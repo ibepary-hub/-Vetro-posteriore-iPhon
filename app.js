@@ -6,6 +6,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let stock = {};
 let currentUser = null;
+let currentCategory = "BackGlass";
 
 const inventory = document.getElementById("inventory");
 const modelTemplate = document.getElementById("modelTemplate");
@@ -14,7 +15,10 @@ const search = document.getElementById("search");
 const filter = document.getElementById("filter");
 const authMsg = document.getElementById("authMsg");
 
-function keyFor(model,color){ return model + "||" + color; }
+function keyFor(model,color){
+  // Mantiene le chiavi BackGlass storiche per non perdere le quantità già salvate.
+  return currentCategory === "BackGlass" ? model + "||" + color : "Housing||" + model + "||" + color;
+}
 function getQty(model,color){ return Number(stock[keyFor(model,color)] || 0); }
 function statusFor(q){
   if(q===0) return ["ESAURITO","empty"];
@@ -107,6 +111,19 @@ document.getElementById("loginBtn").onclick=async()=>{
   if(error) authMsg.textContent=error.message; else showAuth(data.user);
 };
 document.getElementById("logoutBtn").onclick=async()=>{await sb.auth.signOut(); stock={}; showAuth(null);};
+
+
+function setCategory(category){
+  currentCategory=category;
+  document.getElementById("backglassTab").classList.toggle("active", category==="BackGlass");
+  document.getElementById("housingTab").classList.toggle("active", category==="Housing");
+  document.getElementById("categoryName").textContent=category;
+  document.getElementById("categoryDescription").textContent=category==="BackGlass" ? "Vetro posteriore" : "Scocca completa";
+  search.value=""; filter.value="all";
+  render();
+}
+document.getElementById("backglassTab").onclick=()=>setCategory("BackGlass");
+document.getElementById("housingTab").onclick=()=>setCategory("Housing");
 
 search.oninput=render; filter.onchange=render;
 sb.auth.getUser().then(({data})=>showAuth(data.user));
