@@ -69,6 +69,12 @@ async function setQty(model,color,value){
   document.getElementById("cloudStatus").textContent=error ? "Errore cloud" : "☁︎ Salvato";
 }
 
+
+function imageForModel(model){
+  const slug=model.toLowerCase().replaceAll("ª","a").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+  return "iphone-photos/"+slug+".png";
+}
+
 function render(){
   if(!currentUser) return;
   inventory.innerHTML="";
@@ -80,7 +86,12 @@ function render(){
     });
     if(!filteredColors.length)return; visibleModels++;
     const node=modelTemplate.content.cloneNode(true), section=node.querySelector(".model"), header=node.querySelector(".modelHeader");
+    section.classList.add("closed");
+    header.setAttribute("aria-expanded","false");
     node.querySelector("h2").textContent=model;
+    const thumb=node.querySelector(".modelThumb");
+    thumb.src=imageForModel(model);
+    thumb.alt=model;
     node.querySelector(".modelCount").textContent=colors.reduce((s,c)=>s+getQty(model,c),0)+" pezzi";
     const colorsBox=node.querySelector(".colors");
     filteredColors.forEach(color=>{
@@ -93,7 +104,12 @@ function render(){
       qtyInput.onchange=()=>setQty(model,color,qtyInput.value);
       colorsBox.appendChild(row);
     });
-    header.onclick=()=>section.classList.toggle("closed"); inventory.appendChild(node);
+    header.onclick=()=>{
+      const willOpen=section.classList.contains("closed");
+      section.classList.toggle("closed");
+      header.setAttribute("aria-expanded", willOpen ? "true" : "false");
+    };
+    inventory.appendChild(node);
   });
   if(!visibleModels) inventory.innerHTML='<div class="emptyState">Nessun articolo trovato.</div>';
   updateStats();
@@ -275,4 +291,30 @@ document.getElementById("refreshSalesBtn").onclick=loadSales;
 
 search.oninput=render; filter.onchange=render;
 sb.auth.getUser().then(({data})=>showAuth(data.user));
+
+// Modalità giorno / notte
+const themeToggle=document.getElementById("themeToggle");
+const themeIcon=document.getElementById("themeIcon");
+const themeLabel=document.getElementById("themeLabel");
+const themeMeta=document.getElementById("themeColorMeta");
+
+function applyTheme(theme){
+  document.body.dataset.theme=theme;
+  const light=theme==="light";
+  themeIcon.textContent=light ? "☾" : "☀︎";
+  themeLabel.textContent=light ? "Notte" : "Giorno";
+  themeToggle.setAttribute("aria-label", light ? "Passa alla modalità notte" : "Passa alla modalità giorno");
+  if(themeMeta) themeMeta.setAttribute("content", light ? "#f4f1ea" : "#070707");
+  try{ localStorage.setItem("beparytech-theme",theme); }catch(_){}
+}
+let initialTheme="dark";
+try{
+  const saved=localStorage.getItem("beparytech-theme");
+  if(saved==="light"||saved==="dark") initialTheme=saved;
+  else if(window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) initialTheme="light";
+}catch(_){}
+applyTheme(initialTheme);
+themeToggle.addEventListener("click",()=>applyTheme(document.body.dataset.theme==="light" ? "dark" : "light"));
+
+
 sb.auth.onAuthStateChange((_event,session)=>{ if(session?.user && session.user.id!==currentUser?.id) showAuth(session.user); });

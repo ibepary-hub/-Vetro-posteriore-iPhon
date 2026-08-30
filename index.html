@@ -6,7 +6,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="BeparyTech">
-  <meta name="theme-color" content="#070707">
+  <meta id="themeColorMeta" name="theme-color" content="#070707">
   <title>BeparyTech • Magazzino Ricambi iPhone</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -23,6 +23,10 @@
           <h1>Magazzino ricambi iPhone</h1>
         </div>
       </div>
+      <button id="themeToggle" class="themeToggle" type="button" aria-label="Passa alla modalità giorno" title="Modalità giorno/notte">
+        <span id="themeIcon" aria-hidden="true">☀︎</span>
+        <span id="themeLabel">Giorno</span>
+      </button>
     </header>
 
     <section class="stats">
@@ -133,8 +137,11 @@
 
   <template id="modelTemplate">
     <section class="model">
-      <button class="modelHeader">
-        <div><h2></h2><span class="modelCount"></span></div>
+      <button class="modelHeader" type="button" aria-expanded="false">
+        <div class="modelHeaderMain">
+          <img class="modelThumb" src="" alt="" loading="lazy">
+          <div><h2></h2><span class="modelCount"></span></div>
+        </div>
         <span class="chevron">⌄</span>
       </button>
       <div class="colors"></div>
