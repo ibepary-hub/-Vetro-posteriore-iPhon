@@ -106,14 +106,6 @@ document.getElementById("loginBtn").onclick=async()=>{
   const {data,error}=await sb.auth.signInWithPassword({email,password});
   if(error) authMsg.textContent=error.message; else showAuth(data.user);
 };
-document.getElementById("signupBtn").onclick=async()=>{
-  authMsg.textContent="";
-  const email=document.getElementById("email").value.trim(), password=document.getElementById("password").value;
-  const {data,error}=await sb.auth.signUp({email,password});
-  if(error) authMsg.textContent=error.message;
-  else if(data.session) showAuth(data.user);
-  else authMsg.textContent="Account creato. Controlla l'email per confermare l'accesso.";
-};
 document.getElementById("logoutBtn").onclick=async()=>{await sb.auth.signOut(); stock={}; showAuth(null);};
 
 search.oninput=render; filter.onchange=render;
