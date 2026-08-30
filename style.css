@@ -279,3 +279,30 @@ body[data-theme="light"] .modelThumb{background:#f7f4ed;border-color:#e2d3b7}
 body[data-theme="light"] .usersPanel{background:#fff;color:var(--text);border-color:#ddd5c8;box-shadow:0 7px 22px rgba(60,45,20,.07)}
 body[data-theme="light"] .createUserForm input,body[data-theme="light"] .createUserForm select{background:#fff;color:#1c1a17;border-color:#d9d1c4;color-scheme:light}
 body[data-theme="light"] .userAvatar{background:#fff6e5;border-color:#d9bd88;color:#7a5315}body[data-theme="light"] .usersListTitle span{background:#f6ead3;color:#7a5315}
+
+/* --- BeparyTech UI refresh: operatori, permessi e cronologia --- */
+.modalInput,.reasonInput,.modalSelect{
+  width:100%;box-sizing:border-box;border:1px solid var(--line,#2a2a2a);border-radius:14px;
+  background:color-mix(in srgb,var(--card,#151515) 88%,transparent);color:inherit;
+  padding:13px 14px;font:inherit;outline:none;transition:.18s ease;
+}
+.modalInput:focus,.reasonInput:focus,.modalSelect:focus{border-color:#7c9cff;box-shadow:0 0 0 3px rgba(124,156,255,.14)}
+.operatorGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0 4px}
+.optionalText{opacity:.55;font-weight:500}
+.readonlyQty{border-color:transparent!important;background:transparent!important;pointer-events:none;font-weight:800}
+.stepper .plus[hidden]{display:none!important}
+.operatorTag{display:inline-flex!important;width:max-content;padding:5px 9px;border-radius:999px;background:rgba(124,156,255,.12);font-size:12px!important;font-weight:700;color:#9db2ff!important}
+.saleNoteText{opacity:.78;font-style:italic}
+.restoreKicker{color:#34d399!important}
+.userRowActions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+.operatorPasswordState{display:block;margin-top:5px;color:#f59e0b;font-size:12px}.operatorPasswordState.set{color:#34d399}
+.compactDialog{max-width:470px}
+.saleRow{border:1px solid color-mix(in srgb,var(--line,#2a2a2a) 85%,transparent);box-shadow:0 12px 35px rgba(0,0,0,.08)}
+.saleActionsRow{display:flex;gap:8px;flex-wrap:wrap}
+.rowAction.restoreSale{border-color:rgba(52,211,153,.28);color:#34d399;background:rgba(52,211,153,.08)}
+.usersPanel,.salesView,.model{backdrop-filter:blur(18px)}
+@media(max-width:700px){
+  .operatorGrid{grid-template-columns:1fr}
+  .userRow{align-items:flex-start!important}.userRowActions{width:100%;justify-content:flex-start;margin-top:8px}
+  .saleActionsRow .rowAction{flex:1 1 auto}
+}

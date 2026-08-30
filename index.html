@@ -91,7 +91,8 @@
         <form id="createUserForm" class="createUserForm">
           <label><span>Username *</span><input id="newUsername" type="text" autocomplete="off" maxlength="40" placeholder="es. laboratorio1" required></label>
           <label><span>Email *</span><input id="newUserEmail" type="email" autocomplete="off" placeholder="utente@email.it" required></label>
-          <label><span>Password *</span><input id="newUserPassword" type="password" autocomplete="new-password" minlength="6" placeholder="Minimo 6 caratteri" required></label>
+          <label><span>Password login *</span><input id="newUserPassword" type="password" autocomplete="new-password" minlength="6" placeholder="Minimo 6 caratteri" required></label>
+          <label><span>Password operatore *</span><input id="newOperatorPassword" type="password" autocomplete="new-password" minlength="4" placeholder="Minimo 4 caratteri" required></label>
           <label><span>Ruolo</span><select id="newUserRole"><option value="standard">Standard</option><option value="admin">Admin</option></select></label>
           <button id="createUserBtn" class="primaryAction createUserBtn" type="submit">Crea utente</button>
           <div id="createUserMsg" class="createUserMsg" aria-live="polite"></div>
@@ -108,7 +109,11 @@
     <div class="saleDialog" role="dialog" aria-modal="true" aria-labelledby="saleTitle">
       <div class="saleDialogHead"><div><span class="saleKicker">REGISTRA VENDITA</span><h2 id="saleTitle">A chi è destinato?</h2></div><button id="cancelSaleX" class="closeBtn" type="button" aria-label="Chiudi">×</button></div>
       <div id="saleItemLabel" class="saleItemLabel"></div>
-      <label class="fieldLabel" for="saleCustomerSelect">Negozio</label>
+      <div class="operatorGrid">
+        <label><span class="fieldLabel">Nome operatore *</span><input id="saleOperatorName" class="modalInput" type="text" autocomplete="off" placeholder="Nome operatore"></label>
+        <label><span class="fieldLabel">Password operatore *</span><input id="saleOperatorPassword" class="modalInput" type="password" autocomplete="off" placeholder="Password operatore"></label>
+      </div>
+      <label class="fieldLabel" for="saleCustomerSelect">Negozio *</label>
       <select id="saleCustomerSelect" class="modalSelect customerSelect">
         <option value="">Seleziona un negozio…</option>
         <option>RPL Piacenza</option>
@@ -125,6 +130,8 @@
         <option>DP Colugna</option>
         <option>E-POL</option>
       </select>
+      <label class="fieldLabel" for="saleNote">Nota <span class="optionalText">(facoltativa)</span></label>
+      <textarea id="saleNote" class="reasonInput" rows="3" placeholder="Scrivi una nota sull'operazione…"></textarea>
       <div id="saleError" class="saleError"></div>
       <div class="saleActions"><button id="cancelSaleBtn" class="secondaryAction" type="button">Annulla</button><button id="confirmSaleBtn" class="primaryAction" type="button" disabled>Conferma −1</button></div>
     </div>
@@ -154,6 +161,30 @@
       <label class="restoreStockOption"><input id="restoreToStock" type="checkbox"><span><strong>Rimetti il pezzo in magazzino</strong><small>Se attivi questa opzione, la quantità del BackGlass/Housing verrà aumentata automaticamente di 1.</small></span></label>
       <div id="deleteSaleError" class="saleError"></div>
       <div class="saleActions"><button id="deleteSaleCancel" class="secondaryAction" type="button">Annulla</button><button id="deleteSaleConfirm" class="dangerAction" type="button" disabled>Archivia riga</button></div>
+    </div>
+  </div>
+
+  <div id="restoreSaleModal" class="saleModal" hidden>
+    <div class="saleDialog" role="dialog" aria-modal="true" aria-labelledby="restoreSaleTitle">
+      <div class="saleDialogHead"><div><span class="saleKicker restoreKicker">RIMETTI IN MAGAZZINO</span><h2 id="restoreSaleTitle">Conferma il rientro</h2></div><button id="restoreSaleX" class="closeBtn" type="button" aria-label="Chiudi">×</button></div>
+      <div id="restoreSaleItem" class="saleItemLabel"></div>
+      <label class="fieldLabel" for="restoreReasonStandard">Motivazione *</label>
+      <textarea id="restoreReasonStandard" class="reasonInput" rows="4" placeholder="Perché il pezzo viene rimesso in magazzino?"></textarea>
+      <label class="fieldLabel" for="restoreOperatorPassword">Password operatore *</label>
+      <input id="restoreOperatorPassword" class="modalInput" type="password" autocomplete="off" placeholder="Password operatore">
+      <div id="restoreSaleError" class="saleError"></div>
+      <div class="saleActions"><button id="restoreSaleCancel" class="secondaryAction" type="button">Annulla</button><button id="restoreSaleConfirm" class="primaryAction" type="button" disabled>Rimetti +1</button></div>
+    </div>
+  </div>
+
+  <div id="operatorPasswordModal" class="saleModal" hidden>
+    <div class="saleDialog compactDialog" role="dialog" aria-modal="true" aria-labelledby="operatorPasswordTitle">
+      <div class="saleDialogHead"><div><span class="saleKicker">SICUREZZA OPERATORE</span><h2 id="operatorPasswordTitle">Imposta password operatore</h2></div><button id="operatorPasswordX" class="closeBtn" type="button" aria-label="Chiudi">×</button></div>
+      <div id="operatorPasswordUser" class="saleItemLabel"></div>
+      <label class="fieldLabel" for="operatorPasswordValue">Nuova password *</label>
+      <input id="operatorPasswordValue" class="modalInput" type="password" minlength="4" autocomplete="new-password" placeholder="Minimo 4 caratteri">
+      <div id="operatorPasswordError" class="saleError"></div>
+      <div class="saleActions"><button id="operatorPasswordCancel" class="secondaryAction" type="button">Annulla</button><button id="operatorPasswordSave" class="primaryAction" type="button">Salva password</button></div>
     </div>
   </div>
 

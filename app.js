@@ -14,6 +14,7 @@ let selectedCustomer = null;
 let sales = [];
 let salesMode = "active";
 let selectedSale = null;
+let selectedUserForOperatorPassword = null;
 
 const inventory = document.getElementById("inventory");
 const modelTemplate = document.getElementById("modelTemplate");
@@ -61,14 +62,20 @@ async function loadCloud(){
 }
 
 async function setQty(model,color,value){
+  if(!isAdmin()) return;
   value=Math.max(0, parseInt(value||0,10)||0);
-  stock[keyFor(model,color)]=value;
-  render();
   document.getElementById("cloudStatus").textContent="☁︎ Salvataggio…";
-  const { error } = await sb.from("backglass_inventory").upsert({
-    user_id: workspaceOwnerId || currentUser.id, item_key:keyFor(model,color), model, color, quantity:value, updated_at:new Date().toISOString()
-  }, { onConflict:"user_id,item_key" });
-  document.getElementById("cloudStatus").textContent=error ? "Errore cloud" : "☁︎ Salvato";
+  const itemKey=keyFor(model,color);
+  const {data,error}=await sb.rpc("set_beparytech_inventory_quantity",{
+    p_item_key:itemKey,p_model:model,p_color:color,p_quantity:value
+  });
+  if(error){
+    document.getElementById("cloudStatus").textContent="Errore cloud";
+    return;
+  }
+  stock[itemKey]=Number(data);
+  render();
+  document.getElementById("cloudStatus").textContent="☁︎ Salvato";
 }
 
 
@@ -102,8 +109,15 @@ function render(){
       row.querySelector(".colorName").textContent=color; row.querySelector(".dot").style.background=colorDot(color);
       qtyInput.value=qty; status.textContent=label; status.className="status "+cls;
       row.querySelector(".minus").onclick=()=>openSaleModal(model,color,qty);
-      row.querySelector(".plus").onclick=()=>setQty(model,color,qty+1);
-      qtyInput.onchange=()=>setQty(model,color,qtyInput.value);
+      const plusBtn=row.querySelector(".plus");
+      if(isAdmin()){
+        plusBtn.onclick=()=>setQty(model,color,qty+1);
+        qtyInput.onchange=()=>setQty(model,color,qtyInput.value);
+      }else{
+        plusBtn.hidden=true;
+        qtyInput.readOnly=true;
+        qtyInput.classList.add("readonlyQty");
+      }
       colorsBox.appendChild(row);
     });
     header.onclick=()=>{
@@ -204,8 +218,9 @@ async function loadUsers(){
   if(!users.length){list.innerHTML='<div class="emptyState">Nessun utente.</div>';return;}
   list.innerHTML=users.map(u=>{
     const initial=(u.username||u.email||"U").trim().charAt(0).toUpperCase();
-    return `<article class="userRow"><div class="userAvatar">${escapeHtml(initial)}</div><div class="userInfo"><strong>${escapeHtml(u.username||"Utente")}</strong><span>${escapeHtml(u.email||"")}</span></div><span class="roleBadge ${u.role==="admin"?"admin":""}">${u.role==="admin"?"Admin":"Standard"}</span></article>`;
+    return `<article class="userRow"><div class="userAvatar">${escapeHtml(initial)}</div><div class="userInfo"><strong>${escapeHtml(u.username||"Utente")}</strong><span>${escapeHtml(u.email||"")}</span><small class="operatorPasswordState ${u.operator_password_set?"set":""}">${u.operator_password_set?"Password operatore impostata":"Password operatore da impostare"}</small></div><div class="userRowActions"><span class="roleBadge ${u.role==="admin"?"admin":""}">${u.role==="admin"?"Admin":"Standard"}</span><button class="rowAction setOperatorPassword" type="button" data-user-id="${escapeHtml(u.user_id)}" data-username="${escapeHtml(u.username||"Utente")}">Password operatore</button></div></article>`;
   }).join("");
+  list.querySelectorAll(".setOperatorPassword").forEach(btn=>btn.addEventListener("click",()=>openOperatorPassword(btn.dataset.userId,btn.dataset.username)));
 }
 
 document.getElementById("createUserForm").addEventListener("submit",async e=>{
@@ -216,6 +231,7 @@ document.getElementById("createUserForm").addEventListener("submit",async e=>{
     username:document.getElementById("newUsername").value.trim(),
     email:document.getElementById("newUserEmail").value.trim(),
     password:document.getElementById("newUserPassword").value,
+    operator_password:document.getElementById("newOperatorPassword").value,
     role:document.getElementById("newUserRole").value
   };
   msg.className="createUserMsg"; msg.textContent=""; btn.disabled=true; btn.textContent="Creazione…";
@@ -232,6 +248,9 @@ function openSaleModal(model,color,qty){
   if(qty<=0) return;
   pendingSale={model,color,category:currentCategory,itemKey:keyFor(model,color)};
   selectedCustomer=null;
+  document.getElementById("saleOperatorName").value=currentProfile?.username||"";
+  document.getElementById("saleOperatorPassword").value="";
+  document.getElementById("saleNote").value="";
   document.getElementById("saleItemLabel").innerHTML=`<strong>${model}</strong><span>${color} · ${currentCategory === "BackGlass" ? "Vetro posteriore" : "Scocca completa"}</span>`;
   const customerSelect=document.getElementById("saleCustomerSelect");
   customerSelect.value="";
@@ -242,10 +261,15 @@ function openSaleModal(model,color,qty){
 function closeSaleModal(){
   document.getElementById("saleModal").hidden=true; pendingSale=null; selectedCustomer=null;
 }
-document.getElementById("saleCustomerSelect").addEventListener("change",e=>{
-  selectedCustomer=e.target.value || null;
-  document.getElementById("confirmSaleBtn").disabled=!selectedCustomer;
-});
+function updateSaleConfirmState(){
+  selectedCustomer=document.getElementById("saleCustomerSelect").value||null;
+  const operator=document.getElementById("saleOperatorName").value.trim();
+  const pass=document.getElementById("saleOperatorPassword").value;
+  document.getElementById("confirmSaleBtn").disabled=!(selectedCustomer&&operator&&pass.length>=4);
+}
+document.getElementById("saleCustomerSelect").addEventListener("change",updateSaleConfirmState);
+document.getElementById("saleOperatorName").addEventListener("input",updateSaleConfirmState);
+document.getElementById("saleOperatorPassword").addEventListener("input",updateSaleConfirmState);
 document.getElementById("cancelSaleBtn").onclick=closeSaleModal;
 document.getElementById("cancelSaleX").onclick=closeSaleModal;
 document.getElementById("saleModal").addEventListener("click",e=>{if(e.target.id==="saleModal") closeSaleModal();});
@@ -256,7 +280,10 @@ document.getElementById("confirmSaleBtn").onclick=async()=>{
   btn.disabled=true; btn.textContent="Salvo…"; document.getElementById("saleError").textContent="";
   const p=pendingSale;
   const {data,error}=await sb.rpc("record_beparytech_sale",{
-    p_customer:selectedCustomer,p_category:p.category,p_item_key:p.itemKey,p_model:p.model,p_color:p.color
+    p_customer:selectedCustomer,p_category:p.category,p_item_key:p.itemKey,p_model:p.model,p_color:p.color,
+    p_operator_name:document.getElementById("saleOperatorName").value.trim(),
+    p_operator_password:document.getElementById("saleOperatorPassword").value,
+    p_note:document.getElementById("saleNote").value.trim()||null
   });
   btn.textContent="Conferma −1";
   if(error){
@@ -272,7 +299,7 @@ async function loadSales(){
   if(!currentUser) return;
   const list=document.getElementById("salesList");
   list.innerHTML='<div class="emptyState">Caricamento vendite…</div>';
-  const {data,error}=await sb.from("beparytech_sales").select("id,customer,category,item_key,model,color,quantity,sold_at,is_archived,deleted_at,delete_reason,restored_to_inventory").order("sold_at",{ascending:false}).limit(1000);
+  const {data,error}=await sb.from("beparytech_sales").select("id,customer,category,item_key,model,color,quantity,sold_at,is_archived,deleted_at,delete_reason,restored_to_inventory,actor_user_id,operator_name,operator_note,restore_reason").order("sold_at",{ascending:false}).limit(1000);
   if(error){list.innerHTML='<div class="emptyState">Errore nel caricamento delle vendite.</div>'; return;}
   sales=data||[]; renderSales();
 }
@@ -290,12 +317,15 @@ function renderSales(){
       const deleted=s.deleted_at?fmt.format(new Date(s.deleted_at)):"—";
       return `<article class="saleRow archiveRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${s.category==="BackGlass"?"BackGlass":"Housing"}</span><b class="archiveBadge">ARCHIVIATA</b></div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · Vendita ${sold}</span><span>Eliminata ${deleted}</span>${s.restored_to_inventory?`<span class="restoredBadge">↩ Rimesso in magazzino +${s.quantity}</span>`:""}</div><div class="archiveReason"><strong>Motivo:</strong> ${escapeHtml(s.delete_reason||"Nessun motivo registrato")}</div></article>`;
     }
-    const adminActions=isAdmin() ? `<div class="saleActionsRow"><button class="rowAction editStore" type="button" data-id="${s.id}">Modifica negozio</button><button class="rowAction delete archiveSale" type="button" data-id="${s.id}">Elimina</button></div>` : "";
-    return `<article class="saleRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${s.category==="BackGlass"?"BackGlass":"Housing"}</span></div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · ${sold}</span></div>${adminActions}</article>`;
+    const actions=isAdmin() ? `<div class="saleActionsRow"><button class="rowAction editStore" type="button" data-id="${s.id}">Modifica negozio</button><button class="rowAction restoreSale" type="button" data-id="${s.id}">Rimetti in magazzino</button><button class="rowAction delete archiveSale" type="button" data-id="${s.id}">Elimina</button></div>` : `<div class="saleActionsRow"><button class="rowAction restoreSale" type="button" data-id="${s.id}">Rimetti in magazzino</button></div>`;
+    return `<article class="saleRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${s.category==="BackGlass"?"BackGlass":"Housing"}</span>${s.operator_name?`<span class="operatorTag">Operatore: ${escapeHtml(s.operator_name)}</span>`:""}</div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · ${sold}</span>${s.operator_note?`<span class="saleNoteText">Nota: ${escapeHtml(s.operator_note)}</span>`:""}</div>${actions}</article>`;
   }).join("");
-  if(!archived && isAdmin()){
-    list.querySelectorAll(".editStore").forEach(btn=>btn.addEventListener("click",()=>openEditStore(Number(btn.dataset.id))));
-    list.querySelectorAll(".archiveSale").forEach(btn=>btn.addEventListener("click",()=>openDeleteSale(Number(btn.dataset.id))));
+  if(!archived){
+    list.querySelectorAll(".restoreSale").forEach(btn=>btn.addEventListener("click",()=>openRestoreSale(Number(btn.dataset.id))));
+    if(isAdmin()){
+      list.querySelectorAll(".editStore").forEach(btn=>btn.addEventListener("click",()=>openEditStore(Number(btn.dataset.id))));
+      list.querySelectorAll(".archiveSale").forEach(btn=>btn.addEventListener("click",()=>openDeleteSale(Number(btn.dataset.id))));
+    }
   }
 }
 function saleById(id){ return sales.find(s=>Number(s.id)===Number(id)); }
@@ -357,6 +387,55 @@ document.getElementById("deleteSaleConfirm").onclick=async()=>{
     document.getElementById("cloudStatus").textContent="☁︎ Pezzo rimesso in magazzino";
   }
   await loadSales();
+};
+
+function openRestoreSale(id){
+  selectedSale=saleById(id); if(!selectedSale)return;
+  document.getElementById("restoreSaleItem").innerHTML=saleLabelHtml(selectedSale);
+  document.getElementById("restoreReasonStandard").value="";
+  document.getElementById("restoreOperatorPassword").value="";
+  document.getElementById("restoreSaleError").textContent="";
+  document.getElementById("restoreSaleConfirm").disabled=true;
+  document.getElementById("restoreSaleModal").hidden=false;
+}
+function closeRestoreSale(){document.getElementById("restoreSaleModal").hidden=true;selectedSale=null;}
+function updateRestoreState(){
+  document.getElementById("restoreSaleConfirm").disabled=!(document.getElementById("restoreReasonStandard").value.trim()&&document.getElementById("restoreOperatorPassword").value.length>=4);
+}
+document.getElementById("restoreReasonStandard").addEventListener("input",updateRestoreState);
+document.getElementById("restoreOperatorPassword").addEventListener("input",updateRestoreState);
+document.getElementById("restoreSaleX").onclick=closeRestoreSale;
+document.getElementById("restoreSaleCancel").onclick=closeRestoreSale;
+document.getElementById("restoreSaleModal").addEventListener("click",e=>{if(e.target.id==="restoreSaleModal")closeRestoreSale();});
+document.getElementById("restoreSaleConfirm").onclick=async()=>{
+  if(!selectedSale)return;
+  const btn=document.getElementById("restoreSaleConfirm"); btn.disabled=true;btn.textContent="Ripristino…";document.getElementById("restoreSaleError").textContent="";
+  const snapshot={...selectedSale};
+  const {data,error}=await sb.rpc("restore_beparytech_sale",{p_id:selectedSale.id,p_reason:document.getElementById("restoreReasonStandard").value.trim(),p_operator_password:document.getElementById("restoreOperatorPassword").value});
+  btn.textContent="Rimetti +1";
+  if(error){document.getElementById("restoreSaleError").textContent=error.message||"Impossibile rimettere il pezzo in magazzino.";updateRestoreState();return;}
+  const k=snapshot.item_key; stock[k]=Number(data); closeRestoreSale();render();await loadSales();document.getElementById("cloudStatus").textContent="☁︎ Pezzo rimesso in magazzino";
+};
+
+function openOperatorPassword(userId,username){
+  selectedUserForOperatorPassword={userId,username};
+  document.getElementById("operatorPasswordUser").innerHTML=`<strong>${escapeHtml(username)}</strong><span>Imposta o sostituisci la password usata per confermare le operazioni.</span>`;
+  document.getElementById("operatorPasswordValue").value="";
+  document.getElementById("operatorPasswordError").textContent="";
+  document.getElementById("operatorPasswordModal").hidden=false;
+}
+function closeOperatorPassword(){document.getElementById("operatorPasswordModal").hidden=true;selectedUserForOperatorPassword=null;}
+document.getElementById("operatorPasswordX").onclick=closeOperatorPassword;
+document.getElementById("operatorPasswordCancel").onclick=closeOperatorPassword;
+document.getElementById("operatorPasswordSave").onclick=async()=>{
+  if(!selectedUserForOperatorPassword)return;
+  const pass=document.getElementById("operatorPasswordValue").value;
+  if(pass.length<4){document.getElementById("operatorPasswordError").textContent="Inserisci almeno 4 caratteri.";return;}
+  const btn=document.getElementById("operatorPasswordSave");btn.disabled=true;btn.textContent="Salvo…";
+  const {data,error}=await sb.functions.invoke("beparytech-users",{method:"POST",body:{action:"set_operator_password",user_id:selectedUserForOperatorPassword.userId,operator_password:pass}});
+  btn.disabled=false;btn.textContent="Salva password";
+  if(error||data?.error){document.getElementById("operatorPasswordError").textContent=data?.error||error?.message||"Errore salvataggio.";return;}
+  closeOperatorPassword();await loadUsers();
 };
 
 document.getElementById("activeSalesTab").onclick=()=>{salesMode="active";renderSales();};
