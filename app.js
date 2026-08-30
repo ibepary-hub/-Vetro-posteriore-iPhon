@@ -10,6 +10,8 @@ let currentCategory = "BackGlass";
 let pendingSale = null;
 let selectedCustomer = null;
 let sales = [];
+let salesMode = "active";
+let selectedSale = null;
 
 const inventory = document.getElementById("inventory");
 const modelTemplate = document.getElementById("modelTemplate");
@@ -179,16 +181,93 @@ async function loadSales(){
   if(!currentUser) return;
   const list=document.getElementById("salesList");
   list.innerHTML='<div class="emptyState">Caricamento vendite…</div>';
-  const {data,error}=await sb.from("beparytech_sales").select("id,customer,category,model,color,quantity,sold_at").order("sold_at",{ascending:false}).limit(500);
+  const {data,error}=await sb.from("beparytech_sales").select("id,customer,category,item_key,model,color,quantity,sold_at,is_archived,deleted_at,delete_reason,restored_to_inventory").order("sold_at",{ascending:false}).limit(1000);
   if(error){list.innerHTML='<div class="emptyState">Errore nel caricamento delle vendite.</div>'; return;}
   sales=data||[]; renderSales();
 }
 function renderSales(){
   const list=document.getElementById("salesList");
-  if(!sales.length){list.innerHTML='<div class="emptyState">Nessuna vendita registrata.</div>'; return;}
+  const archived=salesMode==="archive";
+  const visible=sales.filter(s=>Boolean(s.is_archived)===archived);
+  document.getElementById("activeSalesTab").classList.toggle("active",!archived);
+  document.getElementById("archiveSalesTab").classList.toggle("active",archived);
+  if(!visible.length){list.innerHTML=`<div class="emptyState">${archived?"Nessuna riga archiviata.":"Nessuna vendita registrata."}</div>`; return;}
   const fmt=new Intl.DateTimeFormat("it-IT",{day:"2-digit",month:"2-digit",year:"2-digit",hour:"2-digit",minute:"2-digit"});
-  list.innerHTML=sales.map(s=>`<article class="saleRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${s.category==="BackGlass"?"BackGlass":"Housing"}</span></div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · ${fmt.format(new Date(s.sold_at))}</span></div></article>`).join("");
+  list.innerHTML=visible.map(s=>{
+    const sold=fmt.format(new Date(s.sold_at));
+    if(archived){
+      const deleted=s.deleted_at?fmt.format(new Date(s.deleted_at)):"—";
+      return `<article class="saleRow archiveRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${s.category==="BackGlass"?"BackGlass":"Housing"}</span><b class="archiveBadge">ARCHIVIATA</b></div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · Vendita ${sold}</span><span>Eliminata ${deleted}</span>${s.restored_to_inventory?`<span class="restoredBadge">↩ Rimesso in magazzino +${s.quantity}</span>`:""}</div><div class="archiveReason"><strong>Motivo:</strong> ${escapeHtml(s.delete_reason||"Nessun motivo registrato")}</div></article>`;
+    }
+    return `<article class="saleRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${s.category==="BackGlass"?"BackGlass":"Housing"}</span></div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · ${sold}</span></div><div class="saleActionsRow"><button class="rowAction editStore" type="button" data-id="${s.id}">Modifica negozio</button><button class="rowAction delete archiveSale" type="button" data-id="${s.id}">Elimina</button></div></article>`;
+  }).join("");
+  if(!archived){
+    list.querySelectorAll(".editStore").forEach(btn=>btn.addEventListener("click",()=>openEditStore(Number(btn.dataset.id))));
+    list.querySelectorAll(".archiveSale").forEach(btn=>btn.addEventListener("click",()=>openDeleteSale(Number(btn.dataset.id))));
+  }
 }
+function saleById(id){ return sales.find(s=>Number(s.id)===Number(id)); }
+function saleLabelHtml(s){ return `<strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${s.category==="BackGlass"?"Vetro posteriore":"Scocca completa"} · ${escapeHtml(s.customer)}</span>`; }
+
+function openEditStore(id){
+  selectedSale=saleById(id); if(!selectedSale) return;
+  document.getElementById("editStoreItem").innerHTML=saleLabelHtml(selectedSale);
+  const select=document.getElementById("editStoreSelect");
+  if([...select.options].some(o=>o.value===selectedSale.customer)) select.value=selectedSale.customer;
+  else select.selectedIndex=0;
+  document.getElementById("editStoreError").textContent="";
+  document.getElementById("editStoreModal").hidden=false;
+}
+function closeEditStore(){document.getElementById("editStoreModal").hidden=true; selectedSale=null;}
+document.getElementById("editStoreX").onclick=closeEditStore;
+document.getElementById("editStoreCancel").onclick=closeEditStore;
+document.getElementById("editStoreModal").addEventListener("click",e=>{if(e.target.id==="editStoreModal")closeEditStore();});
+document.getElementById("editStoreSave").onclick=async()=>{
+  if(!selectedSale)return;
+  const btn=document.getElementById("editStoreSave"), customer=document.getElementById("editStoreSelect").value;
+  btn.disabled=true; btn.textContent="Salvo…"; document.getElementById("editStoreError").textContent="";
+  const {error}=await sb.rpc("update_beparytech_sale_customer",{p_id:selectedSale.id,p_customer:customer});
+  btn.disabled=false; btn.textContent="Salva";
+  if(error){document.getElementById("editStoreError").textContent=error.message||"Impossibile modificare il negozio.";return;}
+  closeEditStore(); await loadSales();
+};
+
+function openDeleteSale(id){
+  selectedSale=saleById(id); if(!selectedSale)return;
+  document.getElementById("deleteSaleItem").innerHTML=saleLabelHtml(selectedSale);
+  const reason=document.getElementById("deleteReason"); reason.value="";
+  document.getElementById("deleteSaleError").textContent="";
+  document.getElementById("restoreToStock").checked=false;
+  document.getElementById("deleteSaleConfirm").disabled=true;
+  document.getElementById("deleteSaleModal").hidden=false; reason.focus();
+}
+function closeDeleteSale(){document.getElementById("deleteSaleModal").hidden=true; selectedSale=null;}
+document.getElementById("deleteSaleX").onclick=closeDeleteSale;
+document.getElementById("deleteSaleCancel").onclick=closeDeleteSale;
+document.getElementById("deleteSaleModal").addEventListener("click",e=>{if(e.target.id==="deleteSaleModal")closeDeleteSale();});
+document.getElementById("deleteReason").addEventListener("input",e=>{document.getElementById("deleteSaleConfirm").disabled=!e.target.value.trim();});
+document.getElementById("deleteSaleConfirm").onclick=async()=>{
+  if(!selectedSale)return;
+  const reason=document.getElementById("deleteReason").value.trim(); if(!reason)return;
+  const btn=document.getElementById("deleteSaleConfirm"); btn.disabled=true; btn.textContent="Archivio…"; document.getElementById("deleteSaleError").textContent="";
+  const restore=document.getElementById("restoreToStock").checked;
+  const saleSnapshot={...selectedSale};
+  const {error}=await sb.rpc("archive_beparytech_sale_v2",{p_id:selectedSale.id,p_reason:reason,p_restore_inventory:restore});
+  btn.textContent="Archivia riga";
+  if(error){document.getElementById("deleteSaleError").textContent=error.message||"Impossibile archiviare la vendita.";btn.disabled=false;return;}
+  closeDeleteSale();
+  if(restore){
+    const k=saleSnapshot.item_key || (saleSnapshot.category==="BackGlass" ? saleSnapshot.model+"||"+saleSnapshot.color : "Housing||"+saleSnapshot.model+"||"+saleSnapshot.color);
+    stock[k]=Number(stock[k]||0)+Number(saleSnapshot.quantity||1);
+    render();
+    document.getElementById("cloudStatus").textContent="☁︎ Pezzo rimesso in magazzino";
+  }
+  await loadSales();
+};
+
+document.getElementById("activeSalesTab").onclick=()=>{salesMode="active";renderSales();};
+document.getElementById("archiveSalesTab").onclick=()=>{salesMode="archive";renderSales();};
+
 function escapeHtml(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));}
 
 document.getElementById("backglassTab").onclick=()=>setCategory("BackGlass");

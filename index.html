@@ -70,6 +70,10 @@
     <main id="inventory"></main>
     <section id="salesView" class="salesView" hidden>
       <div class="salesHeader"><div><strong>Vendite</strong><span>Storico dei ricambi scaricati</span></div><button id="refreshSalesBtn" class="miniBtn" type="button">Aggiorna</button></div>
+      <div class="salesSubTabs" role="tablist" aria-label="Vendite e archivio">
+        <button id="activeSalesTab" class="salesSubTab active" type="button">Vendite attive</button>
+        <button id="archiveSalesTab" class="salesSubTab" type="button">Archivio</button>
+      </div>
       <div id="salesList"></div>
     </section>
   </div>
@@ -79,14 +83,49 @@
       <div class="saleDialogHead"><div><span class="saleKicker">REGISTRA VENDITA</span><h2 id="saleTitle">A chi è destinato?</h2></div><button id="cancelSaleX" class="closeBtn" type="button" aria-label="Chiudi">×</button></div>
       <div id="saleItemLabel" class="saleItemLabel"></div>
       <div id="customerChoices" class="customerChoices">
-        <button type="button" data-customer="DoctorPhone">DoctorPhone</button>
-        <button type="button" data-customer="Riparalo">Riparalo</button>
-        <button type="button" data-customer="Melaggiusti Piacenza">Melaggiusti Piacenza</button>
-        <button type="button" data-customer="Melaggiusti Parma">Melaggiusti Parma</button>
+        <button type="button" data-customer="RPL Piacenza">RPL Piacenza</button>
+        <button type="button" data-customer="RPL Manerbio">RPL Manerbio</button>
+        <button type="button" data-customer="MELA Piacenza">MELA Piacenza</button>
+        <button type="button" data-customer="MELA Lime Store">MELA Lime Store</button>
+        <button type="button" data-customer="MELA Repubblica">MELA Repubblica</button>
+        <button type="button" data-customer="MELA Emilia Est">MELA Emilia Est</button>
+        <button type="button" data-customer="DP Udine">DP Udine</button>
+        <button type="button" data-customer="DP Majano">DP Majano</button>
+        <button type="button" data-customer="DP Tolmezzo">DP Tolmezzo</button>
+        <button type="button" data-customer="DP Cividale">DP Cividale</button>
+        <button type="button" data-customer="DP Codroipo">DP Codroipo</button>
+        <button type="button" data-customer="DP Colugna">DP Colugna</button>
         <button type="button" data-customer="E-POL">E-POL</button>
       </div>
       <div id="saleError" class="saleError"></div>
       <div class="saleActions"><button id="cancelSaleBtn" class="secondaryAction" type="button">Annulla</button><button id="confirmSaleBtn" class="primaryAction" type="button" disabled>Conferma −1</button></div>
+    </div>
+  </div>
+
+
+  <div id="editStoreModal" class="saleModal" hidden>
+    <div class="saleDialog" role="dialog" aria-modal="true" aria-labelledby="editStoreTitle">
+      <div class="saleDialogHead"><div><span class="saleKicker">MODIFICA VENDITA</span><h2 id="editStoreTitle">Cambia negozio</h2></div><button id="editStoreX" class="closeBtn" type="button" aria-label="Chiudi">×</button></div>
+      <div id="editStoreItem" class="saleItemLabel"></div>
+      <label class="fieldLabel" for="editStoreSelect">Negozio</label>
+      <select id="editStoreSelect" class="modalSelect">
+        <option>RPL Piacenza</option><option>RPL Manerbio</option><option>MELA Piacenza</option><option>MELA Lime Store</option><option>MELA Repubblica</option><option>MELA Emilia Est</option><option>DP Udine</option><option>DP Majano</option><option>DP Tolmezzo</option><option>DP Cividale</option><option>DP Codroipo</option><option>DP Colugna</option><option>E-POL</option>
+      </select>
+      <div id="editStoreError" class="saleError"></div>
+      <div class="saleActions"><button id="editStoreCancel" class="secondaryAction" type="button">Annulla</button><button id="editStoreSave" class="primaryAction" type="button">Salva</button></div>
+    </div>
+  </div>
+
+  <div id="deleteSaleModal" class="saleModal" hidden>
+    <div class="saleDialog" role="dialog" aria-modal="true" aria-labelledby="deleteSaleTitle">
+      <div class="saleDialogHead"><div><span class="saleKicker dangerKicker">ARCHIVIA VENDITA</span><h2 id="deleteSaleTitle">Perché stai eliminando questa riga?</h2></div><button id="deleteSaleX" class="closeBtn" type="button" aria-label="Chiudi">×</button></div>
+      <div id="deleteSaleItem" class="saleItemLabel"></div>
+      <label class="fieldLabel" for="deleteReason">Motivo eliminazione</label>
+      <textarea id="deleteReason" class="reasonInput" rows="4" placeholder="Scrivi il motivo…"></textarea>
+      <div class="archiveNote">La riga non verrà persa: sarà spostata nella sezione Archivio con data e ora dell’eliminazione.</div>
+      <label class="restoreStockOption"><input id="restoreToStock" type="checkbox"><span><strong>Rimetti il pezzo in magazzino</strong><small>Se attivi questa opzione, la quantità del BackGlass/Housing verrà aumentata automaticamente di 1.</small></span></label>
+      <div id="deleteSaleError" class="saleError"></div>
+      <div class="saleActions"><button id="deleteSaleCancel" class="secondaryAction" type="button">Annulla</button><button id="deleteSaleConfirm" class="dangerAction" type="button" disabled>Archivia riga</button></div>
     </div>
   </div>
 
