@@ -5,17 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#0f172a">
-  <title>Magazzino Vetri iPhone</title>
+  <meta name="apple-mobile-web-app-title" content="BeparyTech">
+  <meta name="theme-color" content="#070707">
+  <title>BeparyTech • Magazzino Vetri iPhone</title>
   <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="icon" type="image/png" href="favicon-64.png">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="app">
     <header>
-      <div>
-        <div class="eyebrow">MAGAZZINO</div>
-        <h1>Vetri posteriori iPhone</h1>
+      <div class="brandHead">
+        <img src="icon-192.png" alt="BeparyTech" class="brandIcon">
+        <div>
+          <div class="eyebrow">BEPARYTECH</div>
+          <h1>Magazzino vetri iPhone</h1>
+        </div>
       </div>
       <button id="resetBtn" class="iconBtn" title="Azzera dati">↺</button>
     </header>
@@ -38,6 +44,7 @@
 
     <section id="authPanel" class="authPanel">
       <div id="signedOut">
+        <img src="beparytech-logo.png" alt="BeparyTech" class="loginLogo">
         <h2>Accesso al magazzino</h2>
         <p>Accedi con email e password. Le quantità saranno salvate online e disponibili sugli altri dispositivi.</p>
         <input id="email" type="email" placeholder="Email">
@@ -49,6 +56,7 @@
         <div id="authMsg"></div>
       </div>
       <div id="signedIn" hidden>
+        <div class="signedBrand"><img src="icon-192.png" alt=""><strong>BeparyTech Cloud</strong></div>
         <div class="cloudLine"><span id="userEmail"></span><span id="cloudStatus">☁︎ Online</span></div>
         <button id="logoutBtn" class="secondary full">Esci</button>
       </div>
@@ -59,10 +67,7 @@
   <template id="modelTemplate">
     <section class="model">
       <button class="modelHeader">
-        <div>
-          <h2></h2>
-          <span class="modelCount"></span>
-        </div>
+        <div><h2></h2><span class="modelCount"></span></div>
         <span class="chevron">⌄</span>
       </button>
       <div class="colors"></div>
@@ -71,18 +76,8 @@
 
   <template id="colorTemplate">
     <div class="colorRow">
-      <div class="colorInfo">
-        <span class="dot"></span>
-        <div>
-          <strong class="colorName"></strong>
-          <span class="status"></span>
-        </div>
-      </div>
-      <div class="stepper">
-        <button class="minus">−</button>
-        <input class="qty" inputmode="numeric" pattern="[0-9]*" value="0">
-        <button class="plus">+</button>
-      </div>
+      <div class="colorInfo"><span class="dot"></span><div><strong class="colorName"></strong><span class="status"></span></div></div>
+      <div class="stepper"><button class="minus">−</button><input class="qty" inputmode="numeric" pattern="[0-9]*" value="0"><button class="plus">+</button></div>
     </div>
   </template>
 
