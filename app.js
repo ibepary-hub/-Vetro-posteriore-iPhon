@@ -69,6 +69,7 @@ function render(){
   inventory.innerHTML="";
   const q=search.value.trim().toLowerCase(); let visibleModels=0;
   Object.entries(MODEL_COLORS).forEach(([model,colors])=>{
+    if(currentCategory === "BackGlass" && (model === "iPhone 7" || model === "iPhone 7 Plus")) return;
     const filteredColors=colors.filter(color=>{
       const qty=getQty(model,color); return (model+" "+color).toLowerCase().includes(q)&&passesFilter(qty);
     });
@@ -93,7 +94,7 @@ function render(){
   updateStats();
 }
 function updateStats(){
-  const all=Object.entries(MODEL_COLORS).flatMap(([m,colors])=>colors.map(c=>getQty(m,c)));
+  const all=Object.entries(MODEL_COLORS).filter(([m])=>!(currentCategory === "BackGlass" && (m === "iPhone 7" || m === "iPhone 7 Plus"))).flatMap(([m,colors])=>colors.map(c=>getQty(m,c)));
   document.getElementById("totalPieces").textContent=all.reduce((a,b)=>a+b,0);
   document.getElementById("availableTypes").textContent=all.filter(x=>x>0).length;
   document.getElementById("lowStock").textContent=all.filter(x=>x>0&&x<=2).length;
