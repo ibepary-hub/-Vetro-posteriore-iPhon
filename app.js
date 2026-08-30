@@ -140,7 +140,8 @@ function openSaleModal(model,color,qty){
   pendingSale={model,color,category:currentCategory,itemKey:keyFor(model,color)};
   selectedCustomer=null;
   document.getElementById("saleItemLabel").innerHTML=`<strong>${model}</strong><span>${color} · ${currentCategory === "BackGlass" ? "Vetro posteriore" : "Scocca completa"}</span>`;
-  document.querySelectorAll("#customerChoices button").forEach(b=>b.classList.remove("selected"));
+  const customerSelect=document.getElementById("saleCustomerSelect");
+  customerSelect.value="";
   document.getElementById("confirmSaleBtn").disabled=true;
   document.getElementById("saleError").textContent="";
   document.getElementById("saleModal").hidden=false;
@@ -148,12 +149,9 @@ function openSaleModal(model,color,qty){
 function closeSaleModal(){
   document.getElementById("saleModal").hidden=true; pendingSale=null; selectedCustomer=null;
 }
-document.querySelectorAll("#customerChoices button").forEach(btn=>{
-  btn.addEventListener("click",()=>{
-    selectedCustomer=btn.dataset.customer;
-    document.querySelectorAll("#customerChoices button").forEach(b=>b.classList.toggle("selected",b===btn));
-    document.getElementById("confirmSaleBtn").disabled=false;
-  });
+document.getElementById("saleCustomerSelect").addEventListener("change",e=>{
+  selectedCustomer=e.target.value || null;
+  document.getElementById("confirmSaleBtn").disabled=!selectedCustomer;
 });
 document.getElementById("cancelSaleBtn").onclick=closeSaleModal;
 document.getElementById("cancelSaleX").onclick=closeSaleModal;

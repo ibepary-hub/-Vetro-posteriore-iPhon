@@ -54,3 +54,118 @@ body:not(.logged-in) .stats,body:not(.logged-in) .tools,body:not(.logged-in) #in
 
 
 .restoreStockOption{display:flex;gap:12px;align-items:flex-start;margin:14px 0;padding:14px;border:1px solid rgba(212,168,87,.35);border-radius:14px;background:rgba(212,168,87,.08);cursor:pointer}.restoreStockOption input{width:22px;height:22px;margin-top:2px;accent-color:#d4a857;flex:0 0 auto}.restoreStockOption span{display:flex;flex-direction:column;gap:4px}.restoreStockOption strong{font-size:15px}.restoreStockOption small{font-size:12px;line-height:1.35;color:#a3a3a3}.restoredBadge{display:inline-block;margin-top:5px;padding:4px 8px;border-radius:999px;border:1px solid rgba(34,197,94,.35);background:rgba(34,197,94,.1);font-size:11px;font-weight:700}
+
+/* Selettore negozio compatto e scorrevole su iPhone */
+.customerSelect{min-height:52px;margin-bottom:4px;background:#151515;color:#f5f1e7;border-color:#4a3c25;font-weight:750}
+.customerSelect:focus{border-color:var(--gold);box-shadow:0 0 0 2px rgba(215,168,79,.14)}
+@media(max-width:430px){.saleDialog{max-height:calc(100dvh - 36px);overflow:auto;-webkit-overflow-scrolling:touch}.customerSelect{font-size:16px}}
+
+/* =========================================================
+   RESPONSIVE UNIVERSALE — mobile, tablet, notebook, desktop
+   ========================================================= */
+html{width:100%;min-width:0;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{width:100%;min-width:0;overflow-x:hidden}
+button,input,select,textarea{font:inherit;max-width:100%}
+button{touch-action:manipulation}
+img,svg{max-width:100%}
+.app{width:min(100%,1320px);max-width:none;padding-left:clamp(12px,2vw,28px);padding-right:clamp(12px,2vw,28px)}
+h1{font-size:clamp(22px,3vw,36px)}
+.brandIcon{width:clamp(44px,5vw,62px);height:clamp(44px,5vw,62px)}
+.stats{gap:clamp(8px,1.3vw,16px)}
+.card{padding:clamp(11px,1.5vw,18px)}
+.card span{font-size:clamp(11px,1vw,13px)}
+.card strong{font-size:clamp(20px,2.5vw,30px)}
+.categoryTabs{gap:clamp(8px,1.2vw,14px)}
+.categoryTab{min-width:0;min-height:78px}
+.categoryTab strong,.categoryTab span,.categoryTab .openHint{overflow-wrap:anywhere}
+.tools{grid-template-columns:minmax(0,1fr) minmax(118px,180px)}
+#inventory{min-width:0}
+.model,.colors,.colorRow,.colorInfo,.stepper{min-width:0}
+.colorRow{flex-wrap:wrap}
+.colorInfo{flex:1 1 180px}
+.stepper{flex:0 0 auto}
+.stepper button{min-width:44px;min-height:44px}
+.qty{min-height:44px}
+.saleRow{min-width:0}
+.saleMain{flex:1 1 260px}
+.saleMeta{flex:0 1 220px}
+.saleActionsRow{flex-wrap:wrap}
+.rowAction,.miniBtn,.salesSubTab,.saleActions button,.closeBtn{min-height:44px}
+.authPanel input,.modalSelect,.reasonInput,input[type=search],select{font-size:16px}
+.saleModal{overflow-y:auto;-webkit-overflow-scrolling:touch;align-items:flex-start;padding:max(14px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left))}
+.saleDialog{margin:auto;width:min(100%,560px);max-height:calc(100vh - 28px);overflow:auto;-webkit-overflow-scrolling:touch}
+@supports(height:100dvh){.saleDialog{max-height:calc(100dvh - 28px)}}
+
+/* Telefoni piccoli: 320–389 px */
+@media(max-width:389px){
+  .app{padding-left:10px;padding-right:10px}
+  .brandHead{gap:8px}.eyebrow{font-size:9px}.brandIcon{width:40px;height:40px;border-radius:12px}
+  h1{font-size:20px}
+  .stats{grid-template-columns:1fr 1fr}.stats .card:last-child{grid-column:1/-1}
+  .categoryTabs3{grid-template-columns:1fr}.categoryTabs3 #salesTab{grid-column:auto}
+  .categoryTab{min-height:62px;padding:11px 38px 11px 12px}.categoryTab strong{font-size:15px}.categoryTab span{font-size:11px}
+  .categoryTitle{flex-wrap:wrap;gap:3px 7px}.categoryTitle strong{font-size:18px}
+  .tools{grid-template-columns:1fr}.tools select{min-height:48px}
+  .modelHeader{padding:13px}.colorRow{padding:11px 12px}
+  .stepper{width:100%;justify-content:flex-end}.qty{width:54px}
+  .salesHeader{align-items:flex-start;flex-wrap:wrap}.miniBtn{width:100%}
+  .salesSubTabs{grid-template-columns:1fr}
+  .saleMeta{flex:1 1 100%;text-align:left}
+  .saleActionsRow{justify-content:stretch}.rowAction{flex:1 1 130px}
+  .saleActions{grid-template-columns:1fr}
+  .saleDialog{padding:14px;border-radius:18px}
+  .restoreStockOption{padding:12px}
+}
+
+/* Telefoni normali e grandi */
+@media(min-width:390px) and (max-width:767px){
+  .categoryTabs3{grid-template-columns:1fr 1fr}.categoryTabs3 #salesTab{grid-column:1/-1;min-height:64px}
+  .saleDialog{width:min(100%,500px)}
+}
+
+/* Tablet portrait / piccoli notebook */
+@media(min-width:768px) and (max-width:1099px){
+  .app{width:min(100%,980px)}
+  .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .categoryTabs3{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .categoryTab{min-height:92px}
+  .tools{grid-template-columns:minmax(0,1fr) 180px}
+  .colorRow{flex-wrap:nowrap}
+  .saleDialog{width:min(92vw,560px)}
+}
+
+/* Desktop / notebook larghi */
+@media(min-width:1100px){
+  .app{width:min(100%,1320px);padding-top:24px}
+  header{margin-bottom:20px}
+  .stats{grid-template-columns:repeat(3,minmax(0,1fr));margin-bottom:18px}
+  .categoryTabs3{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:18px}
+  .categoryTab{min-height:96px;padding:18px 48px 18px 18px}.categoryTab strong{font-size:19px}.categoryTab span{font-size:13px}
+  .tools{grid-template-columns:minmax(0,1fr) 200px;gap:12px}
+  .authPanel{padding:20px}
+  .signedBrand strong{font-size:16px}
+  .modelHeader{padding:17px 18px}.modelHeader h2{font-size:19px}.colorRow{padding:14px 18px;flex-wrap:nowrap}.colorName{font-size:15px}
+  .salesView{max-width:none}.saleRow{padding:15px 18px}.saleMain strong,.saleMeta strong{font-size:15px}
+  .saleDialog{width:min(100%,600px);padding:22px}
+}
+
+/* Schermi molto larghi: mantieni leggibilità e sfrutta lo spazio senza allungare troppo */
+@media(min-width:1500px){
+  .app{width:min(100%,1420px)}
+  #inventory{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start}
+  #inventory>.model{margin-bottom:0}
+}
+
+/* Orientamento landscape su telefoni bassi */
+@media(max-height:520px) and (orientation:landscape){
+  .saleModal{align-items:flex-start}
+  .saleDialog{max-height:calc(100vh - 18px);margin:0 auto}
+  @supports(height:100dvh){.saleDialog{max-height:calc(100dvh - 18px)}}
+  .loginLogo{max-height:140px}
+}
+
+/* Accessibilità e browser senza hover */
+@media(hover:hover) and (pointer:fine){
+  .categoryTab:hover,.modelHeader:hover,.rowAction:hover,.miniBtn:hover{filter:brightness(1.08)}
+}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}

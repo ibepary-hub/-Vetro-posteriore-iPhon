@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="BeparyTech">
   <meta name="theme-color" content="#070707">
-  <title>BeparyTech • Magazzino Vetri iPhone</title>
+  <title>BeparyTech • Magazzino Ricambi iPhone</title>
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
@@ -82,21 +82,23 @@
     <div class="saleDialog" role="dialog" aria-modal="true" aria-labelledby="saleTitle">
       <div class="saleDialogHead"><div><span class="saleKicker">REGISTRA VENDITA</span><h2 id="saleTitle">A chi è destinato?</h2></div><button id="cancelSaleX" class="closeBtn" type="button" aria-label="Chiudi">×</button></div>
       <div id="saleItemLabel" class="saleItemLabel"></div>
-      <div id="customerChoices" class="customerChoices">
-        <button type="button" data-customer="RPL Piacenza">RPL Piacenza</button>
-        <button type="button" data-customer="RPL Manerbio">RPL Manerbio</button>
-        <button type="button" data-customer="MELA Piacenza">MELA Piacenza</button>
-        <button type="button" data-customer="MELA Lime Store">MELA Lime Store</button>
-        <button type="button" data-customer="MELA Repubblica">MELA Repubblica</button>
-        <button type="button" data-customer="MELA Emilia Est">MELA Emilia Est</button>
-        <button type="button" data-customer="DP Udine">DP Udine</button>
-        <button type="button" data-customer="DP Majano">DP Majano</button>
-        <button type="button" data-customer="DP Tolmezzo">DP Tolmezzo</button>
-        <button type="button" data-customer="DP Cividale">DP Cividale</button>
-        <button type="button" data-customer="DP Codroipo">DP Codroipo</button>
-        <button type="button" data-customer="DP Colugna">DP Colugna</button>
-        <button type="button" data-customer="E-POL">E-POL</button>
-      </div>
+      <label class="fieldLabel" for="saleCustomerSelect">Negozio</label>
+      <select id="saleCustomerSelect" class="modalSelect customerSelect">
+        <option value="">Seleziona un negozio…</option>
+        <option>RPL Piacenza</option>
+        <option>RPL Manerbio</option>
+        <option>MELA Piacenza</option>
+        <option>MELA Lime Store</option>
+        <option>MELA Repubblica</option>
+        <option>MELA Emilia Est</option>
+        <option>DP Udine</option>
+        <option>DP Majano</option>
+        <option>DP Tolmezzo</option>
+        <option>DP Cividale</option>
+        <option>DP Codroipo</option>
+        <option>DP Colugna</option>
+        <option>E-POL</option>
+      </select>
       <div id="saleError" class="saleError"></div>
       <div class="saleActions"><button id="cancelSaleBtn" class="secondaryAction" type="button">Annulla</button><button id="confirmSaleBtn" class="primaryAction" type="button" disabled>Conferma −1</button></div>
     </div>
