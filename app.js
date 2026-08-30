@@ -275,9 +275,10 @@ function renderSales(){
       const deleted=s.deleted_at?fmt.format(new Date(s.deleted_at)):"—";
       return `<article class="saleRow archiveRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${s.category==="BackGlass"?"BackGlass":"Housing"}</span><b class="archiveBadge">ARCHIVIATA</b></div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · Vendita ${sold}</span><span>Eliminata ${deleted}</span>${s.restored_to_inventory?`<span class="restoredBadge">↩ Rimesso in magazzino +${s.quantity}</span>`:""}</div><div class="archiveReason"><strong>Motivo:</strong> ${escapeHtml(s.delete_reason||"Nessun motivo registrato")}</div></article>`;
     }
-    return `<article class="saleRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${s.category==="BackGlass"?"BackGlass":"Housing"}</span></div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · ${sold}</span></div><div class="saleActionsRow"><button class="rowAction editStore" type="button" data-id="${s.id}">Modifica negozio</button><button class="rowAction delete archiveSale" type="button" data-id="${s.id}">Elimina</button></div></article>`;
+    const adminActions=currentProfile?.role==="admin" ? `<div class="saleActionsRow"><button class="rowAction editStore" type="button" data-id="${s.id}">Modifica negozio</button><button class="rowAction delete archiveSale" type="button" data-id="${s.id}">Elimina</button></div>` : "";
+    return `<article class="saleRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${s.category==="BackGlass"?"BackGlass":"Housing"}</span></div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · ${sold}</span></div>${adminActions}</article>`;
   }).join("");
-  if(!archived){
+  if(!archived && currentProfile?.role==="admin"){
     list.querySelectorAll(".editStore").forEach(btn=>btn.addEventListener("click",()=>openEditStore(Number(btn.dataset.id))));
     list.querySelectorAll(".archiveSale").forEach(btn=>btn.addEventListener("click",()=>openDeleteSale(Number(btn.dataset.id))));
   }
@@ -286,6 +287,7 @@ function saleById(id){ return sales.find(s=>Number(s.id)===Number(id)); }
 function saleLabelHtml(s){ return `<strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${s.category==="BackGlass"?"Vetro posteriore":"Scocca completa"} · ${escapeHtml(s.customer)}</span>`; }
 
 function openEditStore(id){
+  if(currentProfile?.role!=="admin") return;
   selectedSale=saleById(id); if(!selectedSale) return;
   document.getElementById("editStoreItem").innerHTML=saleLabelHtml(selectedSale);
   const select=document.getElementById("editStoreSelect");
@@ -309,6 +311,7 @@ document.getElementById("editStoreSave").onclick=async()=>{
 };
 
 function openDeleteSale(id){
+  if(currentProfile?.role!=="admin") return;
   selectedSale=saleById(id); if(!selectedSale)return;
   document.getElementById("deleteSaleItem").innerHTML=saleLabelHtml(selectedSale);
   const reason=document.getElementById("deleteReason"); reason.value="";
