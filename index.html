@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0f172a">
+  <title>Magazzino Vetri iPhone</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <header>
+      <div>
+        <div class="eyebrow">MAGAZZINO</div>
+        <h1>Vetri posteriori iPhone</h1>
+      </div>
+      <button id="resetBtn" class="iconBtn" title="Azzera dati">↺</button>
+    </header>
+
+    <section class="stats">
+      <div class="card"><span>Pezzi totali</span><strong id="totalPieces">0</strong></div>
+      <div class="card"><span>Tipi disponibili</span><strong id="availableTypes">0</strong></div>
+      <div class="card warning"><span>Scorte basse</span><strong id="lowStock">0</strong></div>
+    </section>
+
+    <section class="tools">
+      <input id="search" type="search" placeholder="Cerca iPhone o colore…">
+      <select id="filter">
+        <option value="all">Tutti</option>
+        <option value="available">Disponibili</option>
+        <option value="low">Scorta bassa</option>
+        <option value="empty">Esauriti</option>
+      </select>
+    </section>
+
+    <section id="authPanel" class="authPanel">
+      <div id="signedOut">
+        <h2>Accesso al magazzino</h2>
+        <p>Accedi con email e password. Le quantità saranno salvate online e disponibili sugli altri dispositivi.</p>
+        <input id="email" type="email" placeholder="Email">
+        <input id="password" type="password" placeholder="Password (min. 6 caratteri)">
+        <div class="authButtons">
+          <button id="loginBtn">Accedi</button>
+          <button id="signupBtn" class="secondary">Crea account</button>
+        </div>
+        <div id="authMsg"></div>
+      </div>
+      <div id="signedIn" hidden>
+        <div class="cloudLine"><span id="userEmail"></span><span id="cloudStatus">☁︎ Online</span></div>
+        <button id="logoutBtn" class="secondary full">Esci</button>
+      </div>
+    </section>
+    <main id="inventory"></main>
+  </div>
+
+  <template id="modelTemplate">
+    <section class="model">
+      <button class="modelHeader">
+        <div>
+          <h2></h2>
+          <span class="modelCount"></span>
+        </div>
+        <span class="chevron">⌄</span>
+      </button>
+      <div class="colors"></div>
+    </section>
+  </template>
+
+  <template id="colorTemplate">
+    <div class="colorRow">
+      <div class="colorInfo">
+        <span class="dot"></span>
+        <div>
+          <strong class="colorName"></strong>
+          <span class="status"></span>
+        </div>
+      </div>
+      <div class="stepper">
+        <button class="minus">−</button>
+        <input class="qty" inputmode="numeric" pattern="[0-9]*" value="0">
+        <button class="plus">+</button>
+      </div>
+    </div>
+  </template>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>
