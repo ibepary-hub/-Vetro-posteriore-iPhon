@@ -257,3 +257,22 @@ body[data-theme="light"] .restoreStockOption{background:#fbf7ef;border-color:#dd
 body[data-theme="light"] .archiveRow{background:#faf8f3}
 body[data-theme="light"] .customerSelect{background:#fff;color:#1c1a17}
 body[data-theme="light"] .modelThumb{background:#f7f4ed;border-color:#e2d3b7}
+
+/* Gestione utenti */
+.categoryTabs4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.usersView{display:grid;gap:14px;margin-top:4px}
+.usersPanel{background:linear-gradient(160deg,#171717,#101010);border:1px solid #342d22;border-radius:22px;padding:18px;box-shadow:0 12px 34px rgba(0,0,0,.24)}
+.usersHeader{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:16px}
+.usersHeader h2{font-size:22px;margin:2px 0 5px}.usersHeader p{margin:0;color:var(--muted);font-size:13px;line-height:1.45}.usersKicker{font-size:11px;letter-spacing:.14em;color:var(--gold2);font-weight:900}
+.createUserForm{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.createUserForm label{display:grid;gap:6px}.createUserForm label>span{font-size:12px;font-weight:800;color:var(--muted)}
+.createUserForm input,.createUserForm select{width:100%;min-width:0;border:1px solid #373129;color:var(--text);background:#0e0e0f;border-radius:13px;padding:13px;font-size:16px}
+.createUserBtn{grid-column:1/-1;min-height:50px;font-weight:900;font-size:16px}.createUserMsg{grid-column:1/-1;min-height:18px;font-size:13px;color:var(--muted)}.createUserMsg.error{color:var(--red)}.createUserMsg.ok{color:var(--green)}
+.usersListTitle{display:flex;align-items:center;justify-content:space-between;padding-bottom:12px;border-bottom:1px solid var(--line)}.usersListTitle strong{font-size:16px}.usersListTitle span{min-width:28px;height:28px;border-radius:999px;display:grid;place-items:center;background:#242018;color:var(--gold2);font-weight:900;font-size:12px}
+.userRow{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:14px 2px;border-bottom:1px solid var(--line)}.userRow:last-child{border-bottom:0}
+.userAvatar{width:44px;height:44px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(145deg,#3e2d14,#21190e);border:1px solid #5d4727;color:var(--gold2);font-weight:900;font-size:17px}.userInfo{min-width:0}.userInfo strong{display:block;font-size:15px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.userInfo span{display:block;color:var(--muted);font-size:12px;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.roleBadge{font-size:11px;font-weight:900;padding:7px 9px;border-radius:999px;border:1px solid #514127;background:#211b11;color:var(--gold2);text-transform:uppercase}.roleBadge.admin{border-color:#6d4aa7;background:#271a3d;color:#c59bff}
+@media(max-width:700px){.categoryTabs4{grid-template-columns:1fr 1fr}.categoryTabs4 #salesTab,.categoryTabs4 #usersTab{grid-column:auto;min-height:68px}.createUserForm{grid-template-columns:1fr}.createUserBtn,.createUserMsg{grid-column:auto}.usersHeader{align-items:center}.usersHeader h2{font-size:20px}}
+@media(max-width:360px){.categoryTabs4{grid-template-columns:1fr}.categoryTabs4 #salesTab,.categoryTabs4 #usersTab{grid-column:auto}.userRow{grid-template-columns:auto minmax(0,1fr)}.roleBadge{grid-column:2;justify-self:start}}
+body[data-theme="light"] .usersPanel{background:#fff;color:var(--text);border-color:#ddd5c8;box-shadow:0 7px 22px rgba(60,45,20,.07)}
+body[data-theme="light"] .createUserForm input,body[data-theme="light"] .createUserForm select{background:#fff;color:#1c1a17;border-color:#d9d1c4;color-scheme:light}
+body[data-theme="light"] .userAvatar{background:#fff6e5;border-color:#d9bd88;color:#7a5315}body[data-theme="light"] .usersListTitle span{background:#f6ead3;color:#7a5315}

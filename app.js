@@ -6,6 +6,8 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 let stock = {};
 let currentUser = null;
+let currentProfile = null;
+let workspaceOwnerId = null;
 let currentCategory = "BackGlass";
 let pendingSale = null;
 let selectedCustomer = null;
@@ -64,7 +66,7 @@ async function setQty(model,color,value){
   render();
   document.getElementById("cloudStatus").textContent="☁︎ Salvataggio…";
   const { error } = await sb.from("backglass_inventory").upsert({
-    user_id: currentUser.id, item_key:keyFor(model,color), model, color, quantity:value, updated_at:new Date().toISOString()
+    user_id: workspaceOwnerId || currentUser.id, item_key:keyFor(model,color), model, color, quantity:value, updated_at:new Date().toISOString()
   }, { onConflict:"user_id,item_key" });
   document.getElementById("cloudStatus").textContent=error ? "Errore cloud" : "☁︎ Salvato";
 }
@@ -120,10 +122,28 @@ function updateStats(){
   document.getElementById("availableTypes").textContent=all.filter(x=>x>0).length;
   document.getElementById("lowStock").textContent=all.filter(x=>x>0&&x<=2).length;
 }
-function showAuth(user){
-  currentUser=user||null; document.body.classList.toggle("logged-in",!!user);
+async function loadMyProfile(){
+  currentProfile=null; workspaceOwnerId=currentUser?.id || null;
+  const usersTab=document.getElementById("usersTab");
+  usersTab.hidden=true;
+  if(!currentUser) return;
+  const {data,error}=await sb.from("beparytech_profiles").select("username,role,active,workspace_owner_id").eq("user_id",currentUser.id).maybeSingle();
+  if(!error && data){
+    currentProfile=data; workspaceOwnerId=data.workspace_owner_id || currentUser.id;
+    usersTab.hidden=data.role!=="admin" || !data.active;
+  }
+}
+async function showAuth(user){
+  currentUser=user||null; currentProfile=null; workspaceOwnerId=user?.id||null; document.body.classList.toggle("logged-in",!!user);
   document.getElementById("signedOut").hidden=!!user; document.getElementById("signedIn").hidden=!user;
-  if(user){document.getElementById("userEmail").textContent=user.email; loadCloud();}
+  if(user){
+    document.getElementById("userEmail").textContent=user.email;
+    await loadMyProfile();
+    await loadCloud();
+  }else{
+    document.getElementById("usersTab").hidden=true;
+    document.getElementById("usersView").hidden=true;
+  }
 }
 
 document.getElementById("loginBtn").onclick=async()=>{
@@ -137,20 +157,62 @@ document.getElementById("logoutBtn").onclick=async()=>{await sb.auth.signOut(); 
 
 function setCategory(category){
   currentCategory=category;
-  const isSales=category==="Vendite";
+  const isSales=category==="Vendite", isUsers=category==="Utenti";
+  if(isUsers && currentProfile?.role!=="admin") return;
   document.getElementById("backglassTab").classList.toggle("active", category==="BackGlass");
   document.getElementById("housingTab").classList.toggle("active", category==="Housing");
   document.getElementById("salesTab").classList.toggle("active", isSales);
-  document.getElementById("categoryName").textContent=isSales ? "Vendite" : category;
-  document.getElementById("categoryDescription").textContent=isSales ? "Storico uscite" : (category==="BackGlass" ? "Vetro posteriore" : "Scocca completa");
-  document.querySelector(".tools").hidden=isSales;
-  inventory.hidden=isSales;
+  document.getElementById("usersTab").classList.toggle("active", isUsers);
+  document.getElementById("categoryName").textContent=isUsers ? "Utenti" : (isSales ? "Vendite" : category);
+  document.getElementById("categoryDescription").textContent=isUsers ? "Gestione accessi" : (isSales ? "Storico uscite" : (category==="BackGlass" ? "Vetro posteriore" : "Scocca completa"));
+  document.querySelector(".tools").hidden=isSales||isUsers;
+  inventory.hidden=isSales||isUsers;
   document.getElementById("salesView").hidden=!isSales;
+  document.getElementById("usersView").hidden=!isUsers;
   search.value=""; filter.value="all";
-  if(isSales) loadSales(); else render();
+  if(isSales) loadSales(); else if(isUsers) loadUsers(); else render();
   document.getElementById("categoryName").scrollIntoView({behavior:"smooth", block:"start"});
 }
 
+
+async function loadUsers(){
+  if(!currentUser || currentProfile?.role!=="admin") return;
+  const list=document.getElementById("usersList");
+  list.innerHTML='<div class="emptyState">Caricamento utenti…</div>';
+  const {data,error}=await sb.functions.invoke("beparytech-users",{method:"GET"});
+  if(error || data?.error){
+    list.innerHTML='<div class="emptyState">Impossibile caricare gli utenti.</div>';
+    return;
+  }
+  const users=data?.users||[];
+  document.getElementById("usersCount").textContent=users.length;
+  if(!users.length){list.innerHTML='<div class="emptyState">Nessun utente.</div>';return;}
+  list.innerHTML=users.map(u=>{
+    const initial=(u.username||u.email||"U").trim().charAt(0).toUpperCase();
+    return `<article class="userRow"><div class="userAvatar">${escapeHtml(initial)}</div><div class="userInfo"><strong>${escapeHtml(u.username||"Utente")}</strong><span>${escapeHtml(u.email||"")}</span></div><span class="roleBadge ${u.role==="admin"?"admin":""}">${u.role==="admin"?"Admin":"Standard"}</span></article>`;
+  }).join("");
+}
+
+document.getElementById("createUserForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  if(currentProfile?.role!=="admin") return;
+  const btn=document.getElementById("createUserBtn"), msg=document.getElementById("createUserMsg");
+  const payload={
+    username:document.getElementById("newUsername").value.trim(),
+    email:document.getElementById("newUserEmail").value.trim(),
+    password:document.getElementById("newUserPassword").value,
+    role:document.getElementById("newUserRole").value
+  };
+  msg.className="createUserMsg"; msg.textContent=""; btn.disabled=true; btn.textContent="Creazione…";
+  const {data,error}=await sb.functions.invoke("beparytech-users",{body:payload,method:"POST"});
+  btn.disabled=false; btn.textContent="Crea utente";
+  if(error || data?.error){msg.className="createUserMsg error";msg.textContent=data?.error||error?.message||"Impossibile creare l'utente.";return;}
+  msg.className="createUserMsg ok";msg.textContent="Utente creato correttamente.";
+  e.target.reset(); document.getElementById("newUserRole").value="standard";
+  await loadUsers();
+});
+
+document.getElementById("refreshUsersBtn").onclick=loadUsers;
 function openSaleModal(model,color,qty){
   if(qty<=0) return;
   pendingSale={model,color,category:currentCategory,itemKey:keyFor(model,color)};
@@ -287,6 +349,7 @@ function escapeHtml(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;",
 document.getElementById("backglassTab").onclick=()=>setCategory("BackGlass");
 document.getElementById("housingTab").onclick=()=>setCategory("Housing");
 document.getElementById("salesTab").onclick=()=>setCategory("Vendite");
+document.getElementById("usersTab").onclick=()=>setCategory("Utenti");
 document.getElementById("refreshSalesBtn").onclick=loadSales;
 
 search.oninput=render; filter.onchange=render;

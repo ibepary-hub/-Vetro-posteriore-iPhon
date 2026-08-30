@@ -35,10 +35,11 @@
       <div class="card warning"><span>Scorte basse</span><strong id="lowStock">0</strong></div>
     </section>
 
-    <section class="categoryTabs categoryTabs3" aria-label="Categoria magazzino">
+    <section class="categoryTabs categoryTabs3 categoryTabs4" aria-label="Categoria magazzino">
       <button type="button" id="backglassTab" class="categoryTab active"><strong>BackGlass</strong><span>Vetro posteriore</span><b class="openHint">Apri ›</b></button>
       <button type="button" id="housingTab" class="categoryTab"><strong>Housing</strong><span>Scocca completa</span><b class="openHint">Apri ›</b></button>
       <button type="button" id="salesTab" class="categoryTab"><strong>Vendite</strong><span>Storico uscite</span><b class="openHint">Apri ›</b></button>
+      <button type="button" id="usersTab" class="categoryTab" hidden><strong>Utenti</strong><span>Gestione accessi</span><b class="openHint">Apri ›</b></button>
     </section>
 
     <section class="categoryTitle"><strong id="categoryName">BackGlass</strong><span id="categoryDescription">Vetro posteriore</span></section>
@@ -79,6 +80,27 @@
         <button id="archiveSalesTab" class="salesSubTab" type="button">Archivio</button>
       </div>
       <div id="salesList"></div>
+    </section>
+
+    <section id="usersView" class="usersView" hidden>
+      <div class="usersPanel">
+        <div class="usersHeader">
+          <div><span class="usersKicker">AMMINISTRAZIONE</span><h2>Gestione utenti</h2><p>Crea gli account che possono accedere al gestionale BeparyTech.</p></div>
+          <button id="refreshUsersBtn" class="miniBtn" type="button">Aggiorna</button>
+        </div>
+        <form id="createUserForm" class="createUserForm">
+          <label><span>Username *</span><input id="newUsername" type="text" autocomplete="off" maxlength="40" placeholder="es. laboratorio1" required></label>
+          <label><span>Email *</span><input id="newUserEmail" type="email" autocomplete="off" placeholder="utente@email.it" required></label>
+          <label><span>Password *</span><input id="newUserPassword" type="password" autocomplete="new-password" minlength="6" placeholder="Minimo 6 caratteri" required></label>
+          <label><span>Ruolo</span><select id="newUserRole"><option value="standard">Standard</option><option value="admin">Admin</option></select></label>
+          <button id="createUserBtn" class="primaryAction createUserBtn" type="submit">Crea utente</button>
+          <div id="createUserMsg" class="createUserMsg" aria-live="polite"></div>
+        </form>
+      </div>
+      <div class="usersPanel usersListPanel">
+        <div class="usersListTitle"><strong>Utenti</strong><span id="usersCount">0</span></div>
+        <div id="usersList"><div class="emptyState">Caricamento utenti…</div></div>
+      </div>
     </section>
   </div>
 
