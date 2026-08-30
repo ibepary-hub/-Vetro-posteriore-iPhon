@@ -121,6 +121,7 @@ function setCategory(category){
   document.getElementById("categoryDescription").textContent=category==="BackGlass" ? "Vetro posteriore" : "Scocca completa";
   search.value=""; filter.value="all";
   render();
+  document.getElementById("categoryName").scrollIntoView({behavior:"smooth", block:"start"});
 }
 document.getElementById("backglassTab").onclick=()=>setCategory("BackGlass");
 document.getElementById("housingTab").onclick=()=>setCategory("Housing");

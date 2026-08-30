@@ -23,3 +23,11 @@ body:not(.logged-in) .stats,body:not(.logged-in) .tools,body:not(.logged-in) #in
 .categoryTitle{display:flex;align-items:baseline;gap:8px;margin:4px 2px 12px}
 .categoryTitle strong{font-size:20px;color:#fff}
 .categoryTitle span{font-size:13px;color:#a8a8a8}
+
+/* Sezioni cliccabili */
+.categoryTab{min-height:88px;text-align:left;position:relative;cursor:pointer;touch-action:manipulation;padding:14px 42px 14px 14px}
+.categoryTab strong{display:block;font-size:17px;line-height:1.1}
+.categoryTab span{font-size:12px;margin-top:5px}
+.categoryTab .openHint{position:absolute;right:13px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--gold2);font-weight:800}
+.categoryTab:active{transform:scale(.985)}
+@media(max-width:380px){.categoryTabs{gap:7px}.categoryTab{padding-left:10px;padding-right:32px}.categoryTab strong{font-size:15px}.categoryTab .openHint{right:8px;font-size:11px}}
