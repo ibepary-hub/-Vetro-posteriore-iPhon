@@ -14,6 +14,20 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <div id="menuOverlay" class="menuOverlay" hidden></div>
+  <aside id="mainMenu" class="mainMenu" aria-hidden="true">
+    <div class="menuHead"><div class="menuBrand"><img src="icon-192.png" alt=""><div><strong>BeparyTech</strong><span>Gestionale magazzino</span></div></div><button id="menuClose" class="menuClose animatedBtn" type="button">×</button></div>
+    <nav class="menuNav">
+      <button class="menuItem active" type="button" data-category="BackGlass"><span class="menuIcon">◫</span><span><strong>BackGlass</strong><small>Vetri posteriori</small></span></button>
+      <button class="menuItem" type="button" data-category="Housing"><span class="menuIcon">▣</span><span><strong>Housing</strong><small>Scocche complete</small></span></button>
+      <div id="customMenuSections" class="customMenuSections"></div>
+      <div class="menuDivider"></div>
+      <button class="menuItem" type="button" data-category="Vendite"><span class="menuIcon">↺</span><span><strong>Cronologia</strong><small>Visibile a tutti gli utenti</small></span></button>
+      <button id="catalogMenuItem" class="menuItem adminOnly" type="button" data-category="GestioneMagazzino" hidden><span class="menuIcon">＋</span><span><strong>Gestione magazzino</strong><small>Sezioni e prodotti</small></span></button>
+      <button id="usersMenuItem" class="menuItem adminOnly" type="button" data-category="Utenti" hidden><span class="menuIcon">♙</span><span><strong>Utenti</strong><small>Accessi e password</small></span></button>
+    </nav>
+    <div class="menuFooter"><span id="menuUserName">Utente</span><small id="menuUserRole">Standard</small></div>
+  </aside>
   <div class="app">
     <header>
       <div class="brandHead">
@@ -23,10 +37,13 @@
           <h1>Magazzino ricambi iPhone</h1>
         </div>
       </div>
-      <button id="themeToggle" class="themeToggle" type="button" aria-label="Passa alla modalità giorno" title="Modalità giorno/notte">
+      <div class="headerActions">
+        <button id="menuToggle" class="menuToggle animatedBtn" type="button" aria-label="Apri menu"><span class="menuGlyph">☰</span><span>Menu</span></button>
+        <button id="themeToggle" class="themeToggle animatedBtn" type="button" aria-label="Passa alla modalità giorno" title="Modalità giorno/notte">
         <span id="themeIcon" aria-hidden="true">☀︎</span>
         <span id="themeLabel">Giorno</span>
-      </button>
+        </button>
+      </div>
     </header>
 
     <section class="stats">
@@ -38,7 +55,7 @@
     <section class="categoryTabs categoryTabs3 categoryTabs4" aria-label="Categoria magazzino">
       <button type="button" id="backglassTab" class="categoryTab active"><strong>BackGlass</strong><span>Vetro posteriore</span><b class="openHint">Apri ›</b></button>
       <button type="button" id="housingTab" class="categoryTab"><strong>Housing</strong><span>Scocca completa</span><b class="openHint">Apri ›</b></button>
-      <button type="button" id="salesTab" class="categoryTab"><strong>Vendite</strong><span>Storico uscite</span><b class="openHint">Apri ›</b></button>
+      <button type="button" id="salesTab" class="categoryTab"><strong>Cronologia</strong><span>Tutte le operazioni</span><b class="openHint">Apri ›</b></button>
       <button type="button" id="usersTab" class="categoryTab" hidden><strong>Utenti</strong><span>Gestione accessi</span><b class="openHint">Apri ›</b></button>
     </section>
 
@@ -102,6 +119,29 @@
         <div class="usersListTitle"><strong>Utenti</strong><span id="usersCount">0</span></div>
         <div id="usersList"><div class="emptyState">Caricamento utenti…</div></div>
       </div>
+    </section>
+
+    <section id="catalogView" class="catalogView" hidden>
+      <div class="adminHero"><div><span class="usersKicker">AMMINISTRAZIONE MAGAZZINO</span><h2>Sezioni e prodotti</h2><p>Crea nuove sezioni del gestionale e inserisci prodotti con una giacenza iniziale.</p></div><span class="adminBadge">ADMIN</span></div>
+      <div class="catalogGrid">
+        <form id="createSectionForm" class="catalogCard">
+          <div class="catalogCardTitle"><span class="catalogIcon">＋</span><div><strong>Nuova sezione</strong><small>Comparirà nel menu di tutti</small></div></div>
+          <label><span>Nome sezione *</span><input id="sectionName" type="text" maxlength="60" placeholder="es. Batterie" required></label>
+          <label><span>Descrizione</span><input id="sectionDescription" type="text" maxlength="120" placeholder="es. Batterie ricambio"></label>
+          <button class="primaryAction animatedBtn" type="submit">Crea sezione</button>
+          <div id="sectionFormMsg" class="createUserMsg"></div>
+        </form>
+        <form id="createProductForm" class="catalogCard">
+          <div class="catalogCardTitle"><span class="catalogIcon">▦</span><div><strong>Aggiungi prodotto</strong><small>Inserisci subito la giacenza</small></div></div>
+          <label><span>Sezione *</span><select id="productSection" required><option value="">Seleziona sezione…</option></select></label>
+          <label><span>Nome prodotto *</span><input id="productName" type="text" maxlength="100" placeholder="es. Batteria iPhone 15" required></label>
+          <label><span>Variante / colore</span><input id="productVariant" type="text" maxlength="80" placeholder="Facoltativo"></label>
+          <div class="catalogTwoCols"><label><span>Giacenza iniziale *</span><input id="productQuantity" type="number" min="0" value="0" required></label><label><span>Scorta bassa</span><input id="productLowStock" type="number" min="0" value="2"></label></div>
+          <button class="primaryAction animatedBtn" type="submit">Aggiungi prodotto</button>
+          <div id="productFormMsg" class="createUserMsg"></div>
+        </form>
+      </div>
+      <div class="catalogCard catalogListCard"><div class="catalogListHead"><div><strong>Sezioni create</strong><small>Prodotti disponibili nel menu</small></div><button id="refreshCatalogBtn" class="miniBtn animatedBtn" type="button">Aggiorna</button></div><div id="catalogAdminList"></div></div>
     </section>
   </div>
 

@@ -15,6 +15,9 @@ let sales = [];
 let salesMode = "active";
 let selectedSale = null;
 let selectedUserForOperatorPassword = null;
+let customSections = [];
+let customProducts = [];
+let currentCustomSectionId = null;
 
 const inventory = document.getElementById("inventory");
 const modelTemplate = document.getElementById("modelTemplate");
@@ -140,17 +143,24 @@ function isAdmin(){
   return !!(currentUser && currentProfile?.role === "admin" && currentProfile?.active);
 }
 function applyRoleVisibility(){
-  const admin = isAdmin();
-  const usersTab = document.getElementById("usersTab");
-  const usersView = document.getElementById("usersView");
-  usersTab.hidden = !admin;
+  const admin=isAdmin();
+  const usersTab=document.getElementById("usersTab");
+  const usersView=document.getElementById("usersView");
+  const catalogView=document.getElementById("catalogView");
+  const catalogMenu=document.getElementById("catalogMenuItem");
+  const usersMenu=document.getElementById("usersMenuItem");
+  usersTab.hidden=!admin;
+  if(catalogMenu) catalogMenu.hidden=!admin;
+  if(usersMenu) usersMenu.hidden=!admin;
   if(!admin){
-    usersView.hidden = true;
+    usersView.hidden=true;
+    if(catalogView) catalogView.hidden=true;
     usersTab.classList.remove("active");
-    // Se si passa da un account Admin a uno Standard mentre è aperta
-    // l'amministrazione, riporta sempre a una sezione consentita.
-    if(currentCategory === "Utenti") setCategory("BackGlass");
+    if(currentCategory==="Utenti"||currentCategory==="GestioneMagazzino") setCategory("BackGlass");
   }
+  const menuUser=document.getElementById("menuUserName"), menuRole=document.getElementById("menuUserRole");
+  if(menuUser) menuUser.textContent=currentProfile?.username||currentUser?.email||"Utente";
+  if(menuRole) menuRole.textContent=admin?"Amministratore":"Operatore standard";
 }
 async function loadMyProfile(){
   currentProfile=null; workspaceOwnerId=currentUser?.id || null;
@@ -169,6 +179,7 @@ async function showAuth(user){
     document.getElementById("userEmail").textContent=user.email;
     await loadMyProfile();
     await loadCloud();
+    await loadCustomCatalog();
   }else{
     document.getElementById("usersTab").hidden=true;
     document.getElementById("usersView").hidden=true;
@@ -185,22 +196,28 @@ document.getElementById("logoutBtn").onclick=async()=>{await sb.auth.signOut(); 
 
 
 function setCategory(category){
-  const isSales=category==="Vendite", isUsers=category==="Utenti";
-  if(isUsers && !isAdmin()) return;
+  const isSales=category==="Vendite", isUsers=category==="Utenti", isCatalog=category==="GestioneMagazzino";
+  const isCustom=String(category).startsWith("custom:");
+  if((isUsers||isCatalog)&&!isAdmin()) return;
   currentCategory=category;
-  document.getElementById("backglassTab").classList.toggle("active", category==="BackGlass");
-  document.getElementById("housingTab").classList.toggle("active", category==="Housing");
-  document.getElementById("salesTab").classList.toggle("active", isSales);
-  document.getElementById("usersTab").classList.toggle("active", isUsers);
-  document.getElementById("categoryName").textContent=isUsers ? "Utenti" : (isSales ? "Vendite" : category);
-  document.getElementById("categoryDescription").textContent=isUsers ? "Gestione accessi" : (isSales ? "Storico uscite" : (category==="BackGlass" ? "Vetro posteriore" : "Scocca completa"));
-  document.querySelector(".tools").hidden=isSales||isUsers;
-  inventory.hidden=isSales||isUsers;
+  currentCustomSectionId=isCustom?Number(String(category).split(":")[1]):null;
+  document.getElementById("backglassTab").classList.toggle("active",category==="BackGlass");
+  document.getElementById("housingTab").classList.toggle("active",category==="Housing");
+  document.getElementById("salesTab").classList.toggle("active",isSales);
+  document.getElementById("usersTab").classList.toggle("active",isUsers);
+  const sec=isCustom?customSections.find(s=>Number(s.id)===currentCustomSectionId):null;
+  document.getElementById("categoryName").textContent=isUsers?"Utenti":isCatalog?"Gestione magazzino":isSales?"Cronologia":sec?.name||category;
+  document.getElementById("categoryDescription").textContent=isUsers?"Gestione accessi":isCatalog?"Crea sezioni e aggiungi prodotti":isSales?"Storico completo di tutti gli operatori":sec?.description||(category==="BackGlass"?"Vetro posteriore":"Scocca completa");
+  document.querySelector(".tools").hidden=isSales||isUsers||isCatalog;
+  inventory.hidden=isSales||isUsers||isCatalog;
   document.getElementById("salesView").hidden=!isSales;
   document.getElementById("usersView").hidden=!isUsers;
+  document.getElementById("catalogView").hidden=!isCatalog;
+  document.querySelectorAll(".menuItem[data-category]").forEach(b=>b.classList.toggle("active",b.dataset.category===category));
   search.value=""; filter.value="all";
-  if(isSales) loadSales(); else if(isUsers) loadUsers(); else render();
-  document.getElementById("categoryName").scrollIntoView({behavior:"smooth", block:"start"});
+  closeMainMenu();
+  if(isSales) loadSales(); else if(isUsers) loadUsers(); else if(isCatalog) renderCatalogAdmin(); else if(isCustom) renderCustomSection(); else render();
+  document.getElementById("categoryName").scrollIntoView({behavior:"smooth",block:"start"});
 }
 
 
@@ -279,19 +296,29 @@ document.getElementById("confirmSaleBtn").onclick=async()=>{
   const btn=document.getElementById("confirmSaleBtn");
   btn.disabled=true; btn.textContent="Salvo…"; document.getElementById("saleError").textContent="";
   const p=pendingSale;
-  const {data,error}=await sb.rpc("record_beparytech_sale",{
-    p_customer:selectedCustomer,p_category:p.category,p_item_key:p.itemKey,p_model:p.model,p_color:p.color,
+  const commonOperator={
+    p_customer:selectedCustomer,
     p_operator_name:document.getElementById("saleOperatorName").value.trim(),
     p_operator_password:document.getElementById("saleOperatorPassword").value,
     p_note:document.getElementById("saleNote").value.trim()||null
-  });
+  };
+  const result=p.kind==="custom"
+    ? await sb.rpc("record_beparytech_custom_sale",{p_product_id:p.productId,...commonOperator})
+    : await sb.rpc("record_beparytech_sale",{p_category:p.category,p_item_key:p.itemKey,p_model:p.model,p_color:p.color,...commonOperator});
+  const {data,error}=result;
   btn.textContent="Conferma −1";
   if(error){
     document.getElementById("saleError").textContent=error.message || "Impossibile registrare la vendita.";
     btn.disabled=false; return;
   }
-  stock[p.itemKey]=Number(data);
-  closeSaleModal(); render();
+  if(p.kind==="custom"){
+    const product=customProducts.find(x=>Number(x.id)===Number(p.productId));
+    if(product) product.quantity=Number(data);
+    closeSaleModal(); renderCustomSection();
+  }else{
+    stock[p.itemKey]=Number(data);
+    closeSaleModal(); render();
+  }
   document.getElementById("cloudStatus").textContent="☁︎ Vendita salvata";
 };
 
@@ -315,10 +342,13 @@ function renderSales(){
     const sold=fmt.format(new Date(s.sold_at));
     if(archived){
       const deleted=s.deleted_at?fmt.format(new Date(s.deleted_at)):"—";
-      return `<article class="saleRow archiveRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${s.category==="BackGlass"?"BackGlass":"Housing"}</span><b class="archiveBadge">ARCHIVIATA</b></div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · Vendita ${sold}</span><span>Eliminata ${deleted}</span>${s.restored_to_inventory?`<span class="restoredBadge">↩ Rimesso in magazzino +${s.quantity}</span>`:""}</div><div class="archiveReason"><strong>Motivo:</strong> ${escapeHtml(s.delete_reason||"Nessun motivo registrato")}</div></article>`;
+      return `<article class="saleRow archiveRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${escapeHtml(s.category)}</span><b class="archiveBadge">ARCHIVIATA</b></div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · Vendita ${sold}</span><span>Eliminata ${deleted}</span>${s.restored_to_inventory?`<span class="restoredBadge">↩ Rimesso in magazzino +${s.quantity}</span>`:""}</div><div class="archiveReason"><strong>Motivo:</strong> ${escapeHtml(s.delete_reason||"Nessun motivo registrato")}</div></article>`;
     }
-    const actions=isAdmin() ? `<div class="saleActionsRow"><button class="rowAction editStore" type="button" data-id="${s.id}">Modifica negozio</button><button class="rowAction restoreSale" type="button" data-id="${s.id}">Rimetti in magazzino</button><button class="rowAction delete archiveSale" type="button" data-id="${s.id}">Elimina</button></div>` : `<div class="saleActionsRow"><button class="rowAction restoreSale" type="button" data-id="${s.id}">Rimetti in magazzino</button></div>`;
-    return `<article class="saleRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${s.category==="BackGlass"?"BackGlass":"Housing"}</span>${s.operator_name?`<span class="operatorTag">Operatore: ${escapeHtml(s.operator_name)}</span>`:""}</div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · ${sold}</span>${s.operator_note?`<span class="saleNoteText">Nota: ${escapeHtml(s.operator_note)}</span>`:""}</div>${actions}</article>`;
+    const ownSale=String(s.actor_user_id||"")===String(currentUser?.id||"");
+    const actions=isAdmin()
+      ? `<div class="saleActionsRow"><button class="rowAction editStore" type="button" data-id="${s.id}">Modifica negozio</button><button class="rowAction restoreSale" type="button" data-id="${s.id}">Rimetti in magazzino</button><button class="rowAction delete archiveSale" type="button" data-id="${s.id}">Elimina</button></div>`
+      : ownSale ? `<div class="saleActionsRow"><button class="rowAction restoreSale" type="button" data-id="${s.id}">Rimetti in magazzino</button></div>` : `<div class="saleActionsRow readOnlyHistory"><span>Solo visualizzazione</span></div>`;
+    return `<article class="saleRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${escapeHtml(s.category)}</span>${s.operator_name?`<span class="operatorTag">Operatore: ${escapeHtml(s.operator_name)}</span>`:""}</div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · ${sold}</span>${s.operator_note?`<span class="saleNoteText">Nota: ${escapeHtml(s.operator_note)}</span>`:""}</div>${actions}</article>`;
   }).join("");
   if(!archived){
     list.querySelectorAll(".restoreSale").forEach(btn=>btn.addEventListener("click",()=>openRestoreSale(Number(btn.dataset.id))));
@@ -329,7 +359,7 @@ function renderSales(){
   }
 }
 function saleById(id){ return sales.find(s=>Number(s.id)===Number(id)); }
-function saleLabelHtml(s){ return `<strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${s.category==="BackGlass"?"Vetro posteriore":"Scocca completa"} · ${escapeHtml(s.customer)}</span>`; }
+function saleLabelHtml(s){ return `<strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${escapeHtml(s.category)} · ${escapeHtml(s.customer)}</span>`; }
 
 function openEditStore(id){
   if(!isAdmin()) return;
@@ -382,8 +412,12 @@ document.getElementById("deleteSaleConfirm").onclick=async()=>{
   closeDeleteSale();
   if(restore){
     const k=saleSnapshot.item_key || (saleSnapshot.category==="BackGlass" ? saleSnapshot.model+"||"+saleSnapshot.color : "Housing||"+saleSnapshot.model+"||"+saleSnapshot.color);
-    stock[k]=Number(stock[k]||0)+Number(saleSnapshot.quantity||1);
-    render();
+    if(String(k).startsWith("CUSTOM||")){
+      const pid=Number(String(k).split("||")[1]), product=customProducts.find(x=>Number(x.id)===pid);
+      if(product) product.quantity=Number(product.quantity||0)+Number(saleSnapshot.quantity||1);
+    }else{
+      stock[k]=Number(stock[k]||0)+Number(saleSnapshot.quantity||1);
+    }
     document.getElementById("cloudStatus").textContent="☁︎ Pezzo rimesso in magazzino";
   }
   await loadSales();
@@ -414,7 +448,11 @@ document.getElementById("restoreSaleConfirm").onclick=async()=>{
   const {data,error}=await sb.rpc("restore_beparytech_sale",{p_id:selectedSale.id,p_reason:document.getElementById("restoreReasonStandard").value.trim(),p_operator_password:document.getElementById("restoreOperatorPassword").value});
   btn.textContent="Rimetti +1";
   if(error){document.getElementById("restoreSaleError").textContent=error.message||"Impossibile rimettere il pezzo in magazzino.";updateRestoreState();return;}
-  const k=snapshot.item_key; stock[k]=Number(data); closeRestoreSale();render();await loadSales();document.getElementById("cloudStatus").textContent="☁︎ Pezzo rimesso in magazzino";
+  const k=snapshot.item_key;
+  if(String(k).startsWith("CUSTOM||")){
+    const pid=Number(String(k).split("||")[1]), product=customProducts.find(x=>Number(x.id)===pid); if(product)product.quantity=Number(data);
+  }else stock[k]=Number(data);
+  closeRestoreSale();await loadSales();document.getElementById("cloudStatus").textContent="☁︎ Pezzo rimesso in magazzino";
 };
 
 function openOperatorPassword(userId,username){
@@ -449,8 +487,115 @@ document.getElementById("salesTab").onclick=()=>setCategory("Vendite");
 document.getElementById("usersTab").onclick=()=>setCategory("Utenti");
 document.getElementById("refreshSalesBtn").onclick=loadSales;
 
-search.oninput=render; filter.onchange=render;
+search.oninput=()=>String(currentCategory).startsWith("custom:")?renderCustomSection():render();
+filter.onchange=()=>String(currentCategory).startsWith("custom:")?renderCustomSection():render();
 sb.auth.getUser().then(({data})=>showAuth(data.user));
+
+
+// ===== Menu, sezioni personalizzate e catalogo Admin =====
+const mainMenu=document.getElementById("mainMenu");
+const menuOverlay=document.getElementById("menuOverlay");
+function openMainMenu(){ if(!currentUser)return; mainMenu.classList.add("open"); mainMenu.setAttribute("aria-hidden","false"); menuOverlay.hidden=false; document.body.classList.add("menu-open"); }
+function closeMainMenu(){ mainMenu.classList.remove("open"); mainMenu.setAttribute("aria-hidden","true"); menuOverlay.hidden=true; document.body.classList.remove("menu-open"); }
+document.getElementById("menuToggle").onclick=openMainMenu;
+document.getElementById("menuClose").onclick=closeMainMenu;
+menuOverlay.onclick=closeMainMenu;
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeMainMenu();});
+document.querySelectorAll(".menuItem[data-category]").forEach(btn=>btn.addEventListener("click",()=>setCategory(btn.dataset.category)));
+
+async function loadCustomCatalog(){
+  if(!currentUser)return;
+  const [{data:sections,error:sErr},{data:products,error:pErr}]=await Promise.all([
+    sb.from("beparytech_sections").select("id,name,description,position,active,created_at").eq("active",true).order("position").order("created_at"),
+    sb.from("beparytech_products").select("id,section_id,name,variant,quantity,low_stock_threshold,active,created_at,updated_at").eq("active",true).order("created_at")
+  ]);
+  if(sErr||pErr){console.error(sErr||pErr);return;}
+  customSections=sections||[]; customProducts=products||[];
+  renderCustomMenu();
+  renderCatalogAdmin();
+}
+function renderCustomMenu(){
+  const box=document.getElementById("customMenuSections"); if(!box)return;
+  box.innerHTML=customSections.map(s=>`<button class="menuItem customMenuItem" type="button" data-category="custom:${s.id}"><span class="menuIcon">▤</span><span><strong>${escapeHtml(s.name)}</strong><small>${escapeHtml(s.description||"Sezione magazzino")}</small></span></button>`).join("");
+  box.querySelectorAll(".menuItem").forEach(btn=>btn.addEventListener("click",()=>setCategory(btn.dataset.category)));
+}
+function customStatus(q,threshold){if(q===0)return["ESAURITO","empty"];if(q<=threshold)return["SCORTA BASSA","low"];return["DISPONIBILE","ok"]}
+function renderCustomSection(){
+  if(!currentUser||!currentCustomSectionId)return;
+  const section=customSections.find(s=>Number(s.id)===currentCustomSectionId);
+  const query=search.value.trim().toLowerCase();
+  const items=customProducts.filter(p=>Number(p.section_id)===currentCustomSectionId).filter(p=>`${p.name} ${p.variant}`.toLowerCase().includes(query)).filter(p=>passesFilter(Number(p.quantity||0)));
+  inventory.innerHTML="";
+  if(!items.length){inventory.innerHTML='<div class="emptyState">Nessun prodotto in questa sezione.</div>';updateCustomStats([]);return;}
+  const grid=document.createElement("div");grid.className="customProductGrid";
+  items.forEach(p=>{
+    const q=Number(p.quantity||0),[status,cls]=customStatus(q,Number(p.low_stock_threshold||2));
+    const card=document.createElement("article");card.className="customProductCard";
+    card.innerHTML=`<div class="customProductTop"><div class="productVisual">${escapeHtml(p.name).charAt(0).toUpperCase()}</div><div class="customProductInfo"><strong>${escapeHtml(p.name)}</strong><span>${escapeHtml(p.variant||section?.name||"")}</span><b class="status ${cls}">${status}</b></div></div><div class="customProductBottom"><div class="customQty"><small>Giacenza</small><strong>${q}</strong></div><div class="customActions"><button class="minus customMinus animatedBtn" type="button" ${q<=0?"disabled":""}>−1</button>${isAdmin()?'<button class="plus customPlus animatedBtn" type="button">+1</button>':""}</div></div>`;
+    card.querySelector(".customMinus").onclick=()=>openCustomSaleModal(p,section);
+    const plus=card.querySelector(".customPlus"); if(plus)plus.onclick=()=>updateCustomProductQty(p,q+1);
+    grid.appendChild(card);
+  });
+  inventory.appendChild(grid);updateCustomStats(items);
+}
+function updateCustomStats(items){
+  const vals=items.length?items:customProducts.filter(p=>Number(p.section_id)===currentCustomSectionId);
+  document.getElementById("totalPieces").textContent=vals.reduce((s,p)=>s+Number(p.quantity||0),0);
+  document.getElementById("availableTypes").textContent=vals.filter(p=>Number(p.quantity)>0).length;
+  document.getElementById("lowStock").textContent=vals.filter(p=>Number(p.quantity)>0&&Number(p.quantity)<=Number(p.low_stock_threshold||2)).length;
+}
+function openCustomSaleModal(product,section){
+  if(Number(product.quantity)<=0)return;
+  pendingSale={kind:"custom",productId:product.id,model:product.name,color:product.variant||"—",category:section?.name||"Prodotti",itemKey:`CUSTOM||${product.id}`};
+  selectedCustomer=null;
+  document.getElementById("saleOperatorName").value=currentProfile?.username||"";
+  document.getElementById("saleOperatorPassword").value="";document.getElementById("saleNote").value="";
+  document.getElementById("saleItemLabel").innerHTML=`<strong>${escapeHtml(product.name)}</strong><span>${escapeHtml(product.variant||section?.name||"")}</span>`;
+  document.getElementById("saleCustomerSelect").value="";document.getElementById("confirmSaleBtn").disabled=true;document.getElementById("saleError").textContent="";document.getElementById("saleModal").hidden=false;
+}
+async function updateCustomProductQty(product,value){
+  if(!isAdmin())return;
+  const next=Math.max(0,Number(value)||0);
+  const {data,error}=await sb.from("beparytech_products").update({quantity:next,updated_at:new Date().toISOString()}).eq("id",product.id).select("quantity").single();
+  if(error){document.getElementById("cloudStatus").textContent="Errore cloud";return;}
+  product.quantity=Number(data.quantity);renderCustomSection();document.getElementById("cloudStatus").textContent="☁︎ Salvato";
+}
+function fillProductSectionSelect(){
+  const sel=document.getElementById("productSection");if(!sel)return;
+  const previous=sel.value;sel.innerHTML='<option value="">Seleziona sezione…</option>'+customSections.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("");
+  if([...sel.options].some(o=>o.value===previous))sel.value=previous;
+}
+function renderCatalogAdmin(){
+  if(!isAdmin())return;
+  fillProductSectionSelect();
+  const list=document.getElementById("catalogAdminList");if(!list)return;
+  if(!customSections.length){list.innerHTML='<div class="emptyState">Crea la prima sezione per iniziare.</div>';return;}
+  list.innerHTML=customSections.map(s=>{
+    const products=customProducts.filter(p=>Number(p.section_id)===Number(s.id));
+    const pieces=products.reduce((a,p)=>a+Number(p.quantity||0),0);
+    return `<div class="catalogSectionRow"><div><strong>${escapeHtml(s.name)}</strong><span>${escapeHtml(s.description||"Nessuna descrizione")}</span></div><div class="catalogSectionStats"><b>${products.length}</b><small>prodotti</small><b>${pieces}</b><small>pezzi</small></div></div>`;
+  }).join("");
+}
+document.getElementById("createSectionForm").addEventListener("submit",async e=>{
+  e.preventDefault();if(!isAdmin())return;
+  const msg=document.getElementById("sectionFormMsg"),name=document.getElementById("sectionName").value.trim(),description=document.getElementById("sectionDescription").value.trim();
+  msg.textContent="";msg.className="createUserMsg";
+  const {error}=await sb.from("beparytech_sections").insert({workspace_owner_id:workspaceOwnerId,name,description,created_by:currentUser.id});
+  if(error){msg.textContent=error.message;msg.className="createUserMsg error";return;}
+  e.target.reset();msg.textContent="Sezione creata.";msg.className="createUserMsg ok";await loadCustomCatalog();
+});
+document.getElementById("createProductForm").addEventListener("submit",async e=>{
+  e.preventDefault();if(!isAdmin())return;
+  const msg=document.getElementById("productFormMsg"),sectionId=Number(document.getElementById("productSection").value),name=document.getElementById("productName").value.trim(),variant=document.getElementById("productVariant").value.trim(),quantity=Math.max(0,Number(document.getElementById("productQuantity").value)||0),low=Math.max(0,Number(document.getElementById("productLowStock").value)||2);
+  msg.textContent="";msg.className="createUserMsg";
+  const {error}=await sb.from("beparytech_products").insert({workspace_owner_id:workspaceOwnerId,section_id:sectionId,name,variant,quantity,low_stock_threshold:low,created_by:currentUser.id});
+  if(error){msg.textContent=error.message;msg.className="createUserMsg error";return;}
+  e.target.reset();document.getElementById("productQuantity").value=0;document.getElementById("productLowStock").value=2;msg.textContent="Prodotto aggiunto.";msg.className="createUserMsg ok";await loadCustomCatalog();
+});
+document.getElementById("refreshCatalogBtn").onclick=loadCustomCatalog;
+// Ricerca/filtro anche nelle sezioni personalizzate
+search.addEventListener("input",()=>{if(String(currentCategory).startsWith("custom:"))renderCustomSection();});
+filter.addEventListener("change",()=>{if(String(currentCategory).startsWith("custom:"))renderCustomSection();});
 
 // Modalità giorno / notte
 const themeToggle=document.getElementById("themeToggle");
