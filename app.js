@@ -72,7 +72,7 @@ async function setQty(model,color,value){
 
 function imageForModel(model){
   const slug=model.toLowerCase().replaceAll("ª","a").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
-  return "iphone-photos/"+slug+".png";
+  return slug+".png";
 }
 
 function render(){
