@@ -115,11 +115,7 @@ document.getElementById("signupBtn").onclick=async()=>{
   else authMsg.textContent="Account creato. Controlla l'email per confermare l'accesso.";
 };
 document.getElementById("logoutBtn").onclick=async()=>{await sb.auth.signOut(); stock={}; showAuth(null);};
-document.getElementById("resetBtn").onclick=async()=>{
-  if(!confirm("Vuoi davvero azzerare tutte le quantità?")) return;
-  const {error}=await sb.from("backglass_inventory").delete().eq("user_id",currentUser.id);
-  if(!error){stock={};render();}
-};
+
 search.oninput=render; filter.onchange=render;
 sb.auth.getUser().then(({data})=>showAuth(data.user));
 sb.auth.onAuthStateChange((_event,session)=>{ if(session?.user && session.user.id!==currentUser?.id) showAuth(session.user); });
