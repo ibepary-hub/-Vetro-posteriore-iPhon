@@ -8,22 +8,23 @@
   <meta name="apple-mobile-web-app-title" content="BeparyTech">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
   <title>BeparyTech • Magazzino Ricambi iPhone</title>
-  <link rel="manifest" href="manifest.json?v=16">
+  <link rel="manifest" href="manifest.json?v=17">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=16">
+  <link rel="stylesheet" href="style.css?v=17">
 </head>
 <body>
   <div id="menuOverlay" class="menuOverlay" hidden></div>
   <aside id="mainMenu" class="mainMenu" aria-hidden="true">
     <div class="menuHead"><div class="menuBrand"><img src="icon-192.png" alt=""><div><strong>BeparyTech</strong><span>Gestionale magazzino</span></div></div><button id="menuClose" class="menuClose animatedBtn" type="button">×</button></div>
     <nav class="menuNav">
-      <button class="menuItem active" type="button" data-category="BackGlass"><span class="menuIcon">◫</span><span><strong>BackGlass</strong><small>Vetri posteriori</small></span></button>
-      <button class="menuItem" type="button" data-category="Housing"><span class="menuIcon">▣</span><span><strong>Housing</strong><small>Scocche complete</small></span></button>
+      <button class="menuItem active" type="button" data-category="Dashboard"><span class="menuIcon">⌂</span><span><strong>Dashboard</strong><small>Riepilogo magazzino</small></span></button>
       <div id="customMenuSections" class="customMenuSections"></div>
       <div class="menuDivider"></div>
-      <button class="menuItem" type="button" data-category="Vendite"><span class="menuIcon">↺</span><span><strong>Cronologia</strong><small>Visibile a tutti gli utenti</small></span></button>
+      <button class="menuItem" type="button" data-category="Cronologia"><span class="menuIcon">≋</span><span><strong>Cronologia</strong><small>Tutte le attività</small></span></button>
+      <button class="menuItem" type="button" data-category="Vendite"><span class="menuIcon">↺</span><span><strong>Vendite / rientri</strong><small>Storico scarichi</small></span></button>
       <button id="catalogMenuItem" class="menuItem adminOnly" type="button" data-category="GestioneMagazzino" hidden><span class="menuIcon">＋</span><span><strong>Gestione magazzino</strong><small>Sezioni e prodotti</small></span></button>
+      <button id="backupMenuItem" class="menuItem adminOnly" type="button" data-category="Backup" hidden><span class="menuIcon">⇩</span><span><strong>Backup</strong><small>Esporta dati</small></span></button>
       <button id="usersMenuItem" class="menuItem adminOnly" type="button" data-category="Utenti" hidden><span class="menuIcon">♙</span><span><strong>Utenti</strong><small>Accessi e password</small></span></button>
     </nav>
     <div class="menuFooter"><span id="menuUserName">Utente</span><small id="menuUserRole">Standard</small></div>
@@ -45,6 +46,11 @@
         </button>
       </div>
     </header>
+
+    <section id="globalSearchBar" class="globalSearchBar" hidden>
+      <div class="globalSearchBox"><span>⌕</span><input id="globalSearch" type="search" placeholder="Cerca ovunque: prodotto, colore, codice, richiesta…"><button id="scanBarcodeBtn" class="miniBtn animatedBtn" type="button">Scansiona</button></div>
+      <div id="globalSearchResults" class="globalSearchResults" hidden></div>
+    </section>
 
     <section class="stats">
       <div class="card"><span>Pezzi totali</span><strong id="totalPieces">0</strong></div>
@@ -89,7 +95,14 @@
         <button id="logoutBtn" class="secondary full">Esci</button>
       </div>
     </section>
+    <section id="dashboardView" class="dashboardView" hidden>
+      <div class="dashboardHero"><div><span class="usersKicker">BEPARYTECH CONTROL</span><h2>Dashboard</h2><p>Situazione del magazzino e attività recenti.</p></div><button id="refreshDashboardBtn" class="miniBtn animatedBtn" type="button">Aggiorna</button></div>
+      <div id="dashboardCards" class="dashboardCards"></div>
+      <div class="dashboardColumns"><div class="dashboardPanel"><div class="panelHead"><strong>Scorte da controllare</strong><span>Scorte basse ed esaurite</span></div><div id="dashboardLowStock"></div></div><div class="dashboardPanel"><div class="panelHead"><strong>Ultime attività</strong><span>Movimenti più recenti</span></div><div id="dashboardActivity"></div></div></div>
+    </section>
     <main id="inventory"></main>
+    <section id="auditView" class="salesView" hidden><div class="salesHeader"><div><strong>Cronologia completa</strong><span>Movimenti, richieste e modifiche</span></div><button id="refreshAuditBtn" class="miniBtn animatedBtn" type="button">Aggiorna</button></div><div id="auditList"></div></section>
+    <section id="backupView" class="catalogView" hidden><div class="adminHero"><div><span class="usersKicker">BACKUP</span><h2>Esporta i dati</h2><p>Scarica una copia del magazzino e della cronologia.</p></div><span class="adminBadge">ADMIN</span></div><div class="backupGrid"><button id="exportInventoryCsv" class="catalogCard backupAction" type="button"><strong>CSV Magazzino</strong><span>Prodotti, sezioni e quantità</span></button><button id="exportRequestsCsv" class="catalogCard backupAction" type="button"><strong>CSV Da ordinare</strong><span>Tutte le richieste</span></button><button id="exportFullBackup" class="catalogCard backupAction" type="button"><strong>Backup JSON completo</strong><span>Magazzino, richieste, vendite e cronologia</span></button></div></section>
     <section id="salesView" class="salesView" hidden>
       <div class="salesHeader"><div><strong>Vendite</strong><span>Storico dei ricambi scaricati</span></div><button id="refreshSalesBtn" class="miniBtn" type="button">Aggiorna</button></div>
       <div class="salesSubTabs" role="tablist" aria-label="Vendite e archivio">
@@ -136,6 +149,7 @@
           <label><span>Sezione *</span><select id="productSection" required><option value="">Seleziona sezione…</option></select></label>
           <label><span>Nome prodotto *</span><input id="productName" type="text" maxlength="100" placeholder="es. Batteria iPhone 15" required></label>
           <label><span>Variante / colore</span><input id="productVariant" type="text" maxlength="80" placeholder="Facoltativo"></label>
+          <div class="catalogTwoCols"><label><span>Codice / SKU</span><input id="productSku" type="text" maxlength="80" placeholder="Facoltativo"></label><label><span>Barcode / QR</span><input id="productBarcode" type="text" maxlength="120" placeholder="Facoltativo"></label></div>
           <div class="catalogTwoCols"><label><span>Giacenza iniziale *</span><input id="productQuantity" type="number" min="0" value="0" required></label><label><span>Scorta bassa</span><input id="productLowStock" type="number" min="0" value="2"></label></div>
           <button class="primaryAction animatedBtn" type="submit">Aggiungi prodotto</button>
           <div id="productFormMsg" class="createUserMsg"></div>
@@ -248,6 +262,7 @@
     </div>
   </template>
 
+  <div id="scannerModal" class="saleModal" hidden><div class="saleDialog"><div class="saleDialogHead"><div><span class="saleKicker">SCANNER</span><h2>QR / Barcode</h2></div><button id="scannerClose" class="closeBtn" type="button">×</button></div><video id="scannerVideo" class="scannerVideo" playsinline muted></video><p id="scannerMsg" class="scannerMsg">Inquadra il codice con la fotocamera.</p><label class="fieldLabel">Oppure inserisci il codice</label><div class="scannerManual"><input id="scannerManualCode" class="modalInput" type="text" placeholder="Codice"><button id="scannerManualSearch" class="primaryAction" type="button">Cerca</button></div></div></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <div id="passwordRecoveryModal" class="saleModal" hidden>
@@ -262,17 +277,17 @@
     </div>
   </div>
 
-  <script src="app.js?v=16"></script>
+  <script src="app.js?v=17"></script>
   <script>
     // Aggiornamento automatico cache / Service Worker
     if ("serviceWorker" in navigator) {
       window.addEventListener("load", async () => {
         try {
-          const reg = await navigator.serviceWorker.register("./sw.js?v=15", { updateViaCache: "none" });
+          const reg = await navigator.serviceWorker.register("./sw.js?v=17", { updateViaCache: "none" });
           await reg.update();
           navigator.serviceWorker.addEventListener("controllerchange", () => {
-            if (!sessionStorage.getItem("bt-cache-reloaded-v15")) {
-              sessionStorage.setItem("bt-cache-reloaded-v15", "1");
+            if (!sessionStorage.getItem("bt-cache-reloaded-v17")) {
+              sessionStorage.setItem("bt-cache-reloaded-v17", "1");
               location.reload();
             }
           });

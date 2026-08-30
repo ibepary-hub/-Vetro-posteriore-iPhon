@@ -149,14 +149,16 @@ function applyRoleVisibility(){
   const catalogView=document.getElementById("catalogView");
   const catalogMenu=document.getElementById("catalogMenuItem");
   const usersMenu=document.getElementById("usersMenuItem");
+  const backupMenu=document.getElementById("backupMenuItem");
   usersTab.hidden=!admin;
   if(catalogMenu) catalogMenu.hidden=!admin;
   if(usersMenu) usersMenu.hidden=!admin;
+  if(backupMenu) backupMenu.hidden=!admin;
   if(!admin){
     usersView.hidden=true;
     if(catalogView) catalogView.hidden=true;
     usersTab.classList.remove("active");
-    if(currentCategory==="Utenti"||currentCategory==="GestioneMagazzino") setCategory("BackGlass");
+    if(["Utenti","GestioneMagazzino","Backup"].includes(currentCategory)) setCategory("Dashboard");
   }
   const menuUser=document.getElementById("menuUserName"), menuRole=document.getElementById("menuUserRole");
   if(menuUser) menuUser.textContent=currentProfile?.username||currentUser?.email||"Utente";
@@ -180,7 +182,11 @@ async function showAuth(user){
     await loadMyProfile();
     await loadCloud();
     await loadCustomCatalog();
+    document.getElementById("globalSearchBar").hidden=false;
+    setCategory("Dashboard");
   }else{
+    document.getElementById("globalSearchBar").hidden=true;
+    document.getElementById("globalSearchResults").hidden=true;
     document.getElementById("usersTab").hidden=true;
     document.getElementById("usersView").hidden=true;
   }
@@ -204,30 +210,29 @@ document.getElementById("logoutBtn").onclick=async()=>{await sb.auth.signOut(); 
 
 
 function setCategory(category){
-  const isSales=category==="Vendite", isUsers=category==="Utenti", isCatalog=category==="GestioneMagazzino";
+  const isDashboard=category==="Dashboard", isSales=category==="Vendite", isAudit=category==="Cronologia", isUsers=category==="Utenti", isCatalog=category==="GestioneMagazzino", isBackup=category==="Backup";
   const isCustom=String(category).startsWith("custom:");
-  if((isUsers||isCatalog)&&!isAdmin()) return;
+  if((isUsers||isCatalog||isBackup)&&!isAdmin()) return;
   currentCategory=category;
   currentCustomSectionId=isCustom?Number(String(category).split(":")[1]):null;
-  document.getElementById("backglassTab").classList.toggle("active",category==="BackGlass");
-  document.getElementById("housingTab").classList.toggle("active",category==="Housing");
-  document.getElementById("salesTab").classList.toggle("active",isSales);
-  document.getElementById("usersTab").classList.toggle("active",isUsers);
   const sec=isCustom?customSections.find(s=>Number(s.id)===currentCustomSectionId):null;
-  document.getElementById("categoryName").textContent=isUsers?"Utenti":isCatalog?"Gestione magazzino":isSales?"Cronologia":sec?.name||category;
-  document.getElementById("categoryDescription").textContent=isUsers?"Gestione accessi":isCatalog?"Crea sezioni e aggiungi prodotti":isSales?"Storico completo di tutti gli operatori":sec?.description||(category==="BackGlass"?"Vetro posteriore":"Scocca completa");
-  document.querySelector(".tools").hidden=isSales||isUsers||isCatalog;
-  inventory.hidden=isSales||isUsers||isCatalog;
+  const title=isDashboard?"Dashboard":isAudit?"Cronologia":isSales?"Vendite / rientri":isUsers?"Utenti":isCatalog?"Gestione magazzino":isBackup?"Backup":sec?.name||category;
+  const desc=isDashboard?"Riepilogo generale":isAudit?"Tutte le attività del gestionale":isSales?"Scarichi, rientri e archivio":isUsers?"Gestione accessi":isCatalog?"Crea e gestisci sezioni e prodotti":isBackup?"Esporta una copia dei dati":sec?.description||"Sezione magazzino";
+  document.getElementById("categoryName").textContent=title;
+  document.getElementById("categoryDescription").textContent=desc;
+  document.querySelector(".tools").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isBackup;
+  document.querySelector(".stats").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isBackup;
+  inventory.hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isBackup;
+  document.getElementById("dashboardView").hidden=!isDashboard;
   document.getElementById("salesView").hidden=!isSales;
+  document.getElementById("auditView").hidden=!isAudit;
   document.getElementById("usersView").hidden=!isUsers;
   document.getElementById("catalogView").hidden=!isCatalog;
+  document.getElementById("backupView").hidden=!isBackup;
   document.querySelectorAll(".menuItem[data-category]").forEach(b=>b.classList.toggle("active",b.dataset.category===category));
-  search.value=""; filter.value="all";
-  closeMainMenu();
-  if(isSales) loadSales(); else if(isUsers) loadUsers(); else if(isCatalog) renderCatalogAdmin(); else if(isCustom) renderCustomSection(); else render();
-  document.getElementById("categoryName").scrollIntoView({behavior:"smooth",block:"start"});
+  search.value=""; filter.value="all"; closeMainMenu();
+  if(isDashboard) loadDashboard(); else if(isAudit) loadAudit(); else if(isSales) loadSales(); else if(isUsers) loadUsers(); else if(isCatalog) renderCatalogAdmin(); else if(isBackup){} else if(isCustom) renderCustomSection();
 }
-
 
 async function loadUsers(){
   if(!isAdmin()) return;
@@ -311,7 +316,7 @@ document.getElementById("confirmSaleBtn").onclick=async()=>{
     p_note:document.getElementById("saleNote").value.trim()||null
   };
   const result=p.kind==="custom"
-    ? await sb.rpc("record_beparytech_custom_sale",{p_product_id:p.productId,...commonOperator})
+    ? await sb.rpc("record_beparytech_product_sale",{p_product_id:p.productId,...commonOperator})
     : await sb.rpc("record_beparytech_sale",{p_category:p.category,p_item_key:p.itemKey,p_model:p.model,p_color:p.color,...commonOperator});
   const {data,error}=result;
   btn.textContent="Conferma −1";
@@ -420,7 +425,7 @@ document.getElementById("deleteSaleConfirm").onclick=async()=>{
   closeDeleteSale();
   if(restore){
     const k=saleSnapshot.item_key || (saleSnapshot.category==="BackGlass" ? saleSnapshot.model+"||"+saleSnapshot.color : "Housing||"+saleSnapshot.model+"||"+saleSnapshot.color);
-    if(String(k).startsWith("CUSTOM||")){
+    if(String(k).startsWith("CUSTOM||")||String(k).startsWith("PRODUCT||")){
       const pid=Number(String(k).split("||")[1]), product=customProducts.find(x=>Number(x.id)===pid);
       if(product) product.quantity=Number(product.quantity||0)+Number(saleSnapshot.quantity||1);
     }else{
@@ -457,7 +462,7 @@ document.getElementById("restoreSaleConfirm").onclick=async()=>{
   btn.textContent="Rimetti +1";
   if(error){document.getElementById("restoreSaleError").textContent=error.message||"Impossibile rimettere il pezzo in magazzino.";updateRestoreState();return;}
   const k=snapshot.item_key;
-  if(String(k).startsWith("CUSTOM||")){
+  if(String(k).startsWith("CUSTOM||")||String(k).startsWith("PRODUCT||")){
     const pid=Number(String(k).split("||")[1]), product=customProducts.find(x=>Number(x.id)===pid); if(product)product.quantity=Number(data);
   }else stock[k]=Number(data);
   closeRestoreSale();await loadSales();document.getElementById("cloudStatus").textContent="☁︎ Pezzo rimesso in magazzino";
@@ -513,9 +518,11 @@ document.querySelectorAll(".menuItem[data-category]").forEach(btn=>btn.addEventL
 
 async function loadCustomCatalog(){
   if(!currentUser)return;
+  let sectionQuery=sb.from("beparytech_sections").select("id,name,description,position,active,section_type,created_at").order("position").order("created_at");
+  if(!isAdmin()) sectionQuery=sectionQuery.eq("active",true);
   const [{data:sections,error:sErr},{data:products,error:pErr}]=await Promise.all([
-    sb.from("beparytech_sections").select("id,name,description,position,active,created_at").eq("active",true).order("position").order("created_at"),
-    sb.from("beparytech_products").select("id,section_id,name,variant,quantity,low_stock_threshold,active,created_at,updated_at").eq("active",true).order("created_at")
+    sectionQuery,
+    sb.from("beparytech_products").select("id,section_id,name,variant,quantity,low_stock_threshold,active,sku,barcode,sort_order,created_at,updated_at").eq("active",true).order("sort_order").order("created_at")
   ]);
   if(sErr||pErr){console.error(sErr||pErr);return;}
   customSections=sections||[]; customProducts=products||[];
@@ -524,54 +531,53 @@ async function loadCustomCatalog(){
 }
 function renderCustomMenu(){
   const box=document.getElementById("customMenuSections"); if(!box)return;
-  box.innerHTML=customSections.map(s=>`<button class="menuItem customMenuItem" type="button" data-category="custom:${s.id}"><span class="menuIcon">▤</span><span><strong>${escapeHtml(s.name)}</strong><small>${escapeHtml(s.description||"Sezione magazzino")}</small></span></button>`).join("");
+  box.innerHTML=customSections.filter(s=>s.active!==false).map(s=>{const req=s.section_type==="requests";const icon=req?"🛒":(s.name==="BackGlass"?"◫":s.name==="Housing"?"▣":"▤");return `<button class="menuItem customMenuItem" type="button" data-category="custom:${s.id}"><span class="menuIcon">${icon}</span><span><strong>${escapeHtml(s.name)}</strong><small>${escapeHtml(s.description||"Sezione magazzino")}</small></span></button>`}).join("");
   box.querySelectorAll(".menuItem").forEach(btn=>btn.addEventListener("click",()=>setCategory(btn.dataset.category)));
 }
 function customStatus(q,threshold){if(q===0)return["ESAURITO","empty"];if(q<=threshold)return["SCORTA BASSA","low"];return["DISPONIBILE","ok"]}
 function renderCustomSection(){
   if(!currentUser||!currentCustomSectionId)return;
   const section=customSections.find(s=>Number(s.id)===currentCustomSectionId);
-  if(section && String(section.name||"").trim().toLowerCase()==="da ordinare"){ renderOrderRequests(section); return; }
+  if(section?.section_type==="requests"){ renderOrderRequests(section); return; }
   const query=search.value.trim().toLowerCase();
-  const items=customProducts.filter(p=>Number(p.section_id)===currentCustomSectionId).filter(p=>`${p.name} ${p.variant}`.toLowerCase().includes(query)).filter(p=>passesFilter(Number(p.quantity||0)));
+  const items=customProducts.filter(p=>Number(p.section_id)===currentCustomSectionId).filter(p=>`${p.name} ${p.variant||""} ${p.sku||""} ${p.barcode||""}`.toLowerCase().includes(query)).filter(p=>passesFilter(Number(p.quantity||0)));
   inventory.innerHTML="";
   if(!items.length){inventory.innerHTML='<div class="emptyState">Nessun prodotto in questa sezione.</div>';updateCustomStats([]);return;}
   const grid=document.createElement("div");grid.className="customProductGrid";
   items.forEach(p=>{
     const q=Number(p.quantity||0),[status,cls]=customStatus(q,Number(p.low_stock_threshold||2));
     const card=document.createElement("article");card.className="customProductCard";
-    card.innerHTML=`<div class="customProductTop"><div class="productVisual">${escapeHtml(p.name).charAt(0).toUpperCase()}</div><div class="customProductInfo"><strong>${escapeHtml(p.name)}</strong><span>${escapeHtml(p.variant||section?.name||"")}</span><b class="status ${cls}">${status}</b></div></div><div class="customProductBottom"><div class="customQty"><small>Giacenza</small><strong>${q}</strong></div><div class="customActions"><button class="minus customMinus animatedBtn" type="button" ${q<=0?"disabled":""}>−1</button>${isAdmin()?'<button class="plus customPlus animatedBtn" type="button">+1</button>':""}</div></div>`;
+    card.innerHTML=`<div class="customProductTop"><div class="productVisual"><img class="productModelImage" src="${escapeHtml(imageForModel(p.name))}" alt="${escapeHtml(p.name)}"><span>${escapeHtml(p.name).charAt(0).toUpperCase()}</span></div><div class="customProductInfo"><strong>${escapeHtml(p.name)}</strong><span>${escapeHtml(p.variant||section?.name||"")}</span>${p.sku||p.barcode?`<small>${escapeHtml(p.sku||p.barcode)}</small>`:""}<b class="status ${cls}">${status}</b></div></div><div class="customProductBottom"><div class="customQty"><small>Giacenza</small><strong>${q}</strong></div><div class="customActions"><button class="minus customMinus animatedBtn" type="button" ${q<=0?"disabled":""}>−1</button>${isAdmin()?'<button class="plus customPlus animatedBtn" type="button">+1</button><button class="edit customEdit animatedBtn" type="button" title="Modifica prodotto">✎</button>':""}</div></div>`;
+    const modelImg=card.querySelector(".productModelImage");modelImg.onerror=()=>{modelImg.hidden=true;modelImg.nextElementSibling.hidden=false};modelImg.onload=()=>{modelImg.nextElementSibling.hidden=true};
     card.querySelector(".customMinus").onclick=()=>openCustomSaleModal(p,section);
     const plus=card.querySelector(".customPlus"); if(plus)plus.onclick=()=>updateCustomProductQty(p,q+1);
+    const edit=card.querySelector(".customEdit");if(edit)edit.onclick=()=>editCustomProduct(p);
     grid.appendChild(card);
   });
   inventory.appendChild(grid);updateCustomStats(items);
 }
 async function renderOrderRequests(section){
-  inventory.innerHTML='<div class="orderRequestWrap"><form id="orderRequestForm" class="orderRequestCard"><div class="catalogCardTitle"><span class="catalogIcon">🛒</span><div><strong>Richiedi qualcosa</strong><small>Puoi chiedere qualsiasi materiale da ordinare</small></div></div><label><span>Cosa serve *</span><input id="requestItem" type="text" maxlength="160" placeholder="es. Display iPhone 15 Pro nero" required></label><div class="catalogTwoCols"><label><span>Quantità *</span><input id="requestQty" type="number" min="1" value="1" required></label><label><span>Nota</span><input id="requestNote" type="text" maxlength="240" placeholder="Facoltativa"></label></div><button class="primaryAction animatedBtn" type="submit">Invia richiesta</button><div id="requestMsg" class="createUserMsg"></div></form><div class="orderRequestCard"><div class="catalogListHead"><div><strong>Da ordinare</strong><small>Richieste di tutti gli utenti</small></div><button id="refreshRequestsBtn" class="miniBtn animatedBtn" type="button">Aggiorna</button></div><div id="requestsList"><div class="emptyState">Caricamento richieste…</div></div></div></div>';
-  document.getElementById("orderRequestForm").addEventListener("submit",submitOrderRequest);
-  document.getElementById("refreshRequestsBtn").onclick=loadOrderRequests;
-  await loadOrderRequests();
+  inventory.innerHTML=`<div class="orderRequestWrap"><form id="orderRequestForm" class="orderRequestCard"><div class="catalogCardTitle"><span class="catalogIcon">🛒</span><div><strong>Nuova richiesta</strong><small>Qualsiasi materiale, ricambio o accessorio</small></div></div><label><span>Cosa serve *</span><input id="requestItem" type="text" maxlength="160" placeholder="es. Display iPhone 15 Pro nero" required></label><div class="catalogTwoCols"><label><span>Quantità *</span><input id="requestQty" type="number" min="1" value="1" required></label><label><span>Codice</span><input id="requestCode" type="text" maxlength="100" placeholder="SKU / codice ricambio"></label></div><label><span>Link prodotto</span><input id="requestLink" type="url" maxlength="500" placeholder="https://..."></label><label><span>Nota</span><input id="requestNote" type="text" maxlength="240" placeholder="Facoltativa"></label><button class="primaryAction animatedBtn" type="submit">Invia richiesta</button><div id="requestMsg" class="createUserMsg"></div></form><div class="orderRequestCard"><div class="catalogListHead"><div><strong>Da ordinare</strong><small>Richieste di tutti gli utenti</small></div><button id="refreshRequestsBtn" class="miniBtn animatedBtn" type="button">Aggiorna</button></div><div id="requestsList"><div class="emptyState">Caricamento richieste…</div></div></div></div>`;
+  document.getElementById("orderRequestForm").addEventListener("submit",submitOrderRequest);document.getElementById("refreshRequestsBtn").onclick=loadOrderRequests;await loadOrderRequests();
 }
 async function submitOrderRequest(e){
   e.preventDefault();
-  const msg=document.getElementById("requestMsg"),item=document.getElementById("requestItem").value.trim(),quantity=Math.max(1,Number(document.getElementById("requestQty").value)||1),note=document.getElementById("requestNote").value.trim();
+  const msg=document.getElementById("requestMsg"),item=document.getElementById("requestItem").value.trim(),quantity=Math.max(1,Number(document.getElementById("requestQty").value)||1),note=document.getElementById("requestNote").value.trim(),code=document.getElementById("requestCode").value.trim(),link=document.getElementById("requestLink").value.trim();
   msg.textContent="";msg.className="createUserMsg";
-  const {error}=await sb.from("beparytech_requests").insert({workspace_owner_id:workspaceOwnerId,created_by:currentUser.id,requester_name:currentProfile?.username||currentUser.email||"Utente",item,quantity,note:note||null});
+  const {error}=await sb.from("beparytech_requests").insert({workspace_owner_id:workspaceOwnerId,created_by:currentUser.id,requester_name:currentProfile?.username||currentUser.email||"Utente",item,quantity,note:note||null,code:code||null,link:link||null});
   if(error){msg.textContent=error.message;msg.className="createUserMsg error";return;}
   e.target.reset();document.getElementById("requestQty").value=1;msg.textContent="Richiesta inviata.";msg.className="createUserMsg ok";await loadOrderRequests();
 }
 async function loadOrderRequests(){
   const list=document.getElementById("requestsList"); if(!list)return;
-  const {data,error}=await sb.from("beparytech_requests").select("id,requester_name,item,quantity,note,status,created_at").order("created_at",{ascending:false});
+  const {data,error}=await sb.from("beparytech_requests").select("id,requester_name,item,quantity,note,code,link,status,created_at,updated_at").order("created_at",{ascending:false});
   if(error){list.innerHTML='<div class="emptyState">Impossibile caricare le richieste.</div>';return;}
-  const rows=data||[];
-  if(!rows.length){list.innerHTML='<div class="emptyState">Nessuna richiesta da ordinare.</div>';return;}
-  list.innerHTML=rows.map(r=>`<div class="requestRow"><div class="requestMain"><strong>${escapeHtml(r.item)}</strong><span>${escapeHtml(r.requester_name)} · Qtà ${Number(r.quantity||1)} · ${new Date(r.created_at).toLocaleString("it-IT")}</span>${r.note?`<small>${escapeHtml(r.note)}</small>`:""}</div><div class="requestSide"><b class="requestStatus ${r.status}">${r.status}</b>${isAdmin()?`<select class="requestStatusSelect" data-id="${r.id}"><option value="richiesto" ${r.status==="richiesto"?"selected":""}>Richiesto</option><option value="ordinato" ${r.status==="ordinato"?"selected":""}>Ordinato</option><option value="arrivato" ${r.status==="arrivato"?"selected":""}>Arrivato</option></select>`:""}</div></div>`).join("");
-  list.querySelectorAll(".requestStatusSelect").forEach(sel=>sel.addEventListener("change",async()=>{const {error}=await sb.from("beparytech_requests").update({status:sel.value,updated_at:new Date().toISOString()}).eq("id",Number(sel.dataset.id));if(error)alert(error.message);else loadOrderRequests();}));
-  document.getElementById("totalPieces").textContent=rows.filter(r=>r.status!=="arrivato").reduce((a,r)=>a+Number(r.quantity||1),0);
-  document.getElementById("availableTypes").textContent=rows.filter(r=>r.status!=="arrivato").length;
-  document.getElementById("lowStock").textContent=rows.filter(r=>r.status==="richiesto").length;
+  const rows=data||[]; window.btRequests=rows;
+  if(!rows.length){list.innerHTML='<div class="emptyState">Nessuna richiesta.</div>';return;}
+  const labels={richiesto:"Richiesto",approvato:"Approvato",ordinato:"Ordinato",arrivato:"Arrivato",consegnato:"Consegnato"};
+  list.innerHTML=rows.map(r=>`<div class="requestRow"><div class="requestMain"><strong>${escapeHtml(r.item)}</strong><span>${escapeHtml(r.requester_name)} · Qtà ${Number(r.quantity||1)} · ${new Date(r.created_at).toLocaleString("it-IT")}</span>${r.code?`<small>Codice: ${escapeHtml(r.code)}</small>`:""}${r.note?`<small>${escapeHtml(r.note)}</small>`:""}${r.link?`<a href="${escapeHtml(r.link)}" target="_blank" rel="noopener">Apri link prodotto ↗</a>`:""}</div><div class="requestSide"><b class="requestStatus ${r.status}">${labels[r.status]||r.status}</b>${isAdmin()?`<select class="requestStatusSelect" data-id="${r.id}">${Object.entries(labels).map(([v,l])=>`<option value="${v}" ${r.status===v?"selected":""}>${l}</option>`).join("")}</select>`:""}</div></div>`).join("");
+  list.querySelectorAll(".requestStatusSelect").forEach(sel=>sel.addEventListener("change",async()=>{const complete=sel.value==="consegnato";const {error}=await sb.from("beparytech_requests").update({status:sel.value,updated_by:currentUser.id,updated_at:new Date().toISOString(),completed_at:complete?new Date().toISOString():null}).eq("id",Number(sel.dataset.id));if(error)alert(error.message);else{loadOrderRequests();loadDashboard();}}));
+  document.getElementById("totalPieces").textContent=rows.filter(r=>!['consegnato'].includes(r.status)).reduce((a,r)=>a+Number(r.quantity||1),0);document.getElementById("availableTypes").textContent=rows.filter(r=>!['consegnato'].includes(r.status)).length;document.getElementById("lowStock").textContent=rows.filter(r=>r.status==="richiesto").length;
 }
 function updateCustomStats(items){
   const vals=items.length?items:customProducts.filter(p=>Number(p.section_id)===currentCustomSectionId);
@@ -581,23 +587,36 @@ function updateCustomStats(items){
 }
 function openCustomSaleModal(product,section){
   if(Number(product.quantity)<=0)return;
-  pendingSale={kind:"custom",productId:product.id,model:product.name,color:product.variant||"—",category:section?.name||"Prodotti",itemKey:`CUSTOM||${product.id}`};
+  pendingSale={kind:"custom",productId:product.id,model:product.name,color:product.variant||"—",category:section?.name||"Prodotti",itemKey:`PRODUCT||${product.id}`};
   selectedCustomer=null;
   document.getElementById("saleOperatorName").value=currentProfile?.username||"";
   document.getElementById("saleOperatorPassword").value="";document.getElementById("saleNote").value="";
   document.getElementById("saleItemLabel").innerHTML=`<strong>${escapeHtml(product.name)}</strong><span>${escapeHtml(product.variant||section?.name||"")}</span>`;
   document.getElementById("saleCustomerSelect").value="";document.getElementById("confirmSaleBtn").disabled=true;document.getElementById("saleError").textContent="";document.getElementById("saleModal").hidden=false;
 }
+async function editCustomProduct(product){
+  if(!isAdmin())return;
+  const name=prompt("Nome prodotto",product.name);if(!name||!name.trim())return;
+  const variant=prompt("Variante / colore",product.variant||"");if(variant===null)return;
+  const sku=prompt("SKU / codice interno",product.sku||"");if(sku===null)return;
+  const barcode=prompt("Barcode / QR code",product.barcode||"");if(barcode===null)return;
+  const low=prompt("Soglia scorta bassa",String(product.low_stock_threshold??2));if(low===null)return;
+  const {error}=await sb.from("beparytech_products").update({name:name.trim(),variant:variant.trim(),sku:sku.trim()||null,barcode:barcode.trim()||null,low_stock_threshold:Math.max(0,Number(low)||0),updated_at:new Date().toISOString()}).eq("id",product.id);
+  if(error){alert(error.message);return;}
+  await loadCustomCatalog();renderCustomSection();
+}
+
 async function updateCustomProductQty(product,value){
   if(!isAdmin())return;
   const next=Math.max(0,Number(value)||0);
-  const {data,error}=await sb.from("beparytech_products").update({quantity:next,updated_at:new Date().toISOString()}).eq("id",product.id).select("quantity").single();
-  if(error){document.getElementById("cloudStatus").textContent="Errore cloud";return;}
-  product.quantity=Number(data.quantity);renderCustomSection();document.getElementById("cloudStatus").textContent="☁︎ Salvato";
+  document.getElementById("cloudStatus").textContent="☁︎ Salvataggio…";
+  const {data,error}=await sb.rpc("adjust_beparytech_product_quantity",{p_product_id:product.id,p_new_quantity:next,p_reason:"Modifica manuale Admin"});
+  if(error){document.getElementById("cloudStatus").textContent="Errore cloud";alert(error.message);return;}
+  product.quantity=Number(data);renderCustomSection();document.getElementById("cloudStatus").textContent="☁︎ Salvato";
 }
 function fillProductSectionSelect(){
   const sel=document.getElementById("productSection");if(!sel)return;
-  const previous=sel.value;sel.innerHTML='<option value="">Seleziona sezione…</option>'+customSections.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("");
+  const previous=sel.value;sel.innerHTML='<option value="">Seleziona sezione…</option>'+customSections.filter(s=>s.active!==false&&s.section_type!=="requests").map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join("");
   if([...sel.options].some(o=>o.value===previous))sel.value=previous;
 }
 function renderCatalogAdmin(){
@@ -608,22 +627,25 @@ function renderCatalogAdmin(){
   list.innerHTML=customSections.map(s=>{
     const products=customProducts.filter(p=>Number(p.section_id)===Number(s.id));
     const pieces=products.reduce((a,p)=>a+Number(p.quantity||0),0);
-    return `<div class="catalogSectionRow"><div><strong>${escapeHtml(s.name)}</strong><span>${escapeHtml(s.description||"Nessuna descrizione")}</span></div><div class="catalogSectionStats"><b>${products.length}</b><small>prodotti</small><b>${pieces}</b><small>pezzi</small></div></div>`;
+    return `<div class="catalogSectionRow ${s.active===false?'sectionInactive':''}" data-section-id="${s.id}"><div class="catalogSectionInfo"><strong>${escapeHtml(s.name)} ${s.active===false?'<em>DISATTIVATA</em>':''}</strong><span>${escapeHtml(s.description||"Nessuna descrizione")}</span></div><div class="catalogSectionStats"><b>${products.length}</b><small>prodotti</small><b>${pieces}</b><small>pezzi</small></div><div class="catalogSectionActions"><button class="miniBtn renameSection" type="button">Rinomina</button><button class="miniBtn moveSection" data-dir="-1" type="button" title="Sposta su">↑</button><button class="miniBtn moveSection" data-dir="1" type="button" title="Sposta giù">↓</button><button class="miniBtn toggleSection" type="button">${s.active===false?'Riattiva':'Disattiva'}</button></div></div>`;
   }).join("");
+  list.querySelectorAll(".renameSection").forEach(btn=>btn.onclick=async()=>{const id=Number(btn.closest("[data-section-id]").dataset.sectionId),sec=customSections.find(x=>Number(x.id)===id);if(!sec)return;const name=prompt("Nuovo nome sezione",sec.name);if(!name||!name.trim()||name.trim()===sec.name)return;const description=prompt("Descrizione sezione",sec.description||"");const {error}=await sb.from("beparytech_sections").update({name:name.trim(),description:(description??sec.description??"").trim()}).eq("id",id);if(error)alert(error.message);else await loadCustomCatalog();});
+  list.querySelectorAll(".toggleSection").forEach(btn=>btn.onclick=async()=>{const id=Number(btn.closest("[data-section-id]").dataset.sectionId),sec=customSections.find(x=>Number(x.id)===id);if(!sec)return;if(sec.active!==false&&!confirm(`Disattivare la sezione “${sec.name}”? I dati non saranno eliminati.`))return;const {error}=await sb.from("beparytech_sections").update({active:sec.active===false}).eq("id",id);if(error)alert(error.message);else await loadCustomCatalog();});
+  list.querySelectorAll(".moveSection").forEach(btn=>btn.onclick=async()=>{const id=Number(btn.closest("[data-section-id]").dataset.sectionId),sec=customSections.find(x=>Number(x.id)===id);if(!sec)return;const dir=Number(btn.dataset.dir),ordered=[...customSections].sort((a,b)=>Number(a.position||0)-Number(b.position||0)||Number(a.id)-Number(b.id)),idx=ordered.findIndex(x=>Number(x.id)===id),other=ordered[idx+dir];if(!other)return;const a=Number(sec.position||0),b=Number(other.position||0);const {error:e1}=await sb.from("beparytech_sections").update({position:b}).eq("id",sec.id);if(e1){alert(e1.message);return;}const {error:e2}=await sb.from("beparytech_sections").update({position:a}).eq("id",other.id);if(e2){alert(e2.message);return;}await loadCustomCatalog();});
 }
 document.getElementById("createSectionForm").addEventListener("submit",async e=>{
   e.preventDefault();if(!isAdmin())return;
   const msg=document.getElementById("sectionFormMsg"),name=document.getElementById("sectionName").value.trim(),description=document.getElementById("sectionDescription").value.trim();
   msg.textContent="";msg.className="createUserMsg";
-  const {error}=await sb.from("beparytech_sections").insert({workspace_owner_id:workspaceOwnerId,name,description,created_by:currentUser.id});
+  const {error}=await sb.from("beparytech_sections").insert({workspace_owner_id:workspaceOwnerId,name,description,section_type:"inventory",created_by:currentUser.id});
   if(error){msg.textContent=error.message;msg.className="createUserMsg error";return;}
   e.target.reset();msg.textContent="Sezione creata.";msg.className="createUserMsg ok";await loadCustomCatalog();
 });
 document.getElementById("createProductForm").addEventListener("submit",async e=>{
   e.preventDefault();if(!isAdmin())return;
-  const msg=document.getElementById("productFormMsg"),sectionId=Number(document.getElementById("productSection").value),name=document.getElementById("productName").value.trim(),variant=document.getElementById("productVariant").value.trim(),quantity=Math.max(0,Number(document.getElementById("productQuantity").value)||0),low=Math.max(0,Number(document.getElementById("productLowStock").value)||2);
+  const msg=document.getElementById("productFormMsg"),sectionId=Number(document.getElementById("productSection").value),name=document.getElementById("productName").value.trim(),variant=document.getElementById("productVariant").value.trim(),sku=document.getElementById("productSku").value.trim(),barcode=document.getElementById("productBarcode").value.trim(),quantity=Math.max(0,Number(document.getElementById("productQuantity").value)||0),low=Math.max(0,Number(document.getElementById("productLowStock").value)||2);
   msg.textContent="";msg.className="createUserMsg";
-  const {error}=await sb.from("beparytech_products").insert({workspace_owner_id:workspaceOwnerId,section_id:sectionId,name,variant,quantity,low_stock_threshold:low,created_by:currentUser.id});
+  const {error}=await sb.from("beparytech_products").insert({workspace_owner_id:workspaceOwnerId,section_id:sectionId,name,variant,sku:sku||null,barcode:barcode||null,quantity,low_stock_threshold:low,created_by:currentUser.id});
   if(error){msg.textContent=error.message;msg.className="createUserMsg error";return;}
   e.target.reset();document.getElementById("productQuantity").value=0;document.getElementById("productLowStock").value=2;msg.textContent="Prodotto aggiunto.";msg.className="createUserMsg ok";await loadCustomCatalog();
 });
@@ -631,6 +653,53 @@ document.getElementById("refreshCatalogBtn").onclick=loadCustomCatalog;
 // Ricerca/filtro anche nelle sezioni personalizzate
 search.addEventListener("input",()=>{if(String(currentCategory).startsWith("custom:"))renderCustomSection();});
 filter.addEventListener("change",()=>{if(String(currentCategory).startsWith("custom:"))renderCustomSection();});
+
+
+// ===== v17 Dashboard, audit, ricerca globale, scanner e backup =====
+let auditEvents=[];
+async function loadAudit(){
+  const list=document.getElementById("auditList"); if(!list)return; list.innerHTML='<div class="emptyState">Caricamento cronologia…</div>';
+  const {data,error}=await sb.from("beparytech_audit_events").select("id,actor_name,event_type,entity_type,title,details,created_at").order("created_at",{ascending:false}).limit(1000);
+  if(error){list.innerHTML='<div class="emptyState">Impossibile caricare la cronologia.</div>';return;} auditEvents=data||[];
+  const labels={inventory_out:"Uscita −1",inventory_set:"Giacenza modificata",inventory_restore:"Rientro +1",request_created:"Richiesta creata",request_updated:"Richiesta aggiornata",section_created:"Sezione creata",section_updated:"Sezione modificata",product_created:"Prodotto creato",product_updated:"Prodotto modificato",sale_legacy:"Vendita storica",sale_archived:"Vendita archiviata"};
+  list.innerHTML=auditEvents.length?auditEvents.map(e=>`<article class="auditRow"><div class="auditIcon">${e.event_type.includes("request")?"🛒":e.event_type.includes("section")?"▤":e.event_type.includes("product")?"◫":e.event_type==="inventory_out"?"−":e.event_type==="inventory_restore"?"↩":"±"}</div><div class="auditMain"><strong>${escapeHtml(e.title)}</strong><span>${escapeHtml(labels[e.event_type]||e.event_type)} · ${escapeHtml(e.actor_name||"Sistema")}</span><small>${new Date(e.created_at).toLocaleString("it-IT")}</small></div><div class="auditDetails">${auditDetailsText(e.details)}</div></article>`).join(""):'<div class="emptyState">Nessuna attività registrata.</div>';
+}
+function auditDetailsText(d){if(!d)return"";const parts=[];if(d.before!==undefined&&d.after!==undefined)parts.push(`${d.before} → ${d.after}`);if(d.customer)parts.push(d.customer);if(d.status)parts.push(d.status);if(d.quantity)parts.push(`Qtà ${d.quantity}`);if(d.reason)parts.push(d.reason);return escapeHtml(parts.join(" · "));}
+async function loadDashboard(){
+  if(!currentUser)return;
+  const startToday=new Date();startToday.setHours(0,0,0,0);
+  const [reqRes,auditRes,todayRes]=await Promise.all([
+    sb.from("beparytech_requests").select("id,item,quantity,status,requester_name,created_at").order("created_at",{ascending:false}).limit(500),
+    sb.from("beparytech_audit_events").select("id,actor_name,event_type,title,details,created_at").order("created_at",{ascending:false}).limit(8),
+    sb.from("beparytech_audit_events").select("id",{count:"exact",head:true}).gte("created_at",startToday.toISOString())
+  ]);
+  const req=reqRes.data||[], audit=auditRes.data||[]; window.btRequests=req;
+  const activeSectionIds=new Set(customSections.filter(s=>s.active!==false&&s.section_type==="inventory").map(s=>Number(s.id)));
+  const inv=customProducts.filter(p=>p.active!==false&&activeSectionIds.has(Number(p.section_id))), total=inv.reduce((a,p)=>a+Number(p.quantity||0),0), low=inv.filter(p=>Number(p.quantity)>0&&Number(p.quantity)<=Number(p.low_stock_threshold||2)), empty=inv.filter(p=>Number(p.quantity)===0), openReq=req.filter(r=>r.status!=="consegnato"),todayCount=Number(todayRes.count||0);
+  document.getElementById("totalPieces").textContent=total;document.getElementById("availableTypes").textContent=inv.filter(p=>Number(p.quantity)>0).length;document.getElementById("lowStock").textContent=low.length;
+  document.getElementById("dashboardCards").innerHTML=`<button class="dashCard" data-go="stock"><span>Pezzi totali</span><strong>${total}</strong><small>${inv.length} articoli</small></button><button class="dashCard warning" data-go="low"><span>Da controllare</span><strong>${low.length+empty.length}</strong><small>${empty.length} esauriti · ${low.length} bassi</small></button><button class="dashCard" data-go="requests"><span>Da ordinare</span><strong>${openReq.length}</strong><small>richieste aperte</small></button><button class="dashCard" data-go="audit"><span>Operazioni oggi</span><strong>${todayCount}</strong><small>attività registrate</small></button>`;
+  document.getElementById("dashboardLowStock").innerHTML=[...empty,...low].slice(0,12).map(p=>{const s=customSections.find(x=>Number(x.id)===Number(p.section_id));return `<button class="dashboardLine" data-section="${p.section_id}"><span><strong>${escapeHtml(p.name)}</strong><small>${escapeHtml(s?.name||"")} · ${escapeHtml(p.variant||"")}</small></span><b>${p.quantity}</b></button>`}).join("")||'<div class="emptyState">Nessuna scorta critica.</div>';
+  document.getElementById("dashboardActivity").innerHTML=audit.map(e=>`<div class="dashboardLine"><span><strong>${escapeHtml(e.title)}</strong><small>${escapeHtml(e.actor_name||"Sistema")} · ${new Date(e.created_at).toLocaleString("it-IT")}</small></span></div>`).join("")||'<div class="emptyState">Nessuna attività.</div>';
+  document.querySelectorAll(".dashboardLine[data-section]").forEach(b=>b.onclick=()=>setCategory(`custom:${b.dataset.section}`));
+  document.querySelectorAll(".dashCard").forEach(b=>b.onclick=()=>{if(b.dataset.go==="requests"){const sec=customSections.find(s=>s.active!==false&&s.section_type==="requests");if(sec)setCategory(`custom:${sec.id}`)}else if(b.dataset.go==="audit")setCategory("Cronologia");else if(b.dataset.go==="low"||b.dataset.go==="stock"){const sec=customSections.find(s=>s.active!==false&&s.section_type==="inventory");if(sec)setCategory(`custom:${sec.id}`)}});
+}
+document.getElementById("refreshDashboardBtn").onclick=loadDashboard;document.getElementById("refreshAuditBtn").onclick=loadAudit;
+
+const gSearch=document.getElementById("globalSearch"),gResults=document.getElementById("globalSearchResults");
+function runGlobalSearch(code){const q=String(code??gSearch.value).trim().toLowerCase();if(code!==undefined)gSearch.value=code;if(!q){gResults.hidden=true;gResults.innerHTML="";return;}const activeIds=new Set(customSections.filter(s=>s.active!==false).map(s=>Number(s.id)));const hits=customProducts.filter(p=>activeIds.has(Number(p.section_id))&&`${p.name} ${p.variant||""} ${p.sku||""} ${p.barcode||""}`.toLowerCase().includes(q)).slice(0,18);const req=(window.btRequests||[]).filter(r=>`${r.item} ${r.requester_name||""}`.toLowerCase().includes(q)).slice(0,8);gResults.innerHTML=`${hits.map(p=>{const sec=customSections.find(s=>Number(s.id)===Number(p.section_id));return `<button class="globalResult" data-section="${p.section_id}"><span><strong>${escapeHtml(p.name)}</strong><small>${escapeHtml(sec?.name||"")} · ${escapeHtml(p.variant||"")}${p.sku?` · ${escapeHtml(p.sku)}`:""}</small></span><b>${p.quantity}</b></button>`}).join("")}${req.map(r=>`<button class="globalResult requestGlobal" data-request="1"><span><strong>${escapeHtml(r.item)}</strong><small>Da ordinare · ${escapeHtml(r.requester_name||"")}</small></span></button>`).join("")}`||'<div class="emptyState">Nessun risultato.</div>';gResults.hidden=false;gResults.querySelectorAll("[data-section]").forEach(b=>b.onclick=()=>{gResults.hidden=true;setCategory(`custom:${b.dataset.section}`)});gResults.querySelectorAll("[data-request]").forEach(b=>b.onclick=()=>{const sec=customSections.find(s=>s.section_type==="requests");gResults.hidden=true;if(sec)setCategory(`custom:${sec.id}`)});}
+gSearch.addEventListener("input",()=>runGlobalSearch());document.addEventListener("click",e=>{if(!e.target.closest("#globalSearchBar"))gResults.hidden=true;});
+
+let scannerStream=null,scannerTimer=null;
+async function openScanner(){const modal=document.getElementById("scannerModal"),msg=document.getElementById("scannerMsg"),video=document.getElementById("scannerVideo");modal.hidden=false;msg.textContent="Inquadra QR o barcode.";if(!navigator.mediaDevices?.getUserMedia||!("BarcodeDetector" in window)){msg.textContent="Scanner automatico non disponibile su questo browser. Inserisci il codice qui sotto.";return;}try{scannerStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});video.srcObject=scannerStream;await video.play();const detector=new BarcodeDetector({formats:["qr_code","code_128","code_39","ean_13","ean_8","upc_a","upc_e"]});const tick=async()=>{if(document.getElementById("scannerModal").hidden)return;try{const codes=await detector.detect(video);if(codes?.[0]?.rawValue){const code=codes[0].rawValue;closeScanner();runGlobalSearch(code);return;}}catch(_){}scannerTimer=setTimeout(tick,350)};tick();}catch(e){msg.textContent="Fotocamera non disponibile. Puoi inserire il codice manualmente.";}}
+function closeScanner(){document.getElementById("scannerModal").hidden=true;if(scannerTimer)clearTimeout(scannerTimer);if(scannerStream){scannerStream.getTracks().forEach(t=>t.stop());scannerStream=null;}}
+document.getElementById("scanBarcodeBtn").onclick=openScanner;document.getElementById("scannerClose").onclick=closeScanner;document.getElementById("scannerManualSearch").onclick=()=>{const v=document.getElementById("scannerManualCode").value.trim();if(v){closeScanner();runGlobalSearch(v)}};
+
+function downloadText(filename,text,type="text/plain;charset=utf-8"){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type}));a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function csvEscape(v){const x=String(v??"");return /[",\n]/.test(x)?`"${x.replaceAll('"','""')}"`:x}
+function exportInventory(){const rows=[["Sezione","Prodotto","Variante","SKU","Barcode","Quantità","Soglia"]];customProducts.forEach(p=>{const sec=customSections.find(s=>Number(s.id)===Number(p.section_id));rows.push([sec?.name,p.name,p.variant,p.sku,p.barcode,p.quantity,p.low_stock_threshold])});downloadText(`BeparyTech_magazzino_${new Date().toISOString().slice(0,10)}.csv`,rows.map(r=>r.map(csvEscape).join(",")).join("\n"),"text/csv;charset=utf-8")}
+async function exportRequests(){const {data}=await sb.from("beparytech_requests").select("requester_name,item,quantity,code,link,note,status,created_at").order("created_at");const rows=[["Operatore","Articolo","Quantità","Codice","Link","Nota","Stato","Data"],...(data||[]).map(r=>[r.requester_name,r.item,r.quantity,r.code,r.link,r.note,r.status,r.created_at])];downloadText(`BeparyTech_da_ordinare_${new Date().toISOString().slice(0,10)}.csv`,rows.map(r=>r.map(csvEscape).join(",")).join("\n"),"text/csv;charset=utf-8")}
+async function exportFull(){const [requests,sales,audit]=await Promise.all([sb.from("beparytech_requests").select("*"),sb.from("beparytech_sales").select("*").limit(5000),sb.from("beparytech_audit_events").select("*").limit(5000)]);downloadText(`BeparyTech_backup_${new Date().toISOString().slice(0,10)}.json`,JSON.stringify({version:17,created_at:new Date().toISOString(),sections:customSections,products:customProducts,requests:requests.data||[],sales:sales.data||[],audit:audit.data||[]},null,2),"application/json")}
+document.getElementById("exportInventoryCsv").onclick=exportInventory;document.getElementById("exportRequestsCsv").onclick=exportRequests;document.getElementById("exportFullBackup").onclick=exportFull;
 
 // Modalità giorno / notte
 const themeToggle=document.getElementById("themeToggle");
