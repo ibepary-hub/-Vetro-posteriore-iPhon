@@ -31,9 +31,10 @@
       <div class="card warning"><span>Scorte basse</span><strong id="lowStock">0</strong></div>
     </section>
 
-    <section class="categoryTabs" aria-label="Categoria magazzino">
+    <section class="categoryTabs categoryTabs3" aria-label="Categoria magazzino">
       <button type="button" id="backglassTab" class="categoryTab active"><strong>BackGlass</strong><span>Vetro posteriore</span><b class="openHint">Apri ›</b></button>
       <button type="button" id="housingTab" class="categoryTab"><strong>Housing</strong><span>Scocca completa</span><b class="openHint">Apri ›</b></button>
+      <button type="button" id="salesTab" class="categoryTab"><strong>Vendite</strong><span>Storico uscite</span><b class="openHint">Apri ›</b></button>
     </section>
 
     <section class="categoryTitle"><strong id="categoryName">BackGlass</strong><span id="categoryDescription">Vetro posteriore</span></section>
@@ -67,6 +68,26 @@
       </div>
     </section>
     <main id="inventory"></main>
+    <section id="salesView" class="salesView" hidden>
+      <div class="salesHeader"><div><strong>Vendite</strong><span>Storico dei ricambi scaricati</span></div><button id="refreshSalesBtn" class="miniBtn" type="button">Aggiorna</button></div>
+      <div id="salesList"></div>
+    </section>
+  </div>
+
+  <div id="saleModal" class="saleModal" hidden>
+    <div class="saleDialog" role="dialog" aria-modal="true" aria-labelledby="saleTitle">
+      <div class="saleDialogHead"><div><span class="saleKicker">REGISTRA VENDITA</span><h2 id="saleTitle">A chi è destinato?</h2></div><button id="cancelSaleX" class="closeBtn" type="button" aria-label="Chiudi">×</button></div>
+      <div id="saleItemLabel" class="saleItemLabel"></div>
+      <div id="customerChoices" class="customerChoices">
+        <button type="button" data-customer="DoctorPhone">DoctorPhone</button>
+        <button type="button" data-customer="Riparalo">Riparalo</button>
+        <button type="button" data-customer="Melaggiusti Piacenza">Melaggiusti Piacenza</button>
+        <button type="button" data-customer="Melaggiusti Parma">Melaggiusti Parma</button>
+        <button type="button" data-customer="E-POL">E-POL</button>
+      </div>
+      <div id="saleError" class="saleError"></div>
+      <div class="saleActions"><button id="cancelSaleBtn" class="secondaryAction" type="button">Annulla</button><button id="confirmSaleBtn" class="primaryAction" type="button" disabled>Conferma −1</button></div>
+    </div>
   </div>
 
   <template id="modelTemplate">

@@ -7,6 +7,9 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let stock = {};
 let currentUser = null;
 let currentCategory = "BackGlass";
+let pendingSale = null;
+let selectedCustomer = null;
+let sales = [];
 
 const inventory = document.getElementById("inventory");
 const modelTemplate = document.getElementById("modelTemplate");
@@ -83,7 +86,7 @@ function render(){
       const qty=getQty(model,color), [label,cls]=statusFor(qty);
       row.querySelector(".colorName").textContent=color; row.querySelector(".dot").style.background=colorDot(color);
       qtyInput.value=qty; status.textContent=label; status.className="status "+cls;
-      row.querySelector(".minus").onclick=()=>setQty(model,color,qty-1);
+      row.querySelector(".minus").onclick=()=>openSaleModal(model,color,qty);
       row.querySelector(".plus").onclick=()=>setQty(model,color,qty+1);
       qtyInput.onchange=()=>setQty(model,color,qtyInput.value);
       colorsBox.appendChild(row);
@@ -116,16 +119,82 @@ document.getElementById("logoutBtn").onclick=async()=>{await sb.auth.signOut(); 
 
 function setCategory(category){
   currentCategory=category;
+  const isSales=category==="Vendite";
   document.getElementById("backglassTab").classList.toggle("active", category==="BackGlass");
   document.getElementById("housingTab").classList.toggle("active", category==="Housing");
-  document.getElementById("categoryName").textContent=category;
-  document.getElementById("categoryDescription").textContent=category==="BackGlass" ? "Vetro posteriore" : "Scocca completa";
+  document.getElementById("salesTab").classList.toggle("active", isSales);
+  document.getElementById("categoryName").textContent=isSales ? "Vendite" : category;
+  document.getElementById("categoryDescription").textContent=isSales ? "Storico uscite" : (category==="BackGlass" ? "Vetro posteriore" : "Scocca completa");
+  document.querySelector(".tools").hidden=isSales;
+  inventory.hidden=isSales;
+  document.getElementById("salesView").hidden=!isSales;
   search.value=""; filter.value="all";
-  render();
+  if(isSales) loadSales(); else render();
   document.getElementById("categoryName").scrollIntoView({behavior:"smooth", block:"start"});
 }
+
+function openSaleModal(model,color,qty){
+  if(qty<=0) return;
+  pendingSale={model,color,category:currentCategory,itemKey:keyFor(model,color)};
+  selectedCustomer=null;
+  document.getElementById("saleItemLabel").innerHTML=`<strong>${model}</strong><span>${color} · ${currentCategory === "BackGlass" ? "Vetro posteriore" : "Scocca completa"}</span>`;
+  document.querySelectorAll("#customerChoices button").forEach(b=>b.classList.remove("selected"));
+  document.getElementById("confirmSaleBtn").disabled=true;
+  document.getElementById("saleError").textContent="";
+  document.getElementById("saleModal").hidden=false;
+}
+function closeSaleModal(){
+  document.getElementById("saleModal").hidden=true; pendingSale=null; selectedCustomer=null;
+}
+document.querySelectorAll("#customerChoices button").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    selectedCustomer=btn.dataset.customer;
+    document.querySelectorAll("#customerChoices button").forEach(b=>b.classList.toggle("selected",b===btn));
+    document.getElementById("confirmSaleBtn").disabled=false;
+  });
+});
+document.getElementById("cancelSaleBtn").onclick=closeSaleModal;
+document.getElementById("cancelSaleX").onclick=closeSaleModal;
+document.getElementById("saleModal").addEventListener("click",e=>{if(e.target.id==="saleModal") closeSaleModal();});
+
+document.getElementById("confirmSaleBtn").onclick=async()=>{
+  if(!pendingSale || !selectedCustomer || !currentUser) return;
+  const btn=document.getElementById("confirmSaleBtn");
+  btn.disabled=true; btn.textContent="Salvo…"; document.getElementById("saleError").textContent="";
+  const p=pendingSale;
+  const {data,error}=await sb.rpc("record_beparytech_sale",{
+    p_customer:selectedCustomer,p_category:p.category,p_item_key:p.itemKey,p_model:p.model,p_color:p.color
+  });
+  btn.textContent="Conferma −1";
+  if(error){
+    document.getElementById("saleError").textContent=error.message || "Impossibile registrare la vendita.";
+    btn.disabled=false; return;
+  }
+  stock[p.itemKey]=Number(data);
+  closeSaleModal(); render();
+  document.getElementById("cloudStatus").textContent="☁︎ Vendita salvata";
+};
+
+async function loadSales(){
+  if(!currentUser) return;
+  const list=document.getElementById("salesList");
+  list.innerHTML='<div class="emptyState">Caricamento vendite…</div>';
+  const {data,error}=await sb.from("beparytech_sales").select("id,customer,category,model,color,quantity,sold_at").order("sold_at",{ascending:false}).limit(500);
+  if(error){list.innerHTML='<div class="emptyState">Errore nel caricamento delle vendite.</div>'; return;}
+  sales=data||[]; renderSales();
+}
+function renderSales(){
+  const list=document.getElementById("salesList");
+  if(!sales.length){list.innerHTML='<div class="emptyState">Nessuna vendita registrata.</div>'; return;}
+  const fmt=new Intl.DateTimeFormat("it-IT",{day:"2-digit",month:"2-digit",year:"2-digit",hour:"2-digit",minute:"2-digit"});
+  list.innerHTML=sales.map(s=>`<article class="saleRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${s.category==="BackGlass"?"BackGlass":"Housing"}</span></div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · ${fmt.format(new Date(s.sold_at))}</span></div></article>`).join("");
+}
+function escapeHtml(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));}
+
 document.getElementById("backglassTab").onclick=()=>setCategory("BackGlass");
 document.getElementById("housingTab").onclick=()=>setCategory("Housing");
+document.getElementById("salesTab").onclick=()=>setCategory("Vendite");
+document.getElementById("refreshSalesBtn").onclick=loadSales;
 
 search.oninput=render; filter.onchange=render;
 sb.auth.getUser().then(({data})=>showAuth(data.user));
