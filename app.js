@@ -122,16 +122,31 @@ function updateStats(){
   document.getElementById("availableTypes").textContent=all.filter(x=>x>0).length;
   document.getElementById("lowStock").textContent=all.filter(x=>x>0&&x<=2).length;
 }
+function isAdmin(){
+  return !!(currentUser && currentProfile?.role === "admin" && currentProfile?.active);
+}
+function applyRoleVisibility(){
+  const admin = isAdmin();
+  const usersTab = document.getElementById("usersTab");
+  const usersView = document.getElementById("usersView");
+  usersTab.hidden = !admin;
+  if(!admin){
+    usersView.hidden = true;
+    usersTab.classList.remove("active");
+    // Se si passa da un account Admin a uno Standard mentre è aperta
+    // l'amministrazione, riporta sempre a una sezione consentita.
+    if(currentCategory === "Utenti") setCategory("BackGlass");
+  }
+}
 async function loadMyProfile(){
   currentProfile=null; workspaceOwnerId=currentUser?.id || null;
-  const usersTab=document.getElementById("usersTab");
-  usersTab.hidden=true;
+  applyRoleVisibility();
   if(!currentUser) return;
   const {data,error}=await sb.from("beparytech_profiles").select("username,role,active,workspace_owner_id").eq("user_id",currentUser.id).maybeSingle();
   if(!error && data){
     currentProfile=data; workspaceOwnerId=data.workspace_owner_id || currentUser.id;
-    usersTab.hidden=data.role!=="admin" || !data.active;
   }
+  applyRoleVisibility();
 }
 async function showAuth(user){
   currentUser=user||null; currentProfile=null; workspaceOwnerId=user?.id||null; document.body.classList.toggle("logged-in",!!user);
@@ -156,9 +171,9 @@ document.getElementById("logoutBtn").onclick=async()=>{await sb.auth.signOut(); 
 
 
 function setCategory(category){
-  currentCategory=category;
   const isSales=category==="Vendite", isUsers=category==="Utenti";
-  if(isUsers && currentProfile?.role!=="admin") return;
+  if(isUsers && !isAdmin()) return;
+  currentCategory=category;
   document.getElementById("backglassTab").classList.toggle("active", category==="BackGlass");
   document.getElementById("housingTab").classList.toggle("active", category==="Housing");
   document.getElementById("salesTab").classList.toggle("active", isSales);
@@ -176,7 +191,7 @@ function setCategory(category){
 
 
 async function loadUsers(){
-  if(!currentUser || currentProfile?.role!=="admin") return;
+  if(!isAdmin()) return;
   const list=document.getElementById("usersList");
   list.innerHTML='<div class="emptyState">Caricamento utenti…</div>';
   const {data,error}=await sb.functions.invoke("beparytech-users",{method:"GET"});
@@ -195,7 +210,7 @@ async function loadUsers(){
 
 document.getElementById("createUserForm").addEventListener("submit",async e=>{
   e.preventDefault();
-  if(currentProfile?.role!=="admin") return;
+  if(!isAdmin()) return;
   const btn=document.getElementById("createUserBtn"), msg=document.getElementById("createUserMsg");
   const payload={
     username:document.getElementById("newUsername").value.trim(),
@@ -275,10 +290,10 @@ function renderSales(){
       const deleted=s.deleted_at?fmt.format(new Date(s.deleted_at)):"—";
       return `<article class="saleRow archiveRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${s.category==="BackGlass"?"BackGlass":"Housing"}</span><b class="archiveBadge">ARCHIVIATA</b></div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · Vendita ${sold}</span><span>Eliminata ${deleted}</span>${s.restored_to_inventory?`<span class="restoredBadge">↩ Rimesso in magazzino +${s.quantity}</span>`:""}</div><div class="archiveReason"><strong>Motivo:</strong> ${escapeHtml(s.delete_reason||"Nessun motivo registrato")}</div></article>`;
     }
-    const adminActions=currentProfile?.role==="admin" ? `<div class="saleActionsRow"><button class="rowAction editStore" type="button" data-id="${s.id}">Modifica negozio</button><button class="rowAction delete archiveSale" type="button" data-id="${s.id}">Elimina</button></div>` : "";
+    const adminActions=isAdmin() ? `<div class="saleActionsRow"><button class="rowAction editStore" type="button" data-id="${s.id}">Modifica negozio</button><button class="rowAction delete archiveSale" type="button" data-id="${s.id}">Elimina</button></div>` : "";
     return `<article class="saleRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${s.category==="BackGlass"?"BackGlass":"Housing"}</span></div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · ${sold}</span></div>${adminActions}</article>`;
   }).join("");
-  if(!archived && currentProfile?.role==="admin"){
+  if(!archived && isAdmin()){
     list.querySelectorAll(".editStore").forEach(btn=>btn.addEventListener("click",()=>openEditStore(Number(btn.dataset.id))));
     list.querySelectorAll(".archiveSale").forEach(btn=>btn.addEventListener("click",()=>openDeleteSale(Number(btn.dataset.id))));
   }
@@ -287,7 +302,7 @@ function saleById(id){ return sales.find(s=>Number(s.id)===Number(id)); }
 function saleLabelHtml(s){ return `<strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${s.category==="BackGlass"?"Vetro posteriore":"Scocca completa"} · ${escapeHtml(s.customer)}</span>`; }
 
 function openEditStore(id){
-  if(currentProfile?.role!=="admin") return;
+  if(!isAdmin()) return;
   selectedSale=saleById(id); if(!selectedSale) return;
   document.getElementById("editStoreItem").innerHTML=saleLabelHtml(selectedSale);
   const select=document.getElementById("editStoreSelect");
@@ -311,7 +326,7 @@ document.getElementById("editStoreSave").onclick=async()=>{
 };
 
 function openDeleteSale(id){
-  if(currentProfile?.role!=="admin") return;
+  if(!isAdmin()) return;
   selectedSale=saleById(id); if(!selectedSale)return;
   document.getElementById("deleteSaleItem").innerHTML=saleLabelHtml(selectedSale);
   const reason=document.getElementById("deleteReason"); reason.value="";

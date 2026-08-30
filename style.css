@@ -1,3 +1,6 @@
+
+/* L'attributo hidden deve avere sempre priorità sulle regole responsive/display. */
+[hidden]{display:none!important}
 :root{
   --bg:#0a0a0b; --card:#151516; --card2:#1d1d1f; --text:#f7f4ec; --muted:#a8a29a; --line:#2d2a26;
   --gold:#d7a84f; --gold2:#f3cf79; --green:#46c979; --amber:#e8aa3e; --red:#f05d5e;
