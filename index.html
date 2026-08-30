@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-title" content="BeparyTech">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
   <title>BeparyTech • Magazzino Ricambi iPhone</title>
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="manifest.json?v=15">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=15">
 </head>
 <body>
   <div id="menuOverlay" class="menuOverlay" hidden></div>
@@ -249,6 +249,23 @@
   </template>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js"></script>
+  <script src="app.js?v=15"></script>
+  <script>
+    // Aggiornamento automatico cache / Service Worker
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", async () => {
+        try {
+          const reg = await navigator.serviceWorker.register("./sw.js?v=15", { updateViaCache: "none" });
+          await reg.update();
+          navigator.serviceWorker.addEventListener("controllerchange", () => {
+            if (!sessionStorage.getItem("bt-cache-reloaded-v15")) {
+              sessionStorage.setItem("bt-cache-reloaded-v15", "1");
+              location.reload();
+            }
+          });
+        } catch (e) { console.warn("Service Worker non disponibile", e); }
+      });
+    }
+  </script>
 </body>
 </html>
