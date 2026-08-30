@@ -8,10 +8,10 @@
   <meta name="apple-mobile-web-app-title" content="BeparyTech">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
   <title>BeparyTech • Magazzino Ricambi iPhone</title>
-  <link rel="manifest" href="manifest.json?v=15">
+  <link rel="manifest" href="manifest.json?v=16">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=15">
+  <link rel="stylesheet" href="style.css?v=16">
 </head>
 <body>
   <div id="menuOverlay" class="menuOverlay" hidden></div>
@@ -77,7 +77,7 @@
         <h2>Accesso al magazzino</h2>
         <p>Accesso riservato agli account autorizzati da BeparyTech. Le quantità sono salvate online e sincronizzate sui tuoi dispositivi.</p>
         <input id="email" type="email" placeholder="Email">
-        <input id="password" type="password" placeholder="Password (min. 6 caratteri)">
+        <div class="passwordRow"><input id="password" type="password" placeholder="Password (min. 6 caratteri)"><button id="forgotPasswordBtn" class="forgotPasswordBtn" type="button">Password dimenticata?</button></div>
         <div class="authButtons">
           <button id="loginBtn" class="full">Accedi</button>
         </div>
@@ -249,7 +249,20 @@
   </template>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=15"></script>
+
+  <div id="passwordRecoveryModal" class="saleModal" hidden>
+    <div class="saleDialog" role="dialog" aria-modal="true" aria-labelledby="passwordRecoveryTitle">
+      <div class="saleDialogHead"><div><span class="saleKicker">RECUPERA PASSWORD</span><h2 id="passwordRecoveryTitle">Imposta una nuova password</h2></div></div>
+      <label class="fieldLabel" for="recoveryPassword">Nuova password *</label>
+      <input id="recoveryPassword" class="modalInput" type="password" minlength="6" autocomplete="new-password" placeholder="Minimo 6 caratteri">
+      <label class="fieldLabel" for="recoveryPassword2">Ripeti password *</label>
+      <input id="recoveryPassword2" class="modalInput" type="password" minlength="6" autocomplete="new-password" placeholder="Ripeti la password">
+      <div id="recoveryPasswordMsg" class="saleError"></div>
+      <div class="saleActions"><button id="saveRecoveryPassword" class="primaryAction" type="button">Salva nuova password</button></div>
+    </div>
+  </div>
+
+  <script src="app.js?v=16"></script>
   <script>
     // Aggiornamento automatico cache / Service Worker
     if ("serviceWorker" in navigator) {

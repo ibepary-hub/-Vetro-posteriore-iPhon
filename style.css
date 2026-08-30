@@ -318,3 +318,30 @@ body[data-theme="light"] .mainMenu{background:linear-gradient(160deg,#fff,#f6f1e
 @media(max-width:760px){.catalogGrid{grid-template-columns:1fr}.customProductGrid{grid-template-columns:1fr}.headerActions{gap:6px}.menuToggle{padding:8px 10px}.menuToggle span:last-child{display:none}}@media(max-width:420px){.themeToggle #themeLabel{display:none}.adminHero{align-items:flex-start}.catalogTwoCols{grid-template-columns:1fr}.catalogSectionRow{align-items:flex-start}.categoryTabs{display:none}.categoryTitle{margin-top:12px}}
 
 .readOnlyHistory{justify-content:flex-end;color:var(--muted);font-size:11px;font-weight:750}
+
+
+/* v16: login pulito + richieste Da ordinare */
+body:not(.logged-in) > .mainMenu,
+body:not(.logged-in) > .menuOverlay,
+body:not(.logged-in) .app > header,
+body:not(.logged-in) .app > .stats,
+body:not(.logged-in) .app > .categoryTabs,
+body:not(.logged-in) .app > .categoryTitle,
+body:not(.logged-in) .app > .tools,
+body:not(.logged-in) .app > main,
+body:not(.logged-in) .app > .salesView,
+body:not(.logged-in) .app > .usersView,
+body:not(.logged-in) .app > .catalogView{display:none!important}
+body:not(.logged-in){min-height:100vh;display:grid;place-items:center;padding:22px}
+body:not(.logged-in) .app{width:min(100%,520px);margin:0;padding:0}
+body:not(.logged-in) .authPanel{margin:0;width:100%;min-height:auto}
+body:not(.logged-in) #signedIn{display:none!important}
+.passwordRow{display:grid;gap:8px}
+.forgotPasswordBtn{appearance:none;border:0;background:transparent;color:var(--accent,#7da7ff);font-weight:700;text-align:right;padding:2px 4px;cursor:pointer}
+.forgotPasswordBtn:hover{text-decoration:underline}
+.orderRequestWrap{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.4fr);gap:18px;width:100%}
+.orderRequestCard{background:var(--panel,#111);border:1px solid var(--border,#272727);border-radius:22px;padding:18px;box-shadow:0 12px 38px rgba(0,0,0,.14)}
+.orderRequestCard label{display:grid;gap:7px;margin:12px 0}.orderRequestCard input,.requestStatusSelect{width:100%;border:1px solid var(--border,#333);background:var(--input,#0d0d0d);color:inherit;border-radius:13px;padding:12px}
+.requestRow{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:14px 0;border-bottom:1px solid var(--border,#262626)}
+.requestRow:last-child{border-bottom:0}.requestMain{display:grid;gap:4px;min-width:0}.requestMain strong{font-size:15px}.requestMain span,.requestMain small{opacity:.72}.requestSide{display:grid;gap:8px;justify-items:end;min-width:120px}.requestStatus{text-transform:uppercase;font-size:11px;letter-spacing:.08em;padding:6px 9px;border-radius:999px;background:rgba(255,255,255,.08)}.requestStatus.ordinato{background:rgba(255,184,77,.16)}.requestStatus.arrivato{background:rgba(76,217,100,.16)}
+@media(max-width:780px){.orderRequestWrap{grid-template-columns:1fr}.requestRow{align-items:flex-start}.requestSide{min-width:100px}}

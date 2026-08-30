@@ -192,6 +192,14 @@ document.getElementById("loginBtn").onclick=async()=>{
   const {data,error}=await sb.auth.signInWithPassword({email,password});
   if(error) authMsg.textContent=error.message; else showAuth(data.user);
 };
+
+document.getElementById("forgotPasswordBtn").onclick=async()=>{
+  const email=document.getElementById("email").value.trim();
+  authMsg.textContent="";
+  if(!email){authMsg.textContent="Inserisci prima la tua email.";return;}
+  const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname});
+  authMsg.textContent=error?error.message:"Email di recupero inviata. Controlla la posta.";
+};
 document.getElementById("logoutBtn").onclick=async()=>{await sb.auth.signOut(); stock={}; showAuth(null);};
 
 
@@ -523,6 +531,7 @@ function customStatus(q,threshold){if(q===0)return["ESAURITO","empty"];if(q<=thr
 function renderCustomSection(){
   if(!currentUser||!currentCustomSectionId)return;
   const section=customSections.find(s=>Number(s.id)===currentCustomSectionId);
+  if(section && String(section.name||"").trim().toLowerCase()==="da ordinare"){ renderOrderRequests(section); return; }
   const query=search.value.trim().toLowerCase();
   const items=customProducts.filter(p=>Number(p.section_id)===currentCustomSectionId).filter(p=>`${p.name} ${p.variant}`.toLowerCase().includes(query)).filter(p=>passesFilter(Number(p.quantity||0)));
   inventory.innerHTML="";
@@ -537,6 +546,32 @@ function renderCustomSection(){
     grid.appendChild(card);
   });
   inventory.appendChild(grid);updateCustomStats(items);
+}
+async function renderOrderRequests(section){
+  inventory.innerHTML='<div class="orderRequestWrap"><form id="orderRequestForm" class="orderRequestCard"><div class="catalogCardTitle"><span class="catalogIcon">🛒</span><div><strong>Richiedi qualcosa</strong><small>Puoi chiedere qualsiasi materiale da ordinare</small></div></div><label><span>Cosa serve *</span><input id="requestItem" type="text" maxlength="160" placeholder="es. Display iPhone 15 Pro nero" required></label><div class="catalogTwoCols"><label><span>Quantità *</span><input id="requestQty" type="number" min="1" value="1" required></label><label><span>Nota</span><input id="requestNote" type="text" maxlength="240" placeholder="Facoltativa"></label></div><button class="primaryAction animatedBtn" type="submit">Invia richiesta</button><div id="requestMsg" class="createUserMsg"></div></form><div class="orderRequestCard"><div class="catalogListHead"><div><strong>Da ordinare</strong><small>Richieste di tutti gli utenti</small></div><button id="refreshRequestsBtn" class="miniBtn animatedBtn" type="button">Aggiorna</button></div><div id="requestsList"><div class="emptyState">Caricamento richieste…</div></div></div></div>';
+  document.getElementById("orderRequestForm").addEventListener("submit",submitOrderRequest);
+  document.getElementById("refreshRequestsBtn").onclick=loadOrderRequests;
+  await loadOrderRequests();
+}
+async function submitOrderRequest(e){
+  e.preventDefault();
+  const msg=document.getElementById("requestMsg"),item=document.getElementById("requestItem").value.trim(),quantity=Math.max(1,Number(document.getElementById("requestQty").value)||1),note=document.getElementById("requestNote").value.trim();
+  msg.textContent="";msg.className="createUserMsg";
+  const {error}=await sb.from("beparytech_requests").insert({workspace_owner_id:workspaceOwnerId,created_by:currentUser.id,requester_name:currentProfile?.username||currentUser.email||"Utente",item,quantity,note:note||null});
+  if(error){msg.textContent=error.message;msg.className="createUserMsg error";return;}
+  e.target.reset();document.getElementById("requestQty").value=1;msg.textContent="Richiesta inviata.";msg.className="createUserMsg ok";await loadOrderRequests();
+}
+async function loadOrderRequests(){
+  const list=document.getElementById("requestsList"); if(!list)return;
+  const {data,error}=await sb.from("beparytech_requests").select("id,requester_name,item,quantity,note,status,created_at").order("created_at",{ascending:false});
+  if(error){list.innerHTML='<div class="emptyState">Impossibile caricare le richieste.</div>';return;}
+  const rows=data||[];
+  if(!rows.length){list.innerHTML='<div class="emptyState">Nessuna richiesta da ordinare.</div>';return;}
+  list.innerHTML=rows.map(r=>`<div class="requestRow"><div class="requestMain"><strong>${escapeHtml(r.item)}</strong><span>${escapeHtml(r.requester_name)} · Qtà ${Number(r.quantity||1)} · ${new Date(r.created_at).toLocaleString("it-IT")}</span>${r.note?`<small>${escapeHtml(r.note)}</small>`:""}</div><div class="requestSide"><b class="requestStatus ${r.status}">${r.status}</b>${isAdmin()?`<select class="requestStatusSelect" data-id="${r.id}"><option value="richiesto" ${r.status==="richiesto"?"selected":""}>Richiesto</option><option value="ordinato" ${r.status==="ordinato"?"selected":""}>Ordinato</option><option value="arrivato" ${r.status==="arrivato"?"selected":""}>Arrivato</option></select>`:""}</div></div>`).join("");
+  list.querySelectorAll(".requestStatusSelect").forEach(sel=>sel.addEventListener("change",async()=>{const {error}=await sb.from("beparytech_requests").update({status:sel.value,updated_at:new Date().toISOString()}).eq("id",Number(sel.dataset.id));if(error)alert(error.message);else loadOrderRequests();}));
+  document.getElementById("totalPieces").textContent=rows.filter(r=>r.status!=="arrivato").reduce((a,r)=>a+Number(r.quantity||1),0);
+  document.getElementById("availableTypes").textContent=rows.filter(r=>r.status!=="arrivato").length;
+  document.getElementById("lowStock").textContent=rows.filter(r=>r.status==="richiesto").length;
 }
 function updateCustomStats(items){
   const vals=items.length?items:customProducts.filter(p=>Number(p.section_id)===currentCustomSectionId);
@@ -622,4 +657,26 @@ applyTheme(initialTheme);
 themeToggle.addEventListener("click",()=>applyTheme(document.body.dataset.theme==="light" ? "dark" : "light"));
 
 
-sb.auth.onAuthStateChange((_event,session)=>{ if(session?.user && session.user.id!==currentUser?.id) showAuth(session.user); });
+sb.auth.onAuthStateChange((event,session)=>{
+  if(event==="PASSWORD_RECOVERY"){
+    document.getElementById("passwordRecoveryModal").hidden=false;
+    return;
+  }
+  if(session?.user && session.user.id!==currentUser?.id) showAuth(session.user);
+  if(!session?.user && currentUser) showAuth(null);
+});
+
+document.getElementById("saveRecoveryPassword").onclick=async()=>{
+  const p1=document.getElementById("recoveryPassword").value;
+  const p2=document.getElementById("recoveryPassword2").value;
+  const msg=document.getElementById("recoveryPasswordMsg");
+  msg.textContent="";
+  if(p1.length<6){msg.textContent="La password deve avere almeno 6 caratteri.";return;}
+  if(p1!==p2){msg.textContent="Le password non coincidono.";return;}
+  const {error}=await sb.auth.updateUser({password:p1});
+  if(error){msg.textContent=error.message;return;}
+  document.getElementById("passwordRecoveryModal").hidden=true;
+  document.getElementById("recoveryPassword").value="";
+  document.getElementById("recoveryPassword2").value="";
+  alert("Password aggiornata correttamente.");
+};
