@@ -118,6 +118,7 @@
     <section id="hoursView" class="hoursView" hidden>
       <div class="hoursHero"><div><span class="usersKicker">AREA PRIVATA ADMIN</span><h2>I miei orari</h2><p>Registra ore lavorate, note e attività extra. Questa sezione è visibile solo a te.</p></div><span class="adminBadge">SOLO ADMIN</span></div>
       <div class="hoursToolbar"><label><span>Mese</span><input id="hoursMonth" type="month"></label><button id="hoursTodayBtn" class="miniBtn animatedBtn" type="button">Oggi</button><button id="hoursRefreshBtn" class="miniBtn animatedBtn" type="button">Aggiorna</button></div>
+      <div class="hoursMonthsPanel"><div class="hoursMonthsTitle"><strong>Mesi</strong><small>Scegli un mese</small></div><div id="hoursMonthColumns" class="hoursMonthColumns" aria-label="Mesi dell'anno"></div></div>
       <div class="hoursSummary"><div><span>Ore normali</span><strong id="hoursNormalTotal">0h 00m</strong></div><div><span>Ore extra</span><strong id="hoursExtraTotal">0h 00m</strong></div><div><span>Totale mese</span><strong id="hoursGrandTotal">0h 00m</strong></div><div><span>Extra €</span><strong id="hoursExtraAmount">€ 0,00</strong></div></div>
       <div class="hoursGrid">
         <form id="hoursForm" class="hoursCard"><div class="catalogCardTitle"><span class="catalogIcon">◷</span><div><strong>Orario giornaliero</strong><small>Mattina e pomeriggio</small></div></div>
@@ -134,7 +135,7 @@
           <label><span>Nota</span><textarea id="extraNote" maxlength="400" rows="3" placeholder="Facoltativa"></textarea></label><button class="primaryAction animatedBtn" type="submit">Aggiungi extra</button><div id="extraMsg" class="createUserMsg"></div>
         </form>
       </div>
-      <div class="hoursCard hoursListCard"><div class="catalogListHead"><div><strong>Riepilogo del mese</strong><small>Orari ed extra giorno per giorno</small></div></div><div id="hoursList"><div class="emptyState">Caricamento…</div></div></div>
+      <div class="hoursCard hoursListCard"><div class="catalogListHead"><div><strong>Riepilogo del mese</strong><small>e-Pol, Riparalo e note separati</small></div></div><div id="hoursList"><div class="emptyState">Caricamento…</div></div></div>
     </section>
     <section id="usersView" class="usersView" hidden>
       <div class="usersPanel">
