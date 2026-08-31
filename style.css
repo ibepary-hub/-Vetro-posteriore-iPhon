@@ -576,3 +576,51 @@ body[data-theme="light"] .authPanel input:-webkit-autofill:active{
   border-color:#cfc6b8 !important;
   transition:background-color 9999s ease-out 0s;
 }
+
+/* v24 MOBILE FIX: layout compatto indipendente dal desktop */
+@media (max-width:700px){
+  .customModelAccordion{gap:8px!important}
+  .customModelGroup{border-radius:16px!important}
+  .customModelHeader{padding:10px 12px!important;min-height:68px!important;gap:10px!important}
+  .customModelHeaderMain{gap:9px!important}
+  .customModelThumb{width:36px!important;height:46px!important}
+  .customModelHeaderMain strong{font-size:16px!important}
+  .customModelHeaderMain small{font-size:11px!important;margin-top:2px!important}
+  .customModelHeader>.chevron{width:38px!important;height:38px!important;flex-basis:38px!important;margin-left:auto!important}
+  .customModelBody{padding:8px!important;overflow:visible!important}
+  .customModelGroup .customProductGrid{display:grid!important;grid-template-columns:1fr!important;gap:8px!important}
+  .customProductCard{padding:10px 11px!important;border-radius:16px!important;overflow:visible!important;min-height:0!important}
+  .customProductTop{gap:9px!important;min-height:0!important}
+  .productVisual{width:42px!important;height:42px!important;border-radius:13px!important}
+  .customProductInfo strong{font-size:15px!important;line-height:1.15!important}
+  .customProductInfo span{font-size:11px!important;margin:2px 0 2px!important}
+  .customProductInfo .status{font-size:10px!important;line-height:1.1!important}
+  .customProductBottom{
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:8px!important;
+    margin-top:8px!important;
+    padding-top:8px!important;
+    border-top:1px solid var(--line)!important;
+  }
+  .customQty{flex:0 0 auto!important;min-width:46px!important}
+  .customQty small{font-size:10px!important}
+  .customQty strong{font-size:23px!important;line-height:1!important;margin-top:2px!important}
+  .customActions{display:flex!important;align-items:center!important;justify-content:flex-end!important;gap:5px!important;flex:0 0 auto!important;max-width:none!important}
+  .customActions button{
+    width:42px!important;
+    min-width:42px!important;
+    height:38px!important;
+    min-height:38px!important;
+    padding:0!important;
+    border-radius:11px!important;
+    font-size:15px!important;
+  }
+  .customActions .edit{font-size:18px!important}
+}
+@media (max-width:380px){
+  .customProductCard{padding:9px!important}
+  .customActions{gap:4px!important}
+  .customActions button{width:39px!important;min-width:39px!important;height:37px!important;min-height:37px!important}
+}
