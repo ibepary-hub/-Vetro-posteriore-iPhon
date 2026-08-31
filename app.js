@@ -567,18 +567,34 @@ function renderCustomSection(){
   const items=customProducts.filter(p=>Number(p.section_id)===currentCustomSectionId).filter(p=>`${p.name} ${p.variant||""} ${p.sku||""} ${p.barcode||""}`.toLowerCase().includes(query)).filter(p=>passesFilter(Number(p.quantity||0))).sort((a,b)=>compareModels(a,b)||String(a.variant||"").localeCompare(String(b.variant||""),"it",{numeric:true,sensitivity:"base"}));
   inventory.innerHTML="";
   if(!items.length){inventory.innerHTML='<div class="emptyState">Nessun prodotto in questa sezione.</div>';updateCustomStats([]);return;}
-  const grid=document.createElement("div");grid.className="customProductGrid";
-  items.forEach(p=>{
-    const q=Number(p.quantity||0),[status,cls]=customStatus(q,Number(p.low_stock_threshold||2));
-    const card=document.createElement("article");card.className="customProductCard";card.dataset.productId=String(p.id);
-    card.innerHTML=`<div class="customProductTop"><div class="productVisual"><img class="productModelImage" src="${escapeHtml(imageForModel(p.name))}" alt="${escapeHtml(p.name)}"><span>${escapeHtml(p.name).charAt(0).toUpperCase()}</span></div><div class="customProductInfo"><strong>${escapeHtml(p.name)}</strong><span>${escapeHtml(p.variant||section?.name||"")}</span>${p.sku||p.barcode?`<small>${escapeHtml(p.sku||p.barcode)}</small>`:""}<b class="status ${cls}">${status}</b></div></div><div class="customProductBottom"><div class="customQty"><small>Giacenza</small><strong>${q}</strong></div><div class="customActions"><button class="minus customMinus animatedBtn" type="button" ${q<=0?"disabled":""}>−1</button>${isAdmin()?'<button class="plus customPlus animatedBtn" type="button">+1</button><button class="edit customEdit animatedBtn" type="button" title="Modifica prodotto">✎</button>':""}</div></div>`;
-    const modelImg=card.querySelector(".productModelImage");modelImg.onerror=()=>{modelImg.hidden=true;modelImg.nextElementSibling.hidden=false};modelImg.onload=()=>{modelImg.nextElementSibling.hidden=true};
-    card.querySelector(".customMinus").onclick=()=>openCustomSaleModal(p,section);
-    const plus=card.querySelector(".customPlus"); if(plus)plus.onclick=()=>updateCustomProductQty(p,q+1);
-    const edit=card.querySelector(".customEdit");if(edit)edit.onclick=()=>editCustomProduct(p);
-    grid.appendChild(card);
+  const groups=new Map();
+  items.forEach(p=>{const key=String(p.name||"Senza modello");if(!groups.has(key))groups.set(key,[]);groups.get(key).push(p)});
+  const accordion=document.createElement("div");accordion.className="customModelAccordion";
+  [...groups.entries()].sort((a,b)=>compareModels(a[0],b[0])).forEach(([model,products])=>{
+    const total=products.reduce((sum,p)=>sum+Number(p.quantity||0),0);
+    const group=document.createElement("section");group.className="customModelGroup closed";group.dataset.model=model;
+    group.innerHTML=`<button class="customModelHeader" type="button" aria-expanded="false"><div class="customModelHeaderMain"><img class="customModelThumb" src="${escapeHtml(imageForModel(model))}" alt="${escapeHtml(model)}"><div><strong>${escapeHtml(model)}</strong><small>${products.length} varianti · ${total} pezzi</small></div></div><span class="chevron">⌄</span></button><div class="customModelBody"><div class="customProductGrid"></div></div>`;
+    const bodyGrid=group.querySelector(".customProductGrid");
+    products.sort((a,b)=>String(a.variant||"").localeCompare(String(b.variant||""),"it",{numeric:true,sensitivity:"base"})).forEach(p=>{
+      const q=Number(p.quantity||0),[status,cls]=customStatus(q,Number(p.low_stock_threshold||2));
+      const card=document.createElement("article");card.className="customProductCard";card.dataset.productId=String(p.id);
+      card.innerHTML=`<div class="customProductTop"><div class="productVisual"><img class="productModelImage" src="${escapeHtml(imageForModel(p.name))}" alt="${escapeHtml(p.name)}"><span>${escapeHtml(p.name).charAt(0).toUpperCase()}</span></div><div class="customProductInfo"><strong>${escapeHtml(p.variant||p.name)}</strong><span>${escapeHtml(p.variant? p.name : (section?.name||""))}</span>${p.sku||p.barcode?`<small>${escapeHtml(p.sku||p.barcode)}</small>`:""}<b class="status ${cls}">${status}</b></div></div><div class="customProductBottom"><div class="customQty"><small>Giacenza</small><strong>${q}</strong></div><div class="customActions"><button class="minus customMinus animatedBtn" type="button" ${q<=0?"disabled":""}>−1</button>${isAdmin()?'<button class="plus customPlus animatedBtn" type="button">+1</button><button class="edit customEdit animatedBtn" type="button" title="Modifica prodotto">✎</button>':""}</div></div>`;
+      const modelImg=card.querySelector(".productModelImage");modelImg.onerror=()=>{modelImg.hidden=true;modelImg.nextElementSibling.hidden=false};modelImg.onload=()=>{modelImg.nextElementSibling.hidden=true};
+      card.querySelector(".customMinus").onclick=()=>openCustomSaleModal(p,section);
+      const plus=card.querySelector(".customPlus"); if(plus)plus.onclick=()=>updateCustomProductQty(p,q+1);
+      const edit=card.querySelector(".customEdit");if(edit)edit.onclick=()=>editCustomProduct(p);
+      bodyGrid.appendChild(card);
+    });
+    const header=group.querySelector(".customModelHeader");
+    header.onclick=()=>{
+      const willOpen=group.classList.contains("closed");
+      accordion.querySelectorAll(".customModelGroup:not(.closed)").forEach(other=>{if(other!==group){other.classList.add("closed");other.querySelector(".customModelHeader")?.setAttribute("aria-expanded","false")}});
+      group.classList.toggle("closed",!willOpen);
+      header.setAttribute("aria-expanded",willOpen?"true":"false");
+    };
+    accordion.appendChild(group);
   });
-  inventory.appendChild(grid);updateCustomStats(items);
+  inventory.appendChild(accordion);updateCustomStats(items);
 }
 async function renderOrderRequests(section){
   inventory.innerHTML=`<div class="orderRequestWrap"><form id="orderRequestForm" class="orderRequestCard"><div class="catalogCardTitle"><span class="catalogIcon">🛒</span><div><strong>Nuova richiesta</strong><small>Qualsiasi materiale, ricambio o accessorio</small></div></div><label><span>Cosa serve *</span><input id="requestItem" type="text" maxlength="160" placeholder="es. Display iPhone 15 Pro nero" required></label><div class="catalogTwoCols"><label><span>Quantità *</span><input id="requestQty" type="number" min="1" value="1" required></label><label><span>Codice</span><input id="requestCode" type="text" maxlength="100" placeholder="SKU / codice ricambio"></label></div><label><span>Link prodotto</span><input id="requestLink" type="url" maxlength="500" placeholder="https://..."></label><label><span>Nota</span><input id="requestNote" type="text" maxlength="240" placeholder="Facoltativa"></label><button class="primaryAction animatedBtn" type="submit">Invia richiesta</button><div id="requestMsg" class="createUserMsg"></div></form><div class="orderRequestCard"><div class="catalogListHead"><div><strong>Da ordinare</strong><small>Richieste di tutti gli utenti</small></div><button id="refreshRequestsBtn" class="miniBtn animatedBtn" type="button">Aggiorna</button></div><div id="requestsList"><div class="emptyState">Caricamento richieste…</div></div></div></div>`;
@@ -716,7 +732,7 @@ function openGlobalProduct(sectionId,productId){
   setCategory(`custom:${sectionId}`);
   requestAnimationFrame(()=>requestAnimationFrame(()=>{
     const card=document.querySelector(`.customProductCard[data-product-id="${productId}"]`);
-    if(card){card.scrollIntoView({behavior:"smooth",block:"center"});card.classList.add("searchFocus");setTimeout(()=>card.classList.remove("searchFocus"),2200);}
+    if(card){const group=card.closest(".customModelGroup");if(group){group.classList.remove("closed");group.querySelector(".customModelHeader")?.setAttribute("aria-expanded","true");}card.scrollIntoView({behavior:"smooth",block:"center"});card.classList.add("searchFocus");setTimeout(()=>card.classList.remove("searchFocus"),2200);}
   }));
 }
 function runGlobalSearch(code){const q=String(code??gSearch.value).trim().toLowerCase();if(code!==undefined)gSearch.value=code;if(!q){gResults.hidden=true;gResults.innerHTML="";return;}const activeIds=new Set(customSections.filter(s=>s.active!==false).map(s=>Number(s.id)));const hits=customProducts.filter(p=>activeIds.has(Number(p.section_id))&&`${p.name} ${p.variant||""} ${p.sku||""} ${p.barcode||""}`.toLowerCase().includes(q)).sort((a,b)=>compareModels(a,b)||String(a.variant||"").localeCompare(String(b.variant||""),"it",{numeric:true,sensitivity:"base"})).slice(0,18);const req=(window.btRequests||[]).filter(r=>`${r.item} ${r.requester_name||""}`.toLowerCase().includes(q)).slice(0,8);gResults.innerHTML=`${hits.map(p=>{const sec=customSections.find(s=>Number(s.id)===Number(p.section_id));return `<button class="globalResult" data-section="${p.section_id}" data-product="${p.id}"><span><strong>${escapeHtml(p.name)}</strong><small>${escapeHtml(sec?.name||"")} · ${escapeHtml(p.variant||"")}${p.sku?` · ${escapeHtml(p.sku)}`:""}</small></span><b>${p.quantity}</b></button>`}).join("")}${req.map(r=>`<button class="globalResult requestGlobal" data-request="1"><span><strong>${escapeHtml(r.item)}</strong><small>Da ordinare · ${escapeHtml(r.requester_name||"")}</small></span></button>`).join("")}`||'<div class="emptyState">Nessun risultato.</div>';gResults.hidden=false;gResults.querySelectorAll("[data-section][data-product]").forEach(b=>b.onclick=()=>openGlobalProduct(b.dataset.section,b.dataset.product));gResults.querySelectorAll("[data-request]").forEach(b=>b.onclick=()=>{const sec=customSections.find(s=>s.section_type==="requests");gResults.hidden=true;if(sec)setCategory(`custom:${sec.id}`)});}

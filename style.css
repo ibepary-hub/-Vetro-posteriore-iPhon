@@ -380,3 +380,20 @@ body:not(.logged-in) .globalSearchBar,body:not(.logged-in) .dashboardView,body:n
 .dashboardToggle{width:100%;border:0;background:transparent;color:var(--text);cursor:pointer;text-align:left;align-items:center}.dashboardToggle span{display:block}.dashboardToggle small{display:block;font-size:11px;color:var(--muted);margin-top:3px}.panelChevron{font-size:22px;line-height:1;transition:transform .2s ease;color:var(--gold2)}.dashboardPanelBody{display:none}.dashboardPanel.open .dashboardPanelBody{display:block}.dashboardPanel.open .panelChevron{transform:rotate(180deg)}
 .customProductCard.searchFocus{outline:2px solid var(--gold2);outline-offset:3px;animation:searchPulse .7s ease 2}@keyframes searchPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.015)}}
 body[data-theme="light"] .dashboardToggle{color:#1c1a17}
+
+/* v19: ogni modello in una tendina separata */
+.customModelAccordion{display:grid;gap:11px}
+.customModelGroup{background:#141414;border:1px solid #28251f;border-radius:18px;overflow:hidden;box-shadow:0 7px 22px rgba(0,0,0,.2)}
+.customModelHeader{width:100%;border:0;background:transparent;color:var(--text);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;text-align:left;cursor:pointer}
+.customModelHeaderMain{display:flex;align-items:center;gap:12px;min-width:0}
+.customModelHeaderMain>div{min-width:0}
+.customModelHeaderMain strong{display:block;font-size:16px;white-space:normal;overflow-wrap:anywhere}
+.customModelHeaderMain small{display:block;color:var(--muted);margin-top:3px;font-size:12px}
+.customModelThumb{width:46px;height:60px;object-fit:contain;flex:0 0 auto}
+.customModelBody{border-top:1px solid var(--line);padding:12px}
+.customModelGroup.closed .customModelBody{display:none}
+.customModelGroup.closed .chevron{transform:rotate(-90deg)}
+.customModelGroup .chevron{transition:transform .18s ease}
+.customModelGroup .customProductGrid{margin:0}
+body[data-theme="light"] .customModelGroup{background:#fff;border-color:#e3d7c3}
+@media(max-width:600px){.customModelHeader{padding:12px 13px}.customModelThumb{width:40px;height:52px}.customModelBody{padding:9px}}
