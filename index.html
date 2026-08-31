@@ -98,7 +98,7 @@
     <section id="dashboardView" class="dashboardView" hidden>
       <div class="dashboardHero"><div><span class="usersKicker">BEPARYTECH CONTROL</span><h2>Dashboard</h2><p>Situazione del magazzino e attività recenti.</p></div><button id="refreshDashboardBtn" class="miniBtn animatedBtn" type="button">Aggiorna</button></div>
       <div id="dashboardCards" class="dashboardCards"></div>
-      <div class="dashboardColumns"><div class="dashboardPanel"><div class="panelHead"><strong>Scorte da controllare</strong><span>Scorte basse ed esaurite</span></div><div id="dashboardLowStock"></div></div><div class="dashboardPanel"><div class="panelHead"><strong>Ultime attività</strong><span>Movimenti più recenti</span></div><div id="dashboardActivity"></div></div></div>
+      <div class="dashboardColumns"><div class="dashboardPanel"><button class="panelHead dashboardToggle" type="button" aria-expanded="false"><span><strong>Scorte basse</strong><small>Scorte basse ed esaurite</small></span><b class="panelChevron">⌄</b></button><div id="dashboardLowStock" class="dashboardPanelBody"></div></div><div class="dashboardPanel"><button class="panelHead dashboardToggle" type="button" aria-expanded="false"><span><strong>Ultimi movimenti</strong><small>Movimenti più recenti</small></span><b class="panelChevron">⌄</b></button><div id="dashboardActivity" class="dashboardPanelBody"></div></div></div>
     </section>
     <main id="inventory"></main>
     <section id="auditView" class="salesView" hidden><div class="salesHeader"><div><strong>Cronologia completa</strong><span>Movimenti, richieste e modifiche</span></div><button id="refreshAuditBtn" class="miniBtn animatedBtn" type="button">Aggiorna</button></div><div id="auditList"></div></section>

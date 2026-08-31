@@ -86,12 +86,36 @@ function imageForModel(model){
   const slug=model.toLowerCase().replaceAll("ª","a").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
   return slug+".png";
 }
+function modelSortKey(name){
+  const n=String(name||"").trim().toLowerCase();
+  const m=n.match(/iphone\s+(\d+)/);
+  if(!m){
+    if(n.includes("iphone x")){
+      const rank=n.includes("xr")?1:n.includes("xs max")?3:n.includes("xs")?2:0;
+      return [10,rank,n];
+    }
+    if(n.includes("iphone air")) return [17,2,n];
+    if(n.includes("iphone se")){ const gen=n.match(/(2|3)/); return [gen?Number(gen[1])===2?11.5:13.5:99,9,n]; }
+    return [999,99,n];
+  }
+  const num=Number(m[1]);
+  let rank=0;
+  if(/\be\b/.test(n)||n.includes(`${num}e`)) rank=0.5;
+  if(n.includes("mini")) rank=1;
+  if(n.includes("plus")) rank=2;
+  if(n.includes("pro max")) rank=4; else if(n.includes("pro")) rank=3;
+  return [num,rank,n];
+}
+function compareModels(a,b){
+  const A=modelSortKey(typeof a==="string"?a:a?.name),B=modelSortKey(typeof b==="string"?b:b?.name);
+  return A[0]-B[0]||A[1]-B[1]||String(A[2]).localeCompare(String(B[2]),"it",{numeric:true,sensitivity:"base"});
+}
 
 function render(){
   if(!currentUser) return;
   inventory.innerHTML="";
   const q=search.value.trim().toLowerCase(); let visibleModels=0;
-  Object.entries(MODEL_COLORS).forEach(([model,colors])=>{
+  Object.entries(MODEL_COLORS).sort((a,b)=>compareModels(a[0],b[0])).forEach(([model,colors])=>{
     if(currentCategory === "BackGlass" && (model === "iPhone 7" || model === "iPhone 7 Plus")) return;
     const filteredColors=colors.filter(color=>{
       const qty=getQty(model,color); return (model+" "+color).toLowerCase().includes(q)&&passesFilter(qty);
@@ -540,13 +564,13 @@ function renderCustomSection(){
   const section=customSections.find(s=>Number(s.id)===currentCustomSectionId);
   if(section?.section_type==="requests"){ renderOrderRequests(section); return; }
   const query=search.value.trim().toLowerCase();
-  const items=customProducts.filter(p=>Number(p.section_id)===currentCustomSectionId).filter(p=>`${p.name} ${p.variant||""} ${p.sku||""} ${p.barcode||""}`.toLowerCase().includes(query)).filter(p=>passesFilter(Number(p.quantity||0)));
+  const items=customProducts.filter(p=>Number(p.section_id)===currentCustomSectionId).filter(p=>`${p.name} ${p.variant||""} ${p.sku||""} ${p.barcode||""}`.toLowerCase().includes(query)).filter(p=>passesFilter(Number(p.quantity||0))).sort((a,b)=>compareModels(a,b)||String(a.variant||"").localeCompare(String(b.variant||""),"it",{numeric:true,sensitivity:"base"}));
   inventory.innerHTML="";
   if(!items.length){inventory.innerHTML='<div class="emptyState">Nessun prodotto in questa sezione.</div>';updateCustomStats([]);return;}
   const grid=document.createElement("div");grid.className="customProductGrid";
   items.forEach(p=>{
     const q=Number(p.quantity||0),[status,cls]=customStatus(q,Number(p.low_stock_threshold||2));
-    const card=document.createElement("article");card.className="customProductCard";
+    const card=document.createElement("article");card.className="customProductCard";card.dataset.productId=String(p.id);
     card.innerHTML=`<div class="customProductTop"><div class="productVisual"><img class="productModelImage" src="${escapeHtml(imageForModel(p.name))}" alt="${escapeHtml(p.name)}"><span>${escapeHtml(p.name).charAt(0).toUpperCase()}</span></div><div class="customProductInfo"><strong>${escapeHtml(p.name)}</strong><span>${escapeHtml(p.variant||section?.name||"")}</span>${p.sku||p.barcode?`<small>${escapeHtml(p.sku||p.barcode)}</small>`:""}<b class="status ${cls}">${status}</b></div></div><div class="customProductBottom"><div class="customQty"><small>Giacenza</small><strong>${q}</strong></div><div class="customActions"><button class="minus customMinus animatedBtn" type="button" ${q<=0?"disabled":""}>−1</button>${isAdmin()?'<button class="plus customPlus animatedBtn" type="button">+1</button><button class="edit customEdit animatedBtn" type="button" title="Modifica prodotto">✎</button>':""}</div></div>`;
     const modelImg=card.querySelector(".productModelImage");modelImg.onerror=()=>{modelImg.hidden=true;modelImg.nextElementSibling.hidden=false};modelImg.onload=()=>{modelImg.nextElementSibling.hidden=true};
     card.querySelector(".customMinus").onclick=()=>openCustomSaleModal(p,section);
@@ -684,9 +708,18 @@ async function loadDashboard(){
   document.querySelectorAll(".dashCard").forEach(b=>b.onclick=()=>{if(b.dataset.go==="requests"){const sec=customSections.find(s=>s.active!==false&&s.section_type==="requests");if(sec)setCategory(`custom:${sec.id}`)}else if(b.dataset.go==="audit")setCategory("Cronologia");else if(b.dataset.go==="low"||b.dataset.go==="stock"){const sec=customSections.find(s=>s.active!==false&&s.section_type==="inventory");if(sec)setCategory(`custom:${sec.id}`)}});
 }
 document.getElementById("refreshDashboardBtn").onclick=loadDashboard;document.getElementById("refreshAuditBtn").onclick=loadAudit;
+document.querySelectorAll(".dashboardToggle").forEach(btn=>btn.addEventListener("click",()=>{const panel=btn.closest(".dashboardPanel");const open=panel.classList.toggle("open");btn.setAttribute("aria-expanded",open?"true":"false");}));
 
 const gSearch=document.getElementById("globalSearch"),gResults=document.getElementById("globalSearchResults");
-function runGlobalSearch(code){const q=String(code??gSearch.value).trim().toLowerCase();if(code!==undefined)gSearch.value=code;if(!q){gResults.hidden=true;gResults.innerHTML="";return;}const activeIds=new Set(customSections.filter(s=>s.active!==false).map(s=>Number(s.id)));const hits=customProducts.filter(p=>activeIds.has(Number(p.section_id))&&`${p.name} ${p.variant||""} ${p.sku||""} ${p.barcode||""}`.toLowerCase().includes(q)).slice(0,18);const req=(window.btRequests||[]).filter(r=>`${r.item} ${r.requester_name||""}`.toLowerCase().includes(q)).slice(0,8);gResults.innerHTML=`${hits.map(p=>{const sec=customSections.find(s=>Number(s.id)===Number(p.section_id));return `<button class="globalResult" data-section="${p.section_id}"><span><strong>${escapeHtml(p.name)}</strong><small>${escapeHtml(sec?.name||"")} · ${escapeHtml(p.variant||"")}${p.sku?` · ${escapeHtml(p.sku)}`:""}</small></span><b>${p.quantity}</b></button>`}).join("")}${req.map(r=>`<button class="globalResult requestGlobal" data-request="1"><span><strong>${escapeHtml(r.item)}</strong><small>Da ordinare · ${escapeHtml(r.requester_name||"")}</small></span></button>`).join("")}`||'<div class="emptyState">Nessun risultato.</div>';gResults.hidden=false;gResults.querySelectorAll("[data-section]").forEach(b=>b.onclick=()=>{gResults.hidden=true;setCategory(`custom:${b.dataset.section}`)});gResults.querySelectorAll("[data-request]").forEach(b=>b.onclick=()=>{const sec=customSections.find(s=>s.section_type==="requests");gResults.hidden=true;if(sec)setCategory(`custom:${sec.id}`)});}
+function openGlobalProduct(sectionId,productId){
+  gResults.hidden=true;
+  setCategory(`custom:${sectionId}`);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    const card=document.querySelector(`.customProductCard[data-product-id="${productId}"]`);
+    if(card){card.scrollIntoView({behavior:"smooth",block:"center"});card.classList.add("searchFocus");setTimeout(()=>card.classList.remove("searchFocus"),2200);}
+  }));
+}
+function runGlobalSearch(code){const q=String(code??gSearch.value).trim().toLowerCase();if(code!==undefined)gSearch.value=code;if(!q){gResults.hidden=true;gResults.innerHTML="";return;}const activeIds=new Set(customSections.filter(s=>s.active!==false).map(s=>Number(s.id)));const hits=customProducts.filter(p=>activeIds.has(Number(p.section_id))&&`${p.name} ${p.variant||""} ${p.sku||""} ${p.barcode||""}`.toLowerCase().includes(q)).sort((a,b)=>compareModels(a,b)||String(a.variant||"").localeCompare(String(b.variant||""),"it",{numeric:true,sensitivity:"base"})).slice(0,18);const req=(window.btRequests||[]).filter(r=>`${r.item} ${r.requester_name||""}`.toLowerCase().includes(q)).slice(0,8);gResults.innerHTML=`${hits.map(p=>{const sec=customSections.find(s=>Number(s.id)===Number(p.section_id));return `<button class="globalResult" data-section="${p.section_id}" data-product="${p.id}"><span><strong>${escapeHtml(p.name)}</strong><small>${escapeHtml(sec?.name||"")} · ${escapeHtml(p.variant||"")}${p.sku?` · ${escapeHtml(p.sku)}`:""}</small></span><b>${p.quantity}</b></button>`}).join("")}${req.map(r=>`<button class="globalResult requestGlobal" data-request="1"><span><strong>${escapeHtml(r.item)}</strong><small>Da ordinare · ${escapeHtml(r.requester_name||"")}</small></span></button>`).join("")}`||'<div class="emptyState">Nessun risultato.</div>';gResults.hidden=false;gResults.querySelectorAll("[data-section][data-product]").forEach(b=>b.onclick=()=>openGlobalProduct(b.dataset.section,b.dataset.product));gResults.querySelectorAll("[data-request]").forEach(b=>b.onclick=()=>{const sec=customSections.find(s=>s.section_type==="requests");gResults.hidden=true;if(sec)setCategory(`custom:${sec.id}`)});}
 gSearch.addEventListener("input",()=>runGlobalSearch());document.addEventListener("click",e=>{if(!e.target.closest("#globalSearchBar"))gResults.hidden=true;});
 
 let scannerStream=null,scannerTimer=null;
