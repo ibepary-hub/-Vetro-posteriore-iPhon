@@ -10,10 +10,10 @@
   <meta name="apple-mobile-web-app-title" content="BeparyTech">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
   <title>BeparyTech • Magazzino Ricambi iPhone</title>
-  <link rel="manifest" href="manifest.json?v=25">
+  <link rel="manifest" href="manifest.json?v=26">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=25">
+  <link rel="stylesheet" href="style.css?v=26">
 </head>
 <body>
   <div id="menuOverlay" class="menuOverlay" hidden></div>
@@ -166,7 +166,7 @@
       <div class="saleDialogHead"><div><span class="saleKicker">REGISTRA VENDITA</span><h2 id="saleTitle">A chi è destinato?</h2></div><button id="cancelSaleX" class="closeBtn" type="button" aria-label="Chiudi">×</button></div>
       <div id="saleItemLabel" class="saleItemLabel"></div>
       <div class="operatorGrid">
-        <label><span class="fieldLabel">Nome operatore *</span><input id="saleOperatorName" class="modalInput" type="text" autocomplete="off" placeholder="Nome operatore"></label>
+        <label><span class="fieldLabel">Nome operatore *</span><select id="saleOperatorName" class="modalSelect"><option value="">Operatore</option></select></label>
         <label><span class="fieldLabel">Password operatore *</span><input id="saleOperatorPassword" class="modalInput" type="password" autocomplete="off" placeholder="Password operatore"></label>
       </div>
       <label class="fieldLabel" for="saleCustomerSelect">Negozio *</label>
@@ -265,6 +265,19 @@
   </template>
 
   <div id="scannerModal" class="saleModal" hidden><div class="saleDialog"><div class="saleDialogHead"><div><span class="saleKicker">SCANNER</span><h2>QR / Barcode</h2></div><button id="scannerClose" class="closeBtn" type="button">×</button></div><video id="scannerVideo" class="scannerVideo" playsinline muted></video><p id="scannerMsg" class="scannerMsg">Inquadra il codice con la fotocamera.</p><label class="fieldLabel">Oppure inserisci il codice</label><div class="scannerManual"><input id="scannerManualCode" class="modalInput" type="text" placeholder="Codice"><button id="scannerManualSearch" class="primaryAction" type="button">Cerca</button></div></div></div>
+  <div id="accountOperatorsModal" class="saleModal" hidden>
+    <div class="saleDialog accountOperatorsDialog" role="dialog" aria-modal="true" aria-labelledby="accountOperatorsTitle">
+      <div class="saleDialogHead"><div><span class="saleKicker">OPERATORI ACCOUNT</span><h2 id="accountOperatorsTitle">Operatori</h2></div><button id="accountOperatorsX" class="closeBtn" type="button" aria-label="Chiudi">×</button></div>
+      <p class="accountOperatorsHelp">Ogni persona usa il proprio codice. Il codice viene salvato cifrato e non è visibile dopo il salvataggio.</p>
+      <form id="accountOperatorForm" class="accountOperatorForm">
+        <div class="operatorGrid"><label><span class="fieldLabel">Nome *</span><input id="accountOperatorName" class="modalInput" type="text" maxlength="80" placeholder="es. Simone" required></label><label><span class="fieldLabel">Codice personale *</span><input id="accountOperatorCode" class="modalInput" type="password" inputmode="numeric" pattern="[0-9]*" minlength="4" maxlength="8" autocomplete="new-password" placeholder="4–8 cifre" required></label></div>
+        <button class="primaryAction" type="submit">Salva operatore / codice</button><div id="accountOperatorsMsg" class="createUserMsg"></div>
+      </form>
+      <div class="usersListTitle"><strong>Operatori configurati</strong></div><div id="accountOperatorsList"><div class="emptyState">Caricamento…</div></div>
+      <div class="saleActions"><button id="accountOperatorsCancel" class="secondaryAction" type="button">Chiudi</button></div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4"></script>
 
   <div id="passwordRecoveryModal" class="saleModal" hidden>
@@ -273,13 +286,13 @@
       <label class="fieldLabel" for="recoveryPassword">Nuova password *</label>
       <input id="recoveryPassword" class="modalInput" type="password" minlength="10" maxlength="128" autocomplete="new-password" placeholder="Minimo 10 caratteri">
       <label class="fieldLabel" for="recoveryPassword2">Ripeti password *</label>
-      <input id="recoveryPassword2" class="modalInput" type="password" minlength="6" autocomplete="new-password" placeholder="Ripeti la password">
+      <input id="recoveryPassword2" class="modalInput" type="password" minlength="10" autocomplete="new-password" placeholder="Ripeti la password">
       <div id="recoveryPasswordMsg" class="saleError"></div>
       <div class="saleActions"><button id="saveRecoveryPassword" class="primaryAction" type="button">Salva nuova password</button></div>
     </div>
   </div>
 
-  <script src="app.js?v=25"></script>
+  <script src="app.js?v=26"></script>
 
 </body>
 </html>

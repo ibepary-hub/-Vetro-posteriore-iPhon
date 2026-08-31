@@ -624,3 +624,14 @@ body[data-theme="light"] .authPanel input:-webkit-autofill:active{
   .customActions{gap:4px!important}
   .customActions button{width:39px!important;min-width:39px!important;height:37px!important;min-height:37px!important}
 }
+
+/* Riparalo multi-operatore */
+.accountOperatorsDialog{max-width:680px}
+.accountOperatorsHelp{margin:0 0 14px;color:var(--muted);font-size:14px;line-height:1.45}
+.accountOperatorForm{display:grid;gap:12px;margin-bottom:18px}
+.accountOperatorRow{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px solid var(--line)}
+.accountOperatorRow>div:first-child{display:grid;gap:4px}
+.accountOperatorRow small{color:var(--muted)}
+.accountOperatorActions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+.operatorRequestFields{margin-bottom:2px}
+@media(max-width:640px){.accountOperatorRow{align-items:flex-start;flex-direction:column}.accountOperatorActions{width:100%}.accountOperatorActions .rowAction{flex:1}.accountOperatorsDialog{max-width:none}}

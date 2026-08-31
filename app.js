@@ -15,6 +15,8 @@ let sales = [];
 let salesMode = "active";
 let selectedSale = null;
 let selectedUserForOperatorPassword = null;
+let accountOperators = [];
+let selectedUserForAccountOperators = null;
 let customSections = [];
 let customProducts = [];
 let currentCustomSectionId = null;
@@ -188,14 +190,38 @@ function applyRoleVisibility(){
   if(menuUser) menuUser.textContent=currentProfile?.username||currentUser?.email||"Utente";
   if(menuRole) menuRole.textContent=admin?"Amministratore":"Operatore standard";
 }
+async function loadAccountOperators(){
+  accountOperators=[];
+  if(!currentUser) return;
+  const {data,error}=await sb.rpc("list_beparytech_account_operators");
+  if(!error && Array.isArray(data)) accountOperators=data;
+}
+function populateSaleOperatorControl(){
+  const control=document.getElementById("saleOperatorName");
+  if(!control) return;
+  if(accountOperators.length){
+    control.innerHTML='<option value="">Seleziona operatore…</option>'+accountOperators.map(o=>`<option value="${escapeHtml(o.name)}">${escapeHtml(o.name)}</option>`).join("");
+    control.value="";
+    document.getElementById("saleOperatorPassword").placeholder="Codice operatore";
+    const label=control.closest("label")?.querySelector(".fieldLabel"); if(label) label.textContent="Operatore *";
+    const passLabel=document.getElementById("saleOperatorPassword")?.closest("label")?.querySelector(".fieldLabel"); if(passLabel) passLabel.textContent="Codice operatore *";
+  }else{
+    control.innerHTML=`<option value="${escapeHtml(currentProfile?.username||"")}">${escapeHtml(currentProfile?.username||"Operatore")}</option>`;
+    control.value=currentProfile?.username||"";
+    document.getElementById("saleOperatorPassword").placeholder="Password operatore";
+    const label=control.closest("label")?.querySelector(".fieldLabel"); if(label) label.textContent="Nome operatore *";
+    const passLabel=document.getElementById("saleOperatorPassword")?.closest("label")?.querySelector(".fieldLabel"); if(passLabel) passLabel.textContent="Password operatore *";
+  }
+}
 async function loadMyProfile(){
-  currentProfile=null; workspaceOwnerId=currentUser?.id || null;
+  currentProfile=null; workspaceOwnerId=currentUser?.id || null; accountOperators=[];
   applyRoleVisibility();
   if(!currentUser) return;
   const {data,error}=await sb.from("beparytech_profiles").select("username,role,active,workspace_owner_id").eq("user_id",currentUser.id).maybeSingle();
   if(!error && data){
     currentProfile=data; workspaceOwnerId=data.workspace_owner_id || currentUser.id;
   }
+  await loadAccountOperators();
   applyRoleVisibility();
 }
 async function showAuth(user){
@@ -272,9 +298,10 @@ async function loadUsers(){
   if(!users.length){list.innerHTML='<div class="emptyState">Nessun utente.</div>';return;}
   list.innerHTML=users.map(u=>{
     const initial=(u.username||u.email||"U").trim().charAt(0).toUpperCase();
-    return `<article class="userRow"><div class="userAvatar">${escapeHtml(initial)}</div><div class="userInfo"><strong>${escapeHtml(u.username||"Utente")}</strong><span>${escapeHtml(u.email||"")}</span><small class="operatorPasswordState ${u.operator_password_set?"set":""}">${u.operator_password_set?"Password operatore impostata":"Password operatore da impostare"}</small></div><div class="userRowActions"><span class="roleBadge ${u.role==="admin"?"admin":""}">${u.role==="admin"?"Admin":"Standard"}</span><button class="rowAction setOperatorPassword" type="button" data-user-id="${escapeHtml(u.user_id)}" data-username="${escapeHtml(u.username||"Utente")}">Password operatore</button></div></article>`;
+    return `<article class="userRow"><div class="userAvatar">${escapeHtml(initial)}</div><div class="userInfo"><strong>${escapeHtml(u.username||"Utente")}</strong><span>${escapeHtml(u.email||"")}</span><small class="operatorPasswordState ${u.operator_password_set?"set":""}">${u.operator_password_set?"Password operatore impostata":"Password operatore da impostare"}</small></div><div class="userRowActions"><span class="roleBadge ${u.role==="admin"?"admin":""}">${u.role==="admin"?"Admin":"Standard"}</span><button class="rowAction manageAccountOperators" type="button" data-user-id="${escapeHtml(u.user_id)}" data-username="${escapeHtml(u.username||"Utente")}">Operatori</button><button class="rowAction setOperatorPassword" type="button" data-user-id="${escapeHtml(u.user_id)}" data-username="${escapeHtml(u.username||"Utente")}">Password operatore</button></div></article>`;
   }).join("");
   list.querySelectorAll(".setOperatorPassword").forEach(btn=>btn.addEventListener("click",()=>openOperatorPassword(btn.dataset.userId,btn.dataset.username)));
+  list.querySelectorAll(".manageAccountOperators").forEach(btn=>btn.addEventListener("click",()=>openAccountOperators(btn.dataset.userId,btn.dataset.username)));
 }
 
 document.getElementById("createUserForm").addEventListener("submit",async e=>{
@@ -305,7 +332,7 @@ function openSaleModal(model,color,qty){
   if(qty<=0) return;
   pendingSale={model,color,category:currentCategory,itemKey:keyFor(model,color)};
   selectedCustomer=null;
-  document.getElementById("saleOperatorName").value=currentProfile?.username||"";
+  populateSaleOperatorControl();
   document.getElementById("saleOperatorPassword").value="";
   document.getElementById("saleNote").value="";
   document.getElementById("saleItemLabel").innerHTML=`<strong>${model}</strong><span>${color} · ${currentCategory === "BackGlass" ? "Vetro posteriore" : "Scocca completa"}</span>`;
@@ -325,7 +352,7 @@ function updateSaleConfirmState(){
   document.getElementById("confirmSaleBtn").disabled=!(selectedCustomer&&operator&&pass.length>=4);
 }
 document.getElementById("saleCustomerSelect").addEventListener("change",updateSaleConfirmState);
-document.getElementById("saleOperatorName").addEventListener("input",updateSaleConfirmState);
+document.getElementById("saleOperatorName").addEventListener("change",updateSaleConfirmState);
 document.getElementById("saleOperatorPassword").addEventListener("input",updateSaleConfirmState);
 document.getElementById("cancelSaleBtn").onclick=closeSaleModal;
 document.getElementById("cancelSaleX").onclick=closeSaleModal;
@@ -601,14 +628,18 @@ function renderCustomSection(){
   inventory.appendChild(accordion);updateCustomStats(items);
 }
 async function renderOrderRequests(section){
-  inventory.innerHTML=`<div class="orderRequestWrap"><form id="orderRequestForm" class="orderRequestCard"><div class="catalogCardTitle"><span class="catalogIcon">🛒</span><div><strong>Nuova richiesta</strong><small>Qualsiasi materiale, ricambio o accessorio</small></div></div><label><span>Cosa serve *</span><input id="requestItem" type="text" maxlength="160" placeholder="es. Display iPhone 15 Pro nero" required></label><div class="catalogTwoCols"><label><span>Quantità *</span><input id="requestQty" type="number" min="1" value="1" required></label><label><span>Codice</span><input id="requestCode" type="text" maxlength="100" placeholder="SKU / codice ricambio"></label></div><label><span>Link prodotto</span><input id="requestLink" type="url" maxlength="500" placeholder="https://..."></label><label><span>Nota</span><input id="requestNote" type="text" maxlength="240" placeholder="Facoltativa"></label><button class="primaryAction animatedBtn" type="submit">Invia richiesta</button><div id="requestMsg" class="createUserMsg"></div></form><div class="orderRequestCard"><div class="catalogListHead"><div><strong>Da ordinare</strong><small>Richieste di tutti gli utenti</small></div><button id="refreshRequestsBtn" class="miniBtn animatedBtn" type="button">Aggiorna</button></div><div id="requestsList"><div class="emptyState">Caricamento richieste…</div></div></div></div>`;
+  const operatorFields=accountOperators.length?`<div class="catalogTwoCols operatorRequestFields"><label><span>Operatore *</span><select id="requestOperatorName" required><option value="">Seleziona operatore…</option>${accountOperators.map(o=>`<option value="${escapeHtml(o.name)}">${escapeHtml(o.name)}</option>`).join("")}</select></label><label><span>Codice operatore *</span><input id="requestOperatorCode" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="off" placeholder="Codice personale" required></label></div>`:"";
+  inventory.innerHTML=`<div class="orderRequestWrap"><form id="orderRequestForm" class="orderRequestCard"><div class="catalogCardTitle"><span class="catalogIcon">🛒</span><div><strong>Nuova richiesta</strong><small>Qualsiasi materiale, ricambio o accessorio</small></div></div>${operatorFields}<label><span>Cosa serve *</span><input id="requestItem" type="text" maxlength="160" placeholder="es. Display iPhone 15 Pro nero" required></label><div class="catalogTwoCols"><label><span>Quantità *</span><input id="requestQty" type="number" min="1" value="1" required></label><label><span>Codice articolo</span><input id="requestCode" type="text" maxlength="100" placeholder="SKU / codice ricambio"></label></div><label><span>Link prodotto</span><input id="requestLink" type="url" maxlength="500" placeholder="https://..."></label><label><span>Nota</span><input id="requestNote" type="text" maxlength="240" placeholder="Facoltativa"></label><button class="primaryAction animatedBtn" type="submit">Invia richiesta</button><div id="requestMsg" class="createUserMsg"></div></form><div class="orderRequestCard"><div class="catalogListHead"><div><strong>Da ordinare</strong><small>Richieste di tutti gli utenti</small></div><button id="refreshRequestsBtn" class="miniBtn animatedBtn" type="button">Aggiorna</button></div><div id="requestsList"><div class="emptyState">Caricamento richieste…</div></div></div></div>`;
   document.getElementById("orderRequestForm").addEventListener("submit",submitOrderRequest);document.getElementById("refreshRequestsBtn").onclick=loadOrderRequests;await loadOrderRequests();
 }
 async function submitOrderRequest(e){
   e.preventDefault();
   const msg=document.getElementById("requestMsg"),item=document.getElementById("requestItem").value.trim(),quantity=Math.max(1,Number(document.getElementById("requestQty").value)||1),note=document.getElementById("requestNote").value.trim(),code=document.getElementById("requestCode").value.trim(),link=document.getElementById("requestLink").value.trim();
+  const operatorName=document.getElementById("requestOperatorName")?.value||null;
+  const operatorCode=document.getElementById("requestOperatorCode")?.value||null;
+  if(accountOperators.length&&(!operatorName||!operatorCode)){msg.textContent="Seleziona operatore e inserisci il suo codice.";msg.className="createUserMsg error";return;}
   msg.textContent="";msg.className="createUserMsg";
-  const {error}=await sb.from("beparytech_requests").insert({workspace_owner_id:workspaceOwnerId,created_by:currentUser.id,requester_name:currentProfile?.username||currentUser.email||"Utente",item,quantity,note:note||null,code:code||null,link:link||null});
+  const {error}=await sb.rpc("create_beparytech_request",{p_item:item,p_quantity:quantity,p_note:note||null,p_code:code||null,p_link:link||null,p_operator_name:operatorName,p_operator_code:operatorCode});
   if(error){msg.textContent=error.message;msg.className="createUserMsg error";return;}
   e.target.reset();document.getElementById("requestQty").value=1;msg.textContent="Richiesta inviata.";msg.className="createUserMsg ok";await loadOrderRequests();
 }
@@ -749,6 +780,41 @@ document.getElementById("scanBarcodeBtn").onclick=openScanner;document.getElemen
 
 function downloadText(filename,text,type="text/plain;charset=utf-8"){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type}));a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function csvEscape(v){const x=String(v??"");return /[",\n]/.test(x)?`"${x.replaceAll('"','""')}"`:x}
+async function openAccountOperators(userId,username){
+  if(!isAdmin()) return;
+  selectedUserForAccountOperators={userId,username};
+  document.getElementById("accountOperatorsTitle").textContent=`Operatori · ${username}`;
+  document.getElementById("accountOperatorName").value="";
+  document.getElementById("accountOperatorCode").value="";
+  document.getElementById("accountOperatorsMsg").textContent="";
+  document.getElementById("accountOperatorsModal").hidden=false;
+  await loadAdminAccountOperators();
+}
+function closeAccountOperators(){document.getElementById("accountOperatorsModal").hidden=true;selectedUserForAccountOperators=null;}
+async function loadAdminAccountOperators(){
+  const list=document.getElementById("accountOperatorsList");
+  if(!selectedUserForAccountOperators||!list)return;
+  list.innerHTML='<div class="emptyState">Caricamento operatori…</div>';
+  const {data,error}=await sb.rpc("admin_list_beparytech_account_operators",{p_account_user_id:selectedUserForAccountOperators.userId});
+  if(error){list.innerHTML=`<div class="emptyState">${escapeHtml(error.message)}</div>`;return;}
+  const rows=data||[];
+  list.innerHTML=rows.length?rows.map(o=>`<div class="accountOperatorRow"><div><strong>${escapeHtml(o.name)}</strong><small>${o.code_set?"Codice impostato":"Codice da impostare"} · ${o.active?"Attivo":"Disattivato"}</small></div><div class="accountOperatorActions"><button class="rowAction resetAccountOperator" data-name="${escapeHtml(o.name)}" type="button">Imposta codice</button><button class="rowAction toggleAccountOperator" data-id="${o.id}" data-active="${o.active?"1":"0"}" type="button">${o.active?"Disattiva":"Attiva"}</button></div></div>`).join(""):'<div class="emptyState">Nessun operatore configurato.</div>';
+  list.querySelectorAll(".resetAccountOperator").forEach(b=>b.onclick=()=>{document.getElementById("accountOperatorName").value=b.dataset.name;document.getElementById("accountOperatorCode").focus();});
+  list.querySelectorAll(".toggleAccountOperator").forEach(b=>b.onclick=async()=>{const {error}=await sb.rpc("admin_set_beparytech_account_operator_active",{p_operator_id:Number(b.dataset.id),p_active:b.dataset.active!=="1"});if(error)alert(error.message);else loadAdminAccountOperators();});
+}
+document.getElementById("accountOperatorsX").onclick=closeAccountOperators;
+document.getElementById("accountOperatorsCancel").onclick=closeAccountOperators;
+document.getElementById("accountOperatorsModal").addEventListener("click",e=>{if(e.target.id==="accountOperatorsModal")closeAccountOperators();});
+document.getElementById("accountOperatorForm").addEventListener("submit",async e=>{
+  e.preventDefault();
+  if(!selectedUserForAccountOperators)return;
+  const name=document.getElementById("accountOperatorName").value.trim(),code=document.getElementById("accountOperatorCode").value.trim(),msg=document.getElementById("accountOperatorsMsg");
+  if(!/^\d{4,8}$/.test(code)){msg.textContent="Il codice deve avere da 4 a 8 cifre.";msg.className="createUserMsg error";return;}
+  const {error}=await sb.rpc("admin_set_beparytech_account_operator",{p_account_user_id:selectedUserForAccountOperators.userId,p_name:name,p_code:code});
+  if(error){msg.textContent=error.message;msg.className="createUserMsg error";return;}
+  msg.textContent=`Codice salvato per ${name}.`;msg.className="createUserMsg ok";document.getElementById("accountOperatorCode").value="";await loadAdminAccountOperators();
+});
+
 function exportInventory(){const rows=[["Sezione","Prodotto","Variante","SKU","Barcode","Quantità","Soglia"]];customProducts.forEach(p=>{const sec=customSections.find(s=>Number(s.id)===Number(p.section_id));rows.push([sec?.name,p.name,p.variant,p.sku,p.barcode,p.quantity,p.low_stock_threshold])});downloadText(`BeparyTech_magazzino_${new Date().toISOString().slice(0,10)}.csv`,rows.map(r=>r.map(csvEscape).join(",")).join("\n"),"text/csv;charset=utf-8")}
 async function exportRequests(){const {data}=await sb.from("beparytech_requests").select("requester_name,item,quantity,code,link,note,status,created_at").order("created_at");const rows=[["Operatore","Articolo","Quantità","Codice","Link","Nota","Stato","Data"],...(data||[]).map(r=>[r.requester_name,r.item,r.quantity,r.code,r.link,r.note,r.status,r.created_at])];downloadText(`BeparyTech_da_ordinare_${new Date().toISOString().slice(0,10)}.csv`,rows.map(r=>r.map(csvEscape).join(",")).join("\n"),"text/csv;charset=utf-8")}
 async function exportFull(){const [requests,sales,audit]=await Promise.all([sb.from("beparytech_requests").select("*"),sb.from("beparytech_sales").select("*").limit(5000),sb.from("beparytech_audit_events").select("*").limit(5000)]);downloadText(`BeparyTech_backup_${new Date().toISOString().slice(0,10)}.json`,JSON.stringify({version:17,created_at:new Date().toISOString(),sections:customSections,products:customProducts,requests:requests.data||[],sales:sales.data||[],audit:audit.data||[]},null,2),"application/json")}
