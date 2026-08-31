@@ -545,3 +545,34 @@ body[data-theme="light"] .customActions .edit{
   color:#17130f!important;
   opacity:1!important;
 }
+
+/* v23: FIX definitivo campi login chiari su Chrome/Brave/Edge/Windows */
+body[data-theme="light"] .authPanel input,
+body[data-theme="light"] .authPanel input[type="email"],
+body[data-theme="light"] .authPanel input[type="password"],
+body[data-theme="light"] .authPanel input[type="text"]{
+  background:#ffffff !important;
+  color:#17130f !important;
+  -webkit-text-fill-color:#17130f !important;
+  caret-color:#17130f !important;
+  border-color:#cfc6b8 !important;
+  color-scheme:light !important;
+  -webkit-appearance:none;
+  appearance:none;
+}
+body[data-theme="light"] .authPanel input::placeholder{
+  color:#756d63 !important;
+  -webkit-text-fill-color:#756d63 !important;
+  opacity:1 !important;
+}
+body[data-theme="light"] .authPanel input:-webkit-autofill,
+body[data-theme="light"] .authPanel input:-webkit-autofill:hover,
+body[data-theme="light"] .authPanel input:-webkit-autofill:focus,
+body[data-theme="light"] .authPanel input:-webkit-autofill:active{
+  -webkit-text-fill-color:#17130f !important;
+  caret-color:#17130f !important;
+  -webkit-box-shadow:0 0 0 1000px #ffffff inset !important;
+  box-shadow:0 0 0 1000px #ffffff inset !important;
+  border-color:#cfc6b8 !important;
+  transition:background-color 9999s ease-out 0s;
+}
