@@ -492,3 +492,56 @@ body[data-theme="light"] .customActions .edit:hover{background:#e7dfd2!important
   .customActions{justify-self:end}
   .customActions button{width:48px;height:44px;padding:0}
 }
+
+
+/* v22: layout desktop corretto in base alla larghezza REALE del contenitore */
+.customModelGroup{width:100%;max-width:100%;box-sizing:border-box}
+.customModelBody{width:100%;max-width:100%;box-sizing:border-box;overflow:hidden}
+.customModelGroup .customProductGrid{
+  width:100%;
+  max-width:100%;
+  box-sizing:border-box;
+  grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr))!important;
+}
+.customProductCard{
+  width:100%;
+  max-width:100%;
+  box-sizing:border-box;
+  overflow:hidden;
+}
+.customProductTop,.customProductBottom{width:100%;max-width:100%;box-sizing:border-box}
+.customProductBottom{
+  grid-template-columns:minmax(54px,1fr) auto!important;
+}
+.customActions{max-width:100%;gap:6px}
+.customActions button{
+  width:46px!important;
+  min-width:46px!important;
+  height:44px!important;
+  padding:0!important;
+}
+.customModelHeader{box-sizing:border-box;overflow:hidden}
+.customModelHeader>.chevron{margin-left:auto!important}
+
+/* Su desktop medio: mai 4 card compresse/tagliate nella stessa riga */
+@media (min-width:900px) and (max-width:1399px){
+  .customModelGroup .customProductGrid{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+}
+@media (min-width:900px) and (max-width:1080px){
+  .customModelGroup .customProductGrid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  }
+}
+@media (max-width:700px){
+  .customModelGroup .customProductGrid{grid-template-columns:1fr!important}
+}
+
+/* Tema giorno: modifica sempre leggibile */
+body[data-theme="light"] .customActions .edit{
+  background:#ece7de!important;
+  border:1px solid #746b61!important;
+  color:#17130f!important;
+  opacity:1!important;
+}
