@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.json?v=27">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=27">
+  <link rel="stylesheet" href="style.css?v=28">
 </head>
 <body>
   <div id="menuOverlay" class="menuOverlay" hidden></div>
@@ -26,6 +26,7 @@
       <button class="menuItem" type="button" data-category="Cronologia"><span class="menuIcon">≋</span><span><strong>Cronologia</strong><small>Tutte le attività</small></span></button>
       <button class="menuItem" type="button" data-category="Vendite"><span class="menuIcon">↺</span><span><strong>Vendite / rientri</strong><small>Storico scarichi</small></span></button>
       <button id="catalogMenuItem" class="menuItem adminOnly" type="button" data-category="GestioneMagazzino" hidden><span class="menuIcon">＋</span><span><strong>Gestione magazzino</strong><small>Sezioni e prodotti</small></span></button>
+      <button id="hoursMenuItem" class="menuItem adminOnly" type="button" data-category="Orari" hidden><span class="menuIcon">◷</span><span><strong>Orari</strong><small>Ore lavorate ed extra</small></span></button>
       <button id="backupMenuItem" class="menuItem adminOnly" type="button" data-category="Backup" hidden><span class="menuIcon">⇩</span><span><strong>Backup</strong><small>Esporta dati</small></span></button>
       <button id="usersMenuItem" class="menuItem adminOnly" type="button" data-category="Utenti" hidden><span class="menuIcon">♙</span><span><strong>Utenti</strong><small>Accessi e password</small></span></button>
     </nav>
@@ -114,6 +115,27 @@
       <div id="salesList"></div>
     </section>
 
+    <section id="hoursView" class="hoursView" hidden>
+      <div class="hoursHero"><div><span class="usersKicker">AREA PRIVATA ADMIN</span><h2>I miei orari</h2><p>Registra ore lavorate, note e attività extra. Questa sezione è visibile solo a te.</p></div><span class="adminBadge">SOLO ADMIN</span></div>
+      <div class="hoursToolbar"><label><span>Mese</span><input id="hoursMonth" type="month"></label><button id="hoursTodayBtn" class="miniBtn animatedBtn" type="button">Oggi</button><button id="hoursRefreshBtn" class="miniBtn animatedBtn" type="button">Aggiorna</button></div>
+      <div class="hoursSummary"><div><span>Ore normali</span><strong id="hoursNormalTotal">0h 00m</strong></div><div><span>Ore extra</span><strong id="hoursExtraTotal">0h 00m</strong></div><div><span>Totale mese</span><strong id="hoursGrandTotal">0h 00m</strong></div><div><span>Extra €</span><strong id="hoursExtraAmount">€ 0,00</strong></div></div>
+      <div class="hoursGrid">
+        <form id="hoursForm" class="hoursCard"><div class="catalogCardTitle"><span class="catalogIcon">◷</span><div><strong>Orario giornaliero</strong><small>Mattina e pomeriggio</small></div></div>
+          <label><span>Data *</span><input id="workDate" type="date" required></label>
+          <div class="hoursTwoCols"><label><span>Entrata mattina</span><input id="morningIn" type="time"></label><label><span>Uscita mattina</span><input id="morningOut" type="time"></label></div>
+          <div class="hoursTwoCols"><label><span>Entrata pomeriggio</span><input id="afternoonIn" type="time"></label><label><span>Uscita pomeriggio</span><input id="afternoonOut" type="time"></label></div>
+          <label><span>Azienda / attività</span><input id="workCompany" type="text" maxlength="80" placeholder="es. e-Pol, Riparalo…"></label><label><span>Nota</span><textarea id="workNote" maxlength="400" rows="3" placeholder="Facoltativa"></textarea></label>
+          <button class="primaryAction animatedBtn" type="submit">Salva orario</button><div id="hoursMsg" class="createUserMsg"></div>
+        </form>
+        <form id="extraForm" class="hoursCard"><div class="catalogCardTitle"><span class="catalogIcon">＋</span><div><strong>Aggiungi extra</strong><small>Puoi inserire più extra nello stesso giorno</small></div></div>
+          <label><span>Data *</span><input id="extraDate" type="date" required></label><label><span>Descrizione *</span><input id="extraDescription" type="text" maxlength="160" placeholder="es. Riparazione extra" required></label>
+          <div class="hoursTwoCols"><label><span>Ore</span><input id="extraHours" type="number" min="0" max="24" value="0"></label><label><span>Minuti</span><input id="extraMinutes" type="number" min="0" max="59" value="0"></label></div>
+          <div class="hoursTwoCols"><label><span>Importo €</span><input id="extraAmount" type="number" min="0" step="0.01" value="0"></label><label><span>Azienda / cliente</span><input id="extraCompany" type="text" maxlength="80"></label></div>
+          <label><span>Nota</span><textarea id="extraNote" maxlength="400" rows="3" placeholder="Facoltativa"></textarea></label><button class="primaryAction animatedBtn" type="submit">Aggiungi extra</button><div id="extraMsg" class="createUserMsg"></div>
+        </form>
+      </div>
+      <div class="hoursCard hoursListCard"><div class="catalogListHead"><div><strong>Riepilogo del mese</strong><small>Orari ed extra giorno per giorno</small></div></div><div id="hoursList"><div class="emptyState">Caricamento…</div></div></div>
+    </section>
     <section id="usersView" class="usersView" hidden>
       <div class="usersPanel">
         <div class="usersHeader">
@@ -292,7 +314,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=27"></script>
+  <script src="app.js?v=28"></script>
 
 </body>
 </html>

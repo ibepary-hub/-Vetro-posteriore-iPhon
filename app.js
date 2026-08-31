@@ -176,15 +176,18 @@ function applyRoleVisibility(){
   const catalogMenu=document.getElementById("catalogMenuItem");
   const usersMenu=document.getElementById("usersMenuItem");
   const backupMenu=document.getElementById("backupMenuItem");
+  const hoursMenu=document.getElementById("hoursMenuItem");
   usersTab.hidden=!admin;
   if(catalogMenu) catalogMenu.hidden=!admin;
   if(usersMenu) usersMenu.hidden=!admin;
   if(backupMenu) backupMenu.hidden=!admin;
+  if(hoursMenu) hoursMenu.hidden=!admin;
   if(!admin){
     usersView.hidden=true;
     if(catalogView) catalogView.hidden=true;
     usersTab.classList.remove("active");
-    if(["Utenti","GestioneMagazzino","Backup"].includes(currentCategory)) setCategory("Dashboard");
+    document.getElementById("hoursView").hidden=true;
+    if(["Utenti","GestioneMagazzino","Backup","Orari"].includes(currentCategory)) setCategory("Dashboard");
   }
   const menuUser=document.getElementById("menuUserName"), menuRole=document.getElementById("menuUserRole");
   if(menuUser) menuUser.textContent=currentProfile?.username||currentUser?.email||"Utente";
@@ -264,28 +267,29 @@ document.getElementById("logoutBtn").onclick=async()=>{await sb.auth.signOut(); 
 
 
 function setCategory(category){
-  const isDashboard=category==="Dashboard", isSales=category==="Vendite", isAudit=category==="Cronologia", isUsers=category==="Utenti", isCatalog=category==="GestioneMagazzino", isBackup=category==="Backup";
+  const isDashboard=category==="Dashboard", isSales=category==="Vendite", isAudit=category==="Cronologia", isUsers=category==="Utenti", isCatalog=category==="GestioneMagazzino", isBackup=category==="Backup", isHours=category==="Orari";
   const isCustom=String(category).startsWith("custom:");
-  if((isUsers||isCatalog||isBackup)&&!isAdmin()) return;
+  if((isUsers||isCatalog||isBackup||isHours)&&!isAdmin()) return;
   currentCategory=category;
   currentCustomSectionId=isCustom?Number(String(category).split(":")[1]):null;
   const sec=isCustom?customSections.find(s=>Number(s.id)===currentCustomSectionId):null;
-  const title=isDashboard?"Dashboard":isAudit?"Cronologia":isSales?"Vendite / rientri":isUsers?"Utenti":isCatalog?"Gestione magazzino":isBackup?"Backup":sec?.name||category;
-  const desc=isDashboard?"Riepilogo generale":isAudit?"Tutte le attività del gestionale":isSales?"Scarichi, rientri e archivio":isUsers?"Gestione accessi":isCatalog?"Crea e gestisci sezioni e prodotti":isBackup?"Esporta una copia dei dati":sec?.description||"Sezione magazzino";
+  const title=isDashboard?"Dashboard":isAudit?"Cronologia":isSales?"Vendite / rientri":isUsers?"Utenti":isCatalog?"Gestione magazzino":isBackup?"Backup":isHours?"I miei orari":sec?.name||category;
+  const desc=isDashboard?"Riepilogo generale":isAudit?"Tutte le attività del gestionale":isSales?"Scarichi, rientri e archivio":isUsers?"Gestione accessi":isCatalog?"Crea e gestisci sezioni e prodotti":isBackup?"Esporta una copia dei dati":isHours?"Area privata Admin · ore lavorate ed extra":sec?.description||"Sezione magazzino";
   document.getElementById("categoryName").textContent=title;
   document.getElementById("categoryDescription").textContent=desc;
-  document.querySelector(".tools").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isBackup;
-  document.querySelector(".stats").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isBackup;
-  inventory.hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isBackup;
+  document.querySelector(".tools").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isBackup||isHours;
+  document.querySelector(".stats").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isBackup||isHours;
+  inventory.hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isBackup||isHours;
   document.getElementById("dashboardView").hidden=!isDashboard;
   document.getElementById("salesView").hidden=!isSales;
   document.getElementById("auditView").hidden=!isAudit;
   document.getElementById("usersView").hidden=!isUsers;
   document.getElementById("catalogView").hidden=!isCatalog;
   document.getElementById("backupView").hidden=!isBackup;
+  document.getElementById("hoursView").hidden=!isHours;
   document.querySelectorAll(".menuItem[data-category]").forEach(b=>b.classList.toggle("active",b.dataset.category===category));
   search.value=""; filter.value="all"; closeMainMenu();
-  if(isDashboard) loadDashboard(); else if(isAudit) loadAudit(); else if(isSales) loadSales(); else if(isUsers) loadUsers(); else if(isCatalog) renderCatalogAdmin(); else if(isBackup){} else if(isCustom) renderCustomSection();
+  if(isDashboard) loadDashboard(); else if(isAudit) loadAudit(); else if(isSales) loadSales(); else if(isUsers) loadUsers(); else if(isCatalog) renderCatalogAdmin(); else if(isBackup){} else if(isHours) loadHours(); else if(isCustom) renderCustomSection();
 }
 
 async function loadUsers(){
@@ -826,6 +830,38 @@ async function exportRequests(){const {data}=await sb.from("beparytech_requests"
 async function exportFull(){const [requests,sales,audit]=await Promise.all([sb.from("beparytech_requests").select("*"),sb.from("beparytech_sales").select("*").limit(5000),sb.from("beparytech_audit_events").select("*").limit(5000)]);downloadText(`BeparyTech_backup_${new Date().toISOString().slice(0,10)}.json`,JSON.stringify({version:17,created_at:new Date().toISOString(),sections:customSections,products:customProducts,requests:requests.data||[],sales:sales.data||[],audit:audit.data||[]},null,2),"application/json")}
 document.getElementById("exportInventoryCsv").onclick=exportInventory;document.getElementById("exportRequestsCsv").onclick=exportRequests;document.getElementById("exportFullBackup").onclick=exportFull;
 
+
+
+// v28 - Orari privati Admin
+function timeToMinutes(v){if(!v)return null;const [h,m]=String(v).split(":").map(Number);return h*60+m;}
+function workedMinutes(r){let n=0;const mi=timeToMinutes(r.morning_in),mo=timeToMinutes(r.morning_out),ai=timeToMinutes(r.afternoon_in),ao=timeToMinutes(r.afternoon_out);if(mi!==null&&mo!==null&&mo>=mi)n+=mo-mi;if(ai!==null&&ao!==null&&ao>=ai)n+=ao-ai;return n;}
+function fmtMinutes(n){n=Math.max(0,Number(n)||0);return `${Math.floor(n/60)}h ${String(n%60).padStart(2,"0")}m`;}
+function fmtDateIt(d){return new Date(`${d}T12:00:00`).toLocaleDateString("it-IT",{weekday:"short",day:"2-digit",month:"short"});}
+function monthBounds(v){const [y,m]=v.split("-").map(Number),start=`${y}-${String(m).padStart(2,"0")}-01`,last=new Date(y,m,0).getDate(),end=`${y}-${String(m).padStart(2,"0")}-${last}`;return {start,end};}
+function localDateISO(d=new Date()){const y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),day=String(d.getDate()).padStart(2,"0");return `${y}-${m}-${day}`;}
+async function loadHours(){
+  if(!isAdmin())return;
+  const month=document.getElementById("hoursMonth");if(!month.value)month.value=localDateISO().slice(0,7);
+  const {start,end}=monthBounds(month.value),list=document.getElementById("hoursList");list.innerHTML='<div class="emptyState">Caricamento…</div>';
+  const [hr,ex]=await Promise.all([sb.from("beparytech_work_hours").select("*").gte("work_date",start).lte("work_date",end).order("work_date",{ascending:false}),sb.from("beparytech_work_extras").select("*").gte("work_date",start).lte("work_date",end).order("work_date",{ascending:false}).order("created_at",{ascending:false})]);
+  if(hr.error||ex.error){list.innerHTML=`<div class="emptyState">Errore nel caricamento: ${escapeHtml(hr.error?.message||ex.error?.message||"")}</div>`;return;}
+  window.btWorkHours=hr.data||[];window.btWorkExtras=ex.data||[];renderHoursList();
+}
+function renderHoursList(){
+  const hours=window.btWorkHours||[],extras=window.btWorkExtras||[],normal=hours.reduce((a,r)=>a+workedMinutes(r),0),extraMin=extras.reduce((a,r)=>a+Number(r.minutes||0),0),amount=extras.reduce((a,r)=>a+Number(r.amount||0),0);
+  document.getElementById("hoursNormalTotal").textContent=fmtMinutes(normal);document.getElementById("hoursExtraTotal").textContent=fmtMinutes(extraMin);document.getElementById("hoursGrandTotal").textContent=fmtMinutes(normal+extraMin);document.getElementById("hoursExtraAmount").textContent=amount.toLocaleString("it-IT",{style:"currency",currency:"EUR"});
+  const dates=[...new Set([...hours.map(x=>x.work_date),...extras.map(x=>x.work_date)])].sort().reverse(),list=document.getElementById("hoursList");
+  if(!dates.length){list.innerHTML='<div class="emptyState">Nessun orario registrato in questo mese.</div>';return;}
+  list.innerHTML=dates.map(d=>{const h=hours.find(x=>x.work_date===d),xs=extras.filter(x=>x.work_date===d),mins=(h?workedMinutes(h):0)+xs.reduce((a,x)=>a+Number(x.minutes||0),0);return `<div class="hoursDay"><div class="hoursDayHead"><strong>${fmtDateIt(d)}</strong><b>${fmtMinutes(mins)}</b></div>${h?`<div class="hoursLine"><span><b>Orario</b><small>${h.morning_in||"—"}–${h.morning_out||"—"} · ${h.afternoon_in||"—"}–${h.afternoon_out||"—"}${h.company?` · ${escapeHtml(h.company)}`:""}${h.note?`<br>${escapeHtml(h.note)}`:""}</small></span><div class="hoursActions"><button class="hoursEdit" data-edit-hour="${h.id}" type="button">Modifica</button><button class="hoursDelete" data-del-hour="${h.id}" type="button">Elimina</button></div></div>`:'<div class="hoursEmpty">Nessun orario normale.</div>'}${xs.map(x=>`<div class="hoursLine"><span><b>Extra · ${escapeHtml(x.description)}</b><small>${fmtMinutes(x.minutes)}${Number(x.amount)>0?` · ${Number(x.amount).toLocaleString("it-IT",{style:"currency",currency:"EUR"})}`:""}${x.company?` · ${escapeHtml(x.company)}`:""}${x.note?`<br>${escapeHtml(x.note)}`:""}</small></span><button class="hoursDelete" data-del-extra="${x.id}" type="button">Elimina</button></div>`).join("")}</div>`}).join("");
+  list.querySelectorAll("[data-edit-hour]").forEach(b=>b.onclick=()=>editHour(Number(b.dataset.editHour)));list.querySelectorAll("[data-del-hour]").forEach(b=>b.onclick=()=>deleteHour(Number(b.dataset.delHour)));list.querySelectorAll("[data-del-extra]").forEach(b=>b.onclick=()=>deleteExtra(Number(b.dataset.delExtra)));
+}
+function editHour(id){const r=(window.btWorkHours||[]).find(x=>Number(x.id)===id);if(!r)return;document.getElementById("workDate").value=r.work_date;document.getElementById("morningIn").value=(r.morning_in||"").slice(0,5);document.getElementById("morningOut").value=(r.morning_out||"").slice(0,5);document.getElementById("afternoonIn").value=(r.afternoon_in||"").slice(0,5);document.getElementById("afternoonOut").value=(r.afternoon_out||"").slice(0,5);document.getElementById("workCompany").value=r.company||"";document.getElementById("workNote").value=r.note||"";document.getElementById("hoursForm").scrollIntoView({behavior:"smooth",block:"start"});}
+async function deleteHour(id){if(!isAdmin()||!confirm("Eliminare questo orario?"))return;const {error}=await sb.from("beparytech_work_hours").delete().eq("id",id);if(error)alert(error.message);else loadHours();}
+async function deleteExtra(id){if(!isAdmin()||!confirm("Eliminare questo extra?"))return;const {error}=await sb.from("beparytech_work_extras").delete().eq("id",id);if(error)alert(error.message);else loadHours();}
+document.getElementById("hoursForm").addEventListener("submit",async e=>{e.preventDefault();if(!isAdmin())return;const msg=document.getElementById("hoursMsg"),row={user_id:currentUser.id,work_date:document.getElementById("workDate").value,morning_in:document.getElementById("morningIn").value||null,morning_out:document.getElementById("morningOut").value||null,afternoon_in:document.getElementById("afternoonIn").value||null,afternoon_out:document.getElementById("afternoonOut").value||null,company:document.getElementById("workCompany").value.trim()||null,note:document.getElementById("workNote").value.trim()||null,updated_at:new Date().toISOString()};const {error}=await sb.from("beparytech_work_hours").upsert(row,{onConflict:"user_id,work_date"});msg.textContent=error?error.message:"Orario salvato.";msg.className=`createUserMsg ${error?"error":"ok"}`;if(!error){document.getElementById("hoursMonth").value=row.work_date.slice(0,7);await loadHours();}});
+document.getElementById("extraForm").addEventListener("submit",async e=>{e.preventDefault();if(!isAdmin())return;const msg=document.getElementById("extraMsg"),mins=Math.max(0,Number(document.getElementById("extraHours").value)||0)*60+Math.max(0,Number(document.getElementById("extraMinutes").value)||0),row={user_id:currentUser.id,work_date:document.getElementById("extraDate").value,description:document.getElementById("extraDescription").value.trim(),minutes:mins,amount:Math.max(0,Number(document.getElementById("extraAmount").value)||0),company:document.getElementById("extraCompany").value.trim()||null,note:document.getElementById("extraNote").value.trim()||null};const {error}=await sb.from("beparytech_work_extras").insert(row);msg.textContent=error?error.message:"Extra aggiunto.";msg.className=`createUserMsg ${error?"error":"ok"}`;if(!error){e.target.reset();document.getElementById("extraDate").value=row.work_date;document.getElementById("extraHours").value=0;document.getElementById("extraMinutes").value=0;document.getElementById("extraAmount").value=0;document.getElementById("hoursMonth").value=row.work_date.slice(0,7);await loadHours();}});
+document.getElementById("hoursMonth").addEventListener("change",loadHours);document.getElementById("hoursRefreshBtn").onclick=loadHours;document.getElementById("hoursTodayBtn").onclick=()=>{const d=localDateISO();document.getElementById("workDate").value=d;document.getElementById("extraDate").value=d;document.getElementById("hoursMonth").value=d.slice(0,7);loadHours();};
+
 // Modalità giorno / notte
 const themeToggle=document.getElementById("themeToggle");
 const themeIcon=document.getElementById("themeIcon");
@@ -881,11 +917,11 @@ document.getElementById("saveRecoveryPassword").onclick=async()=>{
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("./sw.js?v=24", { updateViaCache: "none" });
+      const reg = await navigator.serviceWorker.register("./sw.js?v=28", { updateViaCache: "none" });
       await reg.update();
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (!sessionStorage.getItem("bt-cache-reloaded-v24")) {
-          sessionStorage.setItem("bt-cache-reloaded-v24", "1");
+        if (!sessionStorage.getItem("bt-cache-reloaded-v28")) {
+          sessionStorage.setItem("bt-cache-reloaded-v28", "1");
           location.reload();
         }
       });

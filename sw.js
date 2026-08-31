@@ -1,6 +1,6 @@
-const CACHE="beparytech-v27-riparalo-operators-fix-shell";
-const RUNTIME="beparytech-v27-riparalo-operators-fix-runtime";
-const SHELL=["./","./index.html","./style.css?v=27","./app.js?v=27","./manifest.json?v=27","./beparytech-logo.png","./icon-192.png","./icon-512.png","./apple-touch-icon.png","./favicon-64.png"];
+const CACHE="beparytech-v28-riparalo-operators-fix-shell";
+const RUNTIME="beparytech-v28-riparalo-operators-fix-runtime";
+const SHELL=["./","./index.html","./style.css?v=28","./app.js?v=28","./manifest.json?v=28","./beparytech-logo.png","./icon-192.png","./icon-512.png","./apple-touch-icon.png","./favicon-64.png"];
 self.addEventListener("install",event=>{
   self.skipWaiting();
   event.waitUntil(caches.open(CACHE).then(cache=>Promise.allSettled(SHELL.map(url=>cache.add(url)))));
