@@ -194,7 +194,11 @@ async function loadAccountOperators(){
   accountOperators=[];
   if(!currentUser) return;
   const {data,error}=await sb.rpc("list_beparytech_account_operators");
-  if(!error && Array.isArray(data)) accountOperators=data;
+  if(error){
+    console.error("Impossibile caricare gli operatori account:",error.message);
+    return;
+  }
+  if(Array.isArray(data)) accountOperators=data.filter(o=>o && o.name);
 }
 function populateSaleOperatorControl(){
   const control=document.getElementById("saleOperatorName");
@@ -328,10 +332,11 @@ document.getElementById("createUserForm").addEventListener("submit",async e=>{
 });
 
 document.getElementById("refreshUsersBtn").onclick=loadUsers;
-function openSaleModal(model,color,qty){
+async function openSaleModal(model,color,qty){
   if(qty<=0) return;
   pendingSale={model,color,category:currentCategory,itemKey:keyFor(model,color)};
   selectedCustomer=null;
+  await loadAccountOperators();
   populateSaleOperatorControl();
   document.getElementById("saleOperatorPassword").value="";
   document.getElementById("saleNote").value="";
@@ -660,11 +665,12 @@ function updateCustomStats(items){
   document.getElementById("availableTypes").textContent=vals.filter(p=>Number(p.quantity)>0).length;
   document.getElementById("lowStock").textContent=vals.filter(p=>Number(p.quantity)>0&&Number(p.quantity)<=Number(p.low_stock_threshold||2)).length;
 }
-function openCustomSaleModal(product,section){
+async function openCustomSaleModal(product,section){
   if(Number(product.quantity)<=0)return;
   pendingSale={kind:"custom",productId:product.id,model:product.name,color:product.variant||"—",category:section?.name||"Prodotti",itemKey:`PRODUCT||${product.id}`};
   selectedCustomer=null;
-  document.getElementById("saleOperatorName").value=currentProfile?.username||"";
+  await loadAccountOperators();
+  populateSaleOperatorControl();
   document.getElementById("saleOperatorPassword").value="";document.getElementById("saleNote").value="";
   document.getElementById("saleItemLabel").innerHTML=`<strong>${escapeHtml(product.name)}</strong><span>${escapeHtml(product.variant||section?.name||"")}</span>`;
   document.getElementById("saleCustomerSelect").value="";document.getElementById("confirmSaleBtn").disabled=true;document.getElementById("saleError").textContent="";document.getElementById("saleModal").hidden=false;
