@@ -288,6 +288,9 @@ document.getElementById("createUserForm").addEventListener("submit",async e=>{
     operator_password:document.getElementById("newOperatorPassword").value,
     role:document.getElementById("newUserRole").value
   };
+  if(payload.password.length<10){msg.textContent="La password login deve avere almeno 10 caratteri.";return;}
+  if(payload.operator_password.length<6){msg.textContent="La password operatore deve avere almeno 6 caratteri.";return;}
+  if(payload.password.length>128||payload.operator_password.length>128){msg.textContent="Password troppo lunga.";return;}
   msg.className="createUserMsg"; msg.textContent=""; btn.disabled=true; btn.textContent="Creazione…";
   const {data,error}=await sb.functions.invoke("beparytech-users",{body:payload,method:"POST"});
   btn.disabled=false; btn.textContent="Crea utente";
@@ -505,7 +508,8 @@ document.getElementById("operatorPasswordCancel").onclick=closeOperatorPassword;
 document.getElementById("operatorPasswordSave").onclick=async()=>{
   if(!selectedUserForOperatorPassword)return;
   const pass=document.getElementById("operatorPasswordValue").value;
-  if(pass.length<4){document.getElementById("operatorPasswordError").textContent="Inserisci almeno 4 caratteri.";return;}
+  if(pass.length<6){document.getElementById("operatorPasswordError").textContent="Inserisci almeno 6 caratteri.";return;}
+  if(pass.length>128){document.getElementById("operatorPasswordError").textContent="Password troppo lunga.";return;}
   const btn=document.getElementById("operatorPasswordSave");btn.disabled=true;btn.textContent="Salvo…";
   const {data,error}=await sb.functions.invoke("beparytech-users",{method:"POST",body:{action:"set_operator_password",user_id:selectedUserForOperatorPassword.userId,operator_password:pass}});
   btn.disabled=false;btn.textContent="Salva password";
@@ -789,7 +793,8 @@ document.getElementById("saveRecoveryPassword").onclick=async()=>{
   const p2=document.getElementById("recoveryPassword2").value;
   const msg=document.getElementById("recoveryPasswordMsg");
   msg.textContent="";
-  if(p1.length<6){msg.textContent="La password deve avere almeno 6 caratteri.";return;}
+  if(p1.length<10){msg.textContent="La password deve avere almeno 10 caratteri.";return;}
+  if(p1.length>128){msg.textContent="La password è troppo lunga.";return;}
   if(p1!==p2){msg.textContent="Le password non coincidono.";return;}
   const {error}=await sb.auth.updateUser({password:p1});
   if(error){msg.textContent=error.message;return;}
@@ -798,3 +803,20 @@ document.getElementById("saveRecoveryPassword").onclick=async()=>{
   document.getElementById("recoveryPassword2").value="";
   alert("Password aggiornata correttamente.");
 };
+
+
+// Service Worker registration kept in external JS so CSP can block inline scripts.
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", async () => {
+    try {
+      const reg = await navigator.serviceWorker.register("./sw.js?v=24", { updateViaCache: "none" });
+      await reg.update();
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (!sessionStorage.getItem("bt-cache-reloaded-v24")) {
+          sessionStorage.setItem("bt-cache-reloaded-v24", "1");
+          location.reload();
+        }
+      });
+    } catch (e) { console.warn("Service Worker non disponibile", e); }
+  });
+}

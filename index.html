@@ -3,15 +3,17 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="referrer" content="no-referrer">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self'; img-src 'self' data: blob:; media-src 'self' blob:; worker-src 'self' blob:; connect-src 'self' https://kqdcbrpykaboabjglwxu.supabase.co wss://kqdcbrpykaboabjglwxu.supabase.co;">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="BeparyTech">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
   <title>BeparyTech • Magazzino Ricambi iPhone</title>
-  <link rel="manifest" href="manifest.json?v=19">
+  <link rel="manifest" href="manifest.json?v=25">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=21">
+  <link rel="stylesheet" href="style.css?v=25">
 </head>
 <body>
   <div id="menuOverlay" class="menuOverlay" hidden></div>
@@ -121,8 +123,8 @@
         <form id="createUserForm" class="createUserForm">
           <label><span>Username *</span><input id="newUsername" type="text" autocomplete="off" maxlength="40" placeholder="es. laboratorio1" required></label>
           <label><span>Email *</span><input id="newUserEmail" type="email" autocomplete="off" placeholder="utente@email.it" required></label>
-          <label><span>Password login *</span><input id="newUserPassword" type="password" autocomplete="new-password" minlength="6" placeholder="Minimo 6 caratteri" required></label>
-          <label><span>Password operatore *</span><input id="newOperatorPassword" type="password" autocomplete="new-password" minlength="4" placeholder="Minimo 4 caratteri" required></label>
+          <label><span>Password login *</span><input id="newUserPassword" type="password" autocomplete="new-password" minlength="10" maxlength="128" placeholder="Minimo 10 caratteri" required></label>
+          <label><span>Password operatore *</span><input id="newOperatorPassword" type="password" autocomplete="new-password" minlength="6" maxlength="128" placeholder="Minimo 6 caratteri" required></label>
           <label><span>Ruolo</span><select id="newUserRole"><option value="standard">Standard</option><option value="admin">Admin</option></select></label>
           <button id="createUserBtn" class="primaryAction createUserBtn" type="submit">Crea utente</button>
           <div id="createUserMsg" class="createUserMsg" aria-live="polite"></div>
@@ -236,7 +238,7 @@
       <div class="saleDialogHead"><div><span class="saleKicker">SICUREZZA OPERATORE</span><h2 id="operatorPasswordTitle">Imposta password operatore</h2></div><button id="operatorPasswordX" class="closeBtn" type="button" aria-label="Chiudi">×</button></div>
       <div id="operatorPasswordUser" class="saleItemLabel"></div>
       <label class="fieldLabel" for="operatorPasswordValue">Nuova password *</label>
-      <input id="operatorPasswordValue" class="modalInput" type="password" minlength="4" autocomplete="new-password" placeholder="Minimo 4 caratteri">
+      <input id="operatorPasswordValue" class="modalInput" type="password" minlength="6" maxlength="128" autocomplete="new-password" placeholder="Minimo 6 caratteri">
       <div id="operatorPasswordError" class="saleError"></div>
       <div class="saleActions"><button id="operatorPasswordCancel" class="secondaryAction" type="button">Annulla</button><button id="operatorPasswordSave" class="primaryAction" type="button">Salva password</button></div>
     </div>
@@ -263,13 +265,13 @@
   </template>
 
   <div id="scannerModal" class="saleModal" hidden><div class="saleDialog"><div class="saleDialogHead"><div><span class="saleKicker">SCANNER</span><h2>QR / Barcode</h2></div><button id="scannerClose" class="closeBtn" type="button">×</button></div><video id="scannerVideo" class="scannerVideo" playsinline muted></video><p id="scannerMsg" class="scannerMsg">Inquadra il codice con la fotocamera.</p><label class="fieldLabel">Oppure inserisci il codice</label><div class="scannerManual"><input id="scannerManualCode" class="modalInput" type="text" placeholder="Codice"><button id="scannerManualSearch" class="primaryAction" type="button">Cerca</button></div></div></div>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4"></script>
 
   <div id="passwordRecoveryModal" class="saleModal" hidden>
     <div class="saleDialog" role="dialog" aria-modal="true" aria-labelledby="passwordRecoveryTitle">
       <div class="saleDialogHead"><div><span class="saleKicker">RECUPERA PASSWORD</span><h2 id="passwordRecoveryTitle">Imposta una nuova password</h2></div></div>
       <label class="fieldLabel" for="recoveryPassword">Nuova password *</label>
-      <input id="recoveryPassword" class="modalInput" type="password" minlength="6" autocomplete="new-password" placeholder="Minimo 6 caratteri">
+      <input id="recoveryPassword" class="modalInput" type="password" minlength="10" maxlength="128" autocomplete="new-password" placeholder="Minimo 10 caratteri">
       <label class="fieldLabel" for="recoveryPassword2">Ripeti password *</label>
       <input id="recoveryPassword2" class="modalInput" type="password" minlength="6" autocomplete="new-password" placeholder="Ripeti la password">
       <div id="recoveryPasswordMsg" class="saleError"></div>
@@ -277,23 +279,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=21"></script>
-  <script>
-    // Aggiornamento automatico cache / Service Worker
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", async () => {
-        try {
-          const reg = await navigator.serviceWorker.register("./sw.js?v=20", { updateViaCache: "none" });
-          await reg.update();
-          navigator.serviceWorker.addEventListener("controllerchange", () => {
-            if (!sessionStorage.getItem("bt-cache-reloaded-v17")) {
-              sessionStorage.setItem("bt-cache-reloaded-v17", "1");
-              location.reload();
-            }
-          });
-        } catch (e) { console.warn("Service Worker non disponibile", e); }
-      });
-    }
-  </script>
+  <script src="app.js?v=25"></script>
+
 </body>
 </html>
