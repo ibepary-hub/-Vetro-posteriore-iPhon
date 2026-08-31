@@ -397,3 +397,64 @@ body[data-theme="light"] .dashboardToggle{color:#1c1a17}
 .customModelGroup .customProductGrid{margin:0}
 body[data-theme="light"] .customModelGroup{background:#fff;border-color:#e3d7c3}
 @media(max-width:600px){.customModelHeader{padding:12px 13px}.customModelThumb{width:40px;height:52px}.customModelBody{padding:9px}}
+
+/* v20: correzione desktop icone + contrasto campi */
+:root{color-scheme:dark}
+input,textarea,select{
+  color:var(--text)!important;
+  caret-color:var(--gold2);
+}
+input::placeholder,textarea::placeholder{color:#8f8a82;opacity:1}
+input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus{
+  -webkit-text-fill-color:var(--text)!important;
+  caret-color:var(--gold2)!important;
+  box-shadow:0 0 0 1000px #0e0e0f inset!important;
+}
+.catalogCard input,.catalogCard select,.orderRequestCard input,.requestStatusSelect,
+.createUserForm input,.createUserForm select,.modalInput,.reasonInput,.modalSelect,
+.scannerManual input,.authPanel input,.qty,input[type="search"]{
+  background:#0e0e0f;color:#f7f4ec!important;border-color:#3a342d;
+}
+.qty{text-align:center}
+
+/* Le icone restano centrate anche su Windows/Chrome con font diversi */
+.menuItem{grid-template-columns:44px minmax(0,1fr);align-items:center}
+.menuItem .menuIcon{
+  width:44px;height:44px;min-width:44px;min-height:44px;
+  display:flex;align-items:center;justify-content:center;
+  padding:0;margin:0;line-height:1;font-size:20px;text-align:center;
+  font-family:"Segoe UI Symbol","Segoe UI",Arial,sans-serif;
+}
+.menuGlyph,.panelChevron,.chevron,.globalSearchBox>span,.auditIcon{
+  display:flex;align-items:center;justify-content:center;line-height:1;
+}
+.headerActions{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:nowrap}
+.menuToggle,.themeToggle{display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
+.menuToggle .menuGlyph{width:22px;height:22px;flex:0 0 22px}
+.themeToggle #themeIcon{width:22px;height:22px;display:flex;align-items:center;justify-content:center;line-height:1}
+.customActions{display:flex;align-items:center;justify-content:flex-end;gap:7px;flex-wrap:nowrap}
+.customActions button,.stepper button,.rowAction,.miniBtn{display:inline-flex;align-items:center;justify-content:center;line-height:1.15}
+.customProductBottom{align-items:center}
+
+/* Evita che le card desktop diventino troppo strette e spostino i comandi */
+@media(min-width:1000px){
+  .customModelGroup .customProductGrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .customProductCard{min-width:0}
+}
+@media(min-width:1380px){
+  .customModelGroup .customProductGrid{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+
+body[data-theme="light"]{color-scheme:light}
+body[data-theme="light"] input,body[data-theme="light"] textarea,body[data-theme="light"] select{
+  color:#1c1a17!important;caret-color:#8b621d;
+}
+body[data-theme="light"] input::placeholder,body[data-theme="light"] textarea::placeholder{color:#81786d}
+body[data-theme="light"] .catalogCard input,body[data-theme="light"] .catalogCard select,
+body[data-theme="light"] .orderRequestCard input,body[data-theme="light"] .requestStatusSelect,
+body[data-theme="light"] .createUserForm input,body[data-theme="light"] .createUserForm select,
+body[data-theme="light"] .modalInput,body[data-theme="light"] .reasonInput,body[data-theme="light"] .modalSelect,
+body[data-theme="light"] .scannerManual input,body[data-theme="light"] .authPanel input,
+body[data-theme="light"] .qty,body[data-theme="light"] input[type="search"]{
+  background:#fff;color:#1c1a17!important;border-color:#d9d1c4;
+}
