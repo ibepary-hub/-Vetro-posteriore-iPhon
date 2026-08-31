@@ -2,7 +2,14 @@
 const MODEL_COLORS = {"iPhone 7": ["Nero", "Nero Jet", "Argento", "Oro", "Oro rosa", "Rosso"], "iPhone 7 Plus": ["Nero", "Nero Jet", "Argento", "Oro", "Oro rosa", "Rosso"], "iPhone 8": ["Grigio siderale", "Argento", "Oro", "Rosso"], "iPhone 8 Plus": ["Grigio siderale", "Argento", "Oro", "Rosso"], "iPhone X": ["Grigio siderale", "Argento"], "iPhone XR": ["Nero", "Bianco", "Blu", "Giallo", "Corallo", "Rosso"], "iPhone XS": ["Grigio siderale", "Argento", "Oro"], "iPhone XS Max": ["Grigio siderale", "Argento", "Oro"], "iPhone 11": ["Nero", "Bianco", "Verde", "Giallo", "Viola", "Rosso"], "iPhone 11 Pro": ["Grigio siderale", "Argento", "Oro", "Verde notte"], "iPhone 11 Pro Max": ["Grigio siderale", "Argento", "Oro", "Verde notte"], "iPhone SE (2ª gen)": ["Nero", "Bianco", "Rosso"], "iPhone 12 mini": ["Nero", "Bianco", "Blu", "Verde", "Viola", "Rosso"], "iPhone 12": ["Nero", "Bianco", "Blu", "Verde", "Viola", "Rosso"], "iPhone 12 Pro": ["Grafite", "Argento", "Oro", "Blu Pacifico"], "iPhone 12 Pro Max": ["Grafite", "Argento", "Oro", "Blu Pacifico"], "iPhone 13 mini": ["Mezzanotte", "Galassia", "Blu", "Rosa", "Verde", "Rosso"], "iPhone 13": ["Mezzanotte", "Galassia", "Blu", "Rosa", "Verde", "Rosso"], "iPhone 13 Pro": ["Grafite", "Argento", "Oro", "Blu Sierra", "Verde alpino"], "iPhone 13 Pro Max": ["Grafite", "Argento", "Oro", "Blu Sierra", "Verde alpino"], "iPhone SE (3ª gen)": ["Mezzanotte", "Galassia", "Rosso"], "iPhone 14": ["Mezzanotte", "Galassia", "Blu", "Viola", "Giallo", "Rosso"], "iPhone 14 Plus": ["Mezzanotte", "Galassia", "Blu", "Viola", "Giallo", "Rosso"], "iPhone 14 Pro": ["Nero siderale", "Argento", "Oro", "Viola scuro"], "iPhone 14 Pro Max": ["Nero siderale", "Argento", "Oro", "Viola scuro"], "iPhone 15": ["Nero", "Blu", "Verde", "Giallo", "Rosa"], "iPhone 15 Plus": ["Nero", "Blu", "Verde", "Giallo", "Rosa"], "iPhone 15 Pro": ["Titanio nero", "Titanio bianco", "Titanio blu", "Titanio naturale"], "iPhone 15 Pro Max": ["Titanio nero", "Titanio bianco", "Titanio blu", "Titanio naturale"], "iPhone 16e": ["Nero", "Bianco"], "iPhone 16": ["Nero", "Bianco", "Rosa", "Verde acqua", "Blu oltremare"], "iPhone 16 Plus": ["Nero", "Bianco", "Rosa", "Verde acqua", "Blu oltremare"], "iPhone 16 Pro": ["Titanio nero", "Titanio bianco", "Titanio naturale", "Titanio sabbia"], "iPhone 16 Pro Max": ["Titanio nero", "Titanio bianco", "Titanio naturale", "Titanio sabbia"], "iPhone 17": ["Nero", "Bianco", "Blu", "Verde", "Lavanda"], "iPhone 17e": ["Nero", "Bianco", "Rosa chiaro"], "iPhone Air": ["Nero", "Bianco", "Oro chiaro", "Azzurro"], "iPhone 17 Pro": ["Argento", "Blu profondo", "Arancione cosmico"], "iPhone 17 Pro Max": ["Argento", "Blu profondo", "Arancione cosmico"]};
 const SUPABASE_URL = "https://kqdcbrpykaboabjglwxu.supabase.co";
 const SUPABASE_KEY = "sb_publishable_h_JHhQI97d8RTKBz8oiLeQ_uCg26kxX";
-const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const PASSWORD_RESET_REDIRECT = "https://ibepary-hub.github.io/-Vetro-posteriore-iPhon/";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    detectSessionInUrl: true,
+    persistSession: true,
+    autoRefreshToken: true
+  }
+});
 
 let stock = {};
 let currentUser = null;
@@ -260,7 +267,7 @@ document.getElementById("forgotPasswordBtn").onclick=async()=>{
   const email=document.getElementById("email").value.trim();
   authMsg.textContent="";
   if(!email){authMsg.textContent="Inserisci prima la tua email.";return;}
-  const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:window.location.origin+window.location.pathname});
+  const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:PASSWORD_RESET_REDIRECT});
   authMsg.textContent=error?error.message:"Email di recupero inviata. Controlla la posta.";
 };
 document.getElementById("logoutBtn").onclick=async()=>{await sb.auth.signOut(); stock={}; showAuth(null);};
@@ -888,14 +895,45 @@ applyTheme(initialTheme);
 themeToggle.addEventListener("click",()=>applyTheme(document.body.dataset.theme==="light" ? "dark" : "light"));
 
 
+function openPasswordRecovery(){
+  const modal=document.getElementById("passwordRecoveryModal");
+  if(modal) modal.hidden=false;
+}
+
 sb.auth.onAuthStateChange((event,session)=>{
   if(event==="PASSWORD_RECOVERY"){
-    document.getElementById("passwordRecoveryModal").hidden=false;
+    openPasswordRecovery();
     return;
   }
   if(session?.user && session.user.id!==currentUser?.id) showAuth(session.user);
   if(!session?.user && currentUser) showAuth(null);
 });
+
+// Gestisce in modo robusto il ritorno dal link di recupero password.
+// Supporta sia il flow implicito (#type=recovery) sia PKCE (?code=...).
+(async function handlePasswordRecoveryReturn(){
+  try{
+    const url=new URL(window.location.href);
+    const hashParams=new URLSearchParams((url.hash||"").replace(/^#/,""));
+    const isRecovery=hashParams.get("type")==="recovery";
+    const code=url.searchParams.get("code");
+
+    if(code){
+      const {error}=await sb.auth.exchangeCodeForSession(code);
+      if(!error){
+        openPasswordRecovery();
+        url.searchParams.delete("code");
+        history.replaceState({},document.title,url.pathname+url.search);
+        return;
+      }
+    }
+
+    if(isRecovery){
+      const {data}=await sb.auth.getSession();
+      if(data?.session) openPasswordRecovery();
+    }
+  }catch(_){/* Il listener PASSWORD_RECOVERY resta il fallback principale. */}
+})();
 
 document.getElementById("saveRecoveryPassword").onclick=async()=>{
   const p1=document.getElementById("recoveryPassword").value;
