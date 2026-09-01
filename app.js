@@ -1181,6 +1181,7 @@ setInterval(bindBeparyProductTitle,1500);
 
 function bindAdminRepairsAccordion(){
   const shell=document.getElementById("adminRepairsCard");
+  if(shell?.dataset.adminFinancePanel==="repairs") return;
   const btn=document.getElementById("adminRepairsToggle");
   const panel=document.getElementById("adminRepairsPanel");
   if(!shell||!btn||!panel||btn.dataset.bound==="1")return;
@@ -1200,4 +1201,28 @@ function bindAdminRepairsAccordion(){
 }
 document.addEventListener("DOMContentLoaded",bindAdminRepairsAccordion);
 setInterval(bindAdminRepairsAccordion,1500);
+
+
+
+function bindAdminFinanceTabs(){
+ const root=document.getElementById("deviceSalesView");
+ if(!root||root.dataset.financeTabsBound==="1")return;
+ root.dataset.financeTabsBound="1";
+ const tabs=[...root.querySelectorAll(".adminFinanceTab")];
+ const panels=[...root.querySelectorAll("[data-admin-finance-panel]")];
+ function show(which){
+   tabs.forEach(t=>t.classList.toggle("active",t.dataset.adminPanel===which));
+   panels.forEach(p=>p.hidden=p.dataset.adminFinancePanel!==which);
+   if(which==="repairs"){
+     const rp=document.getElementById("adminRepairsPanel"); if(rp)rp.hidden=false;
+     try{bindAdminRepairs();loadAdminRepairs();}catch(e){}
+   } else {
+     try{loadAdminDeviceSales();}catch(e){}
+   }
+ }
+ tabs.forEach(t=>t.addEventListener("click",()=>show(t.dataset.adminPanel)));
+ show("parts");
+}
+document.addEventListener("DOMContentLoaded",bindAdminFinanceTabs);
+setInterval(bindAdminFinanceTabs,1500);
 
