@@ -1,0 +1,7 @@
+DYMO AUTO v35
+- Corretto formato etichetta per il rotolo mostrato in foto: 57 x 32 mm.
+- Corretto il rapporto larghezza/altezza per evitare testo ruotato/tagliato.
+- Margini pagina a 0 e contenuto confinato alla singola etichetta.
+- Testo nota adattivo mantenuto.
+
+IMPORTANTE: nel dialogo di stampa DYMO selezionare il formato etichetta 57 x 32 mm (11354 / equivalente) e scala 100%. Il browser non puo cambiare in modo affidabile il formato impostato nel driver della stampante.
