@@ -1002,9 +1002,9 @@ function supplierFromUrl(value){
   }catch(_){return "";}
 }
 function updateDeviceSaleVatPreview(){
-  const gross=Math.max(0,Number(document.getElementById("deviceSalePrice")?.value)||0);
+  const net=Math.max(0,Number(document.getElementById("deviceSalePrice")?.value)||0);
   const rate=Math.min(100,Math.max(0,Number(document.getElementById("deviceSaleVatRate")?.value)||0));
-  const net=gross/(1+rate/100), vat=gross-net;
+  const vat=net*rate/100, gross=net+vat;
   document.getElementById("deviceSaleNet").textContent=euroFmt.format(net||0);
   document.getElementById("deviceSaleVat").textContent=euroFmt.format(vat||0);
   document.getElementById("deviceSaleGross").textContent=euroFmt.format(gross||0);
@@ -1015,10 +1015,10 @@ async function loadDeviceSales(){
   list.innerHTML='<div class="emptyState">Caricamento…</div>';
   const {data,error}=await sb.from("beparytech_admin_device_sales").select("*").order("sold_at",{ascending:false}).order("id",{ascending:false}).limit(300);
   if(error){list.innerHTML='<div class="emptyState">Impossibile caricare le vendite.</div>';return;}
-  const rows=data||[], gross=rows.reduce((a,r)=>a+Number(r.sale_price||0),0), vat=rows.reduce((a,r)=>a+Number(r.vat_amount||0),0);
+  const rows=data||[], vat=rows.reduce((a,r)=>a+Number(r.vat_amount||0),0), gross=rows.reduce((a,r)=>a+Number(r.sale_price||0)+Number(r.vat_amount||0),0);
   sum.innerHTML=`<div><span>Vendite</span><strong>${rows.length}</strong></div><div><span>Totale</span><strong>${euroFmt.format(gross)}</strong></div><div><span>IVA</span><strong>${euroFmt.format(vat)}</strong></div>`;
   if(!rows.length){list.innerHTML='<div class="emptyState">Nessuna vendita registrata.</div>';return;}
-  list.innerHTML=rows.map(r=>`<article class="deviceAdminSaleRow"><div class="deviceAdminSaleTop"><div><strong>${escapeHtml(r.device_name)}</strong><span>${escapeHtml(r.store)} · ${new Date(r.sold_at+"T12:00:00").toLocaleDateString("it-IT")}</span></div><div class="deviceAdminSalePrice"><strong>${euroFmt.format(Number(r.sale_price||0))}</strong><span>IVA ${Number(r.vat_rate||0).toLocaleString("it-IT")}% · ${euroFmt.format(Number(r.vat_amount||0))}</span></div></div><div class="deviceAdminSaleMeta"><span>Imponibile ${euroFmt.format(Number(r.net_amount||0))}</span>${r.supplier_name?`<span>Fornitore: ${escapeHtml(r.supplier_name)}</span>`:""}${r.note?`<span>Nota: ${escapeHtml(r.note)}</span>`:""}</div>${r.purchase_url?`<a class="deviceAdminSaleLink" href="${escapeHtml(safeExternalUrl(r.purchase_url))}" target="_blank" rel="noopener noreferrer">Apri riferimento acquisto ↗</a>`:""}<div class="deviceAdminSaleActions"><button class="rowAction deleteDeviceSale" data-id="${r.id}" type="button">Elimina</button></div></article>`).join("");
+  list.innerHTML=rows.map(r=>`<article class="deviceAdminSaleRow"><div class="deviceAdminSaleTop"><div><strong>${escapeHtml(r.device_name)}</strong><span>${escapeHtml(r.store)} · ${new Date(r.sold_at+"T12:00:00").toLocaleDateString("it-IT")}</span></div><div class="deviceAdminSalePrice"><strong>${euroFmt.format(Number(r.sale_price||0)+Number(r.vat_amount||0))}</strong><span>Totale IVA inclusa · IVA ${Number(r.vat_rate||0).toLocaleString("it-IT")}%: ${euroFmt.format(Number(r.vat_amount||0))}</span></div></div><div class="deviceAdminSaleMeta"><span>Imponibile ${euroFmt.format(Number(r.net_amount||0))}</span>${r.supplier_name?`<span>Fornitore: ${escapeHtml(r.supplier_name)}</span>`:""}${r.note?`<span>Nota: ${escapeHtml(r.note)}</span>`:""}</div>${r.purchase_url?`<a class="deviceAdminSaleLink" href="${escapeHtml(safeExternalUrl(r.purchase_url))}" target="_blank" rel="noopener noreferrer">Apri riferimento acquisto ↗</a>`:""}<div class="deviceAdminSaleActions"><button class="rowAction deleteDeviceSale" data-id="${r.id}" type="button">Elimina</button></div></article>`).join("");
   list.querySelectorAll(".deleteDeviceSale").forEach(b=>b.onclick=async()=>{if(!confirm("Eliminare questa vendita?"))return; const {error}=await sb.from("beparytech_admin_device_sales").delete().eq("id",Number(b.dataset.id)); if(error)alert(error.message); else loadDeviceSales();});
 }
 const dsDate=document.getElementById("deviceSaleDate"); if(dsDate) dsDate.value=new Date().toISOString().slice(0,10);
