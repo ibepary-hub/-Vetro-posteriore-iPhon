@@ -144,7 +144,32 @@
           <button class="primaryAction animatedBtn" type="submit">Salva vendita</button>
           <div id="deviceSaleMsg" class="createUserMsg" aria-live="polite"></div>
         </form>
-        <div class="deviceSaleCard deviceSaleHistoryCard">
+        
+        <div class="deviceSaleCard" id="adminRepairsCard">
+          <div class="deviceSaleCardHead"><div><strong>Riparazioni dispositivi</strong><small>Scheda madre, display, connettori e altre riparazioni effettuate</small></div><span class="adminBadge">SOLO ADMIN</span></div>
+          <form id="adminRepairForm">
+            <div class="deviceSaleGrid">
+              <label><span>Data riparazione *</span><input id="adminRepairDate" type="date" required></label>
+              <label><span>Negozio *</span><select id="adminRepairStore" required><option value="">Seleziona negozio…</option><option>RPL Piacenza</option><option>RPL Manerbio</option><option>MELA Piacenza</option><option>MELA Lime Store</option><option>MELA Repubblica</option><option>MELA Emilia Est</option><option>DP Udine</option><option>DP Majano</option><option>DP Tolmezzo</option><option>DP Cividale</option><option>DP Codroipo</option><option>DP Colugna</option><option>E-POL</option></select></label>
+              <label class="wide"><span>Dispositivo *</span><input id="adminRepairDevice" maxlength="160" placeholder="es. iPhone 15 Pro, Samsung S24, notebook..." required></label>
+              <label class="wide"><span>Tipo di riparazione *</span><input id="adminRepairType" maxlength="240" placeholder="es. Riparazione scheda madre, sostituzione connettore..." required></label>
+              <label><span>Prezzo escluso IVA *</span><div class="moneyInput"><span>€</span><input id="adminRepairPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" required></div></label>
+              <label><span>IVA %</span><input id="adminRepairVatRate" type="number" min="0" max="100" step="0.01" value="22" inputmode="decimal"></label>
+              <label class="wide"><span>Nota</span><textarea id="adminRepairNote" maxlength="1000" rows="3" placeholder="Facoltativa"></textarea></label>
+            </div>
+            <div class="vatPreview">
+              <div><span>Imponibile</span><strong id="adminRepairNet">€ 0,00</strong></div>
+              <div><span>IVA</span><strong id="adminRepairVat">€ 0,00</strong></div>
+              <div class="total"><span>Totale IVA inclusa</span><strong id="adminRepairGross">€ 0,00</strong></div>
+            </div>
+            <button class="primaryAction animatedBtn" type="submit">Salva riparazione</button>
+            <div id="adminRepairMsg" class="createUserMsg" aria-live="polite"></div>
+          </form>
+          <div class="deviceSaleCardHead" style="margin-top:22px"><div><strong>Riparazioni registrate</strong><small>Storico delle lavorazioni</small></div><button id="refreshAdminRepairsBtn" class="miniBtn" type="button">Aggiorna</button></div>
+          <div id="adminRepairsSummary" class="deviceSalesSummary"></div>
+          <div id="adminRepairsList"><div class="emptyState">Nessuna riparazione caricata</div></div>
+        </div>
+<div class="deviceSaleCard deviceSaleHistoryCard">
           <div class="deviceSaleCardHead"><div><strong>Vendite registrate</strong><small>Solo gli amministratori possono visualizzarle</small></div><button id="refreshDeviceSalesBtn" class="miniBtn" type="button">Aggiorna</button></div>
           <div id="deviceSalesSummary" class="deviceSalesSummary"></div>
           <div id="deviceSalesList"><div class="emptyState">Caricamento…</div></div>
