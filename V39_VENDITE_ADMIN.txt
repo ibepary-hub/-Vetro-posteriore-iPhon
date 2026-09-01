@@ -1,0 +1,9 @@
+BeparyTech v39 — Vendite ricambi Admin
+
+- Sezione privata Admin per vendite di ricambi e articoli elettronici.
+- Negozi già presenti nel gestionale riutilizzati.
+- Prezzo vendita IVA inclusa; imponibile e IVA calcolati automaticamente (22% predefinito modificabile).
+- Link acquisto/riferimento e riconoscimento automatico fornitore.
+- Storico con link cliccabile e riepilogo totale/IVA.
+- Gestione utenti: cambio password login proprio e degli altri utenti.
+- Sicurezza Supabase RLS applicata alla nuova tabella.

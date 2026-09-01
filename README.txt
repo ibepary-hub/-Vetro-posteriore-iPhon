@@ -52,3 +52,14 @@ AGGIORNAMENTO v28 — ORARI PRIVATI ADMIN
 - Extra multipli per giorno con descrizione, durata, importo, azienda/cliente e nota.
 - Totali mensili separati: ore normali, ore extra, totale e importi extra.
 - Protezione anche lato database Supabase con RLS: gli account Standard non possono leggere né modificare i dati Orari, anche chiamando direttamente l'API.
+
+
+AGGIORNAMENTO v39 — VENDITE RICAMBI ADMIN
+- Nuova sezione “Vendite ricambi” visibile esclusivamente agli account Admin.
+- Inserimento manuale di data, negozio, ricambio/articolo e prezzo vendita IVA inclusa.
+- IVA predefinita 22% modificabile, con imponibile e quota IVA calcolati automaticamente.
+- Nomi negozi riutilizzati dalla versione esistente: RPL, MELA, DP ed E-POL.
+- Campo link acquisto/riferimento con riconoscimento automatico del fornitore (AliExpress, eBay, Amazon, Temu, Back Market e dominio generico).
+- Link originale conservato e cliccabile nello storico.
+- RLS Supabase: i dati non sono leggibili/modificabili dagli account Standard.
+- In Gestione utenti, Admin può cambiare la password login propria o degli altri utenti del workspace tramite Edge Function sicura.

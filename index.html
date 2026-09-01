@@ -10,10 +10,10 @@
   <meta name="apple-mobile-web-app-title" content="BeparyTech">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
   <title>BeparyTech • Magazzino Ricambi iPhone</title>
-  <link rel="manifest" href="manifest.json?v=33">
+  <link rel="manifest" href="manifest.json?v=39">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=38">
+  <link rel="stylesheet" href="style.css?v=39">
 </head>
 <body>
   <div id="menuOverlay" class="menuOverlay" hidden></div>
@@ -26,6 +26,7 @@
       <button class="menuItem" type="button" data-category="Cronologia"><span class="menuIcon">≋</span><span><strong>Cronologia</strong><small>Tutte le attività</small></span></button>
       <button class="menuItem" type="button" data-category="Vendite"><span class="menuIcon">✓</span><span><strong>Vendute</strong><small>Vendite, note e rientri</small></span></button>
       <button id="catalogMenuItem" class="menuItem adminOnly" type="button" data-category="GestioneMagazzino" hidden><span class="menuIcon">＋</span><span><strong>Gestione magazzino</strong><small>Sezioni e prodotti</small></span></button>
+      <button id="deviceSalesMenuItem" class="menuItem adminOnly" type="button" data-category="VenditeAdmin" hidden><span class="menuIcon">€</span><span><strong>Vendite ricambi</strong><small>Prezzi, IVA e riferimenti acquisto</small></span></button>
       <button id="hoursMenuItem" class="menuItem adminOnly" type="button" data-category="Orari" hidden><span class="menuIcon">◷</span><span><strong>Orari</strong><small>Ore lavorate ed extra</small></span></button>
       <button id="backupMenuItem" class="menuItem adminOnly" type="button" data-category="Backup" hidden><span class="menuIcon">⇩</span><span><strong>Backup</strong><small>Esporta dati</small></span></button>
       <button id="usersMenuItem" class="menuItem adminOnly" type="button" data-category="Utenti" hidden><span class="menuIcon">♙</span><span><strong>Utenti</strong><small>Accessi e password</small></span></button>
@@ -115,6 +116,41 @@
       <div id="salesList"></div>
     </section>
 
+
+    <section id="deviceSalesView" class="deviceSalesView" hidden>
+      <div class="deviceSalesHero">
+        <div><span class="usersKicker">AREA PRIVATA ADMIN</span><h2>Vendite ricambi</h2><p>Registra le vendite di ricambi e articoli elettronici, calcola l’IVA e conserva il riferimento dell’acquisto.</p></div>
+        <span class="adminBadge">SOLO ADMIN</span>
+      </div>
+      <div class="deviceSalesLayout">
+        <form id="deviceSaleForm" class="deviceSaleCard">
+          <div class="deviceSaleCardHead"><div><strong>Nuova vendita</strong><small>I dati economici vengono calcolati automaticamente</small></div></div>
+          <div class="deviceSaleGrid">
+            <label><span>Data vendita *</span><input id="deviceSaleDate" type="date" required></label>
+            <label><span>Negozio *</span><select id="deviceSaleStore" required><option value="">Seleziona negozio…</option><option>RPL Piacenza</option><option>RPL Manerbio</option><option>MELA Piacenza</option><option>MELA Lime Store</option><option>MELA Repubblica</option><option>MELA Emilia Est</option><option>DP Udine</option><option>DP Majano</option><option>DP Tolmezzo</option><option>DP Cividale</option><option>DP Codroipo</option><option>DP Colugna</option><option>E-POL</option></select></label>
+            <label class="wide"><span>Ricambio / Articolo *</span><input id="deviceSaleName" type="text" maxlength="160" placeholder="es. Display iPhone 15 Pro, batteria, flat, connettore..." required></label>
+            <label><span>Prezzo vendita IVA inclusa *</span><div class="moneyInput"><span>€</span><input id="deviceSalePrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" required></div></label>
+            <label><span>IVA %</span><input id="deviceSaleVatRate" type="number" min="0" max="100" step="0.01" value="22" inputmode="decimal"></label>
+            <label class="wide"><span>Link acquisto / riferimento</span><input id="deviceSalePurchaseUrl" type="url" maxlength="2000" placeholder="https://www.aliexpress.com/... oppure https://www.ebay.it/..."></label>
+            <label class="wide"><span>Fornitore riconosciuto</span><input id="deviceSaleSupplier" type="text" maxlength="160" placeholder="Si compila automaticamente dal link"></label>
+            <label class="wide"><span>Nota</span><textarea id="deviceSaleNote" maxlength="1000" rows="3" placeholder="Facoltativa"></textarea></label>
+          </div>
+          <div class="vatPreview">
+            <div><span>Imponibile</span><strong id="deviceSaleNet">€ 0,00</strong></div>
+            <div><span>IVA</span><strong id="deviceSaleVat">€ 0,00</strong></div>
+            <div class="total"><span>Totale vendita</span><strong id="deviceSaleGross">€ 0,00</strong></div>
+          </div>
+          <button class="primaryAction animatedBtn" type="submit">Salva vendita</button>
+          <div id="deviceSaleMsg" class="createUserMsg" aria-live="polite"></div>
+        </form>
+        <div class="deviceSaleCard deviceSaleHistoryCard">
+          <div class="deviceSaleCardHead"><div><strong>Vendite registrate</strong><small>Solo gli amministratori possono visualizzarle</small></div><button id="refreshDeviceSalesBtn" class="miniBtn" type="button">Aggiorna</button></div>
+          <div id="deviceSalesSummary" class="deviceSalesSummary"></div>
+          <div id="deviceSalesList"><div class="emptyState">Caricamento…</div></div>
+        </div>
+      </div>
+    </section>
+
     <section id="hoursView" class="hoursView" hidden>
       <div class="hoursHero"><div><span class="usersKicker">AREA PRIVATA ADMIN</span><h2>I miei orari</h2><p>Registra ore lavorate, note e attività extra. Questa sezione è visibile solo a te.</p></div><span class="adminBadge">SOLO ADMIN</span></div>
       <div class="hoursToolbar"><label><span>Mese</span><input id="hoursMonth" type="month"></label><button id="hoursTodayBtn" class="miniBtn animatedBtn" type="button">Oggi</button><button id="hoursRefreshBtn" class="miniBtn animatedBtn" type="button">Aggiorna</button></div>
@@ -151,6 +187,16 @@
           <label><span>Ruolo</span><select id="newUserRole"><option value="standard">Standard</option><option value="admin">Admin</option></select></label>
           <button id="createUserBtn" class="primaryAction createUserBtn" type="submit">Crea utente</button>
           <div id="createUserMsg" class="createUserMsg" aria-live="polite"></div>
+        </form>
+      </div>
+      <div class="usersPanel">
+        <div class="usersHeader"><div><span class="usersKicker">SICUREZZA LOGIN</span><h2>Cambia password</h2><p>Puoi cambiare la tua password oppure quella di un utente del gestionale.</p></div></div>
+        <form id="adminLoginPasswordForm" class="createUserForm passwordAdminForm">
+          <label><span>Utente *</span><select id="adminLoginPasswordUser" required><option value="">Seleziona utente…</option></select></label>
+          <label><span>Nuova password *</span><input id="adminLoginPasswordValue" type="password" autocomplete="new-password" minlength="10" maxlength="128" placeholder="Minimo 10 caratteri" required></label>
+          <label><span>Ripeti password *</span><input id="adminLoginPasswordValue2" type="password" autocomplete="new-password" minlength="10" maxlength="128" placeholder="Ripeti la password" required></label>
+          <button id="adminLoginPasswordSave" class="primaryAction createUserBtn" type="submit">Aggiorna password</button>
+          <div id="adminLoginPasswordMsg" class="createUserMsg" aria-live="polite"></div>
         </form>
       </div>
       <div class="usersPanel usersListPanel">
@@ -331,7 +377,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=38"></script>
+  <script src="app.js?v=39"></script>
 
 </body>
 </html>

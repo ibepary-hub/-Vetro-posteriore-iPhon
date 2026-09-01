@@ -184,17 +184,20 @@ function applyRoleVisibility(){
   const usersMenu=document.getElementById("usersMenuItem");
   const backupMenu=document.getElementById("backupMenuItem");
   const hoursMenu=document.getElementById("hoursMenuItem");
+  const deviceSalesMenu=document.getElementById("deviceSalesMenuItem");
   usersTab.hidden=!admin;
   if(catalogMenu) catalogMenu.hidden=!admin;
   if(usersMenu) usersMenu.hidden=!admin;
   if(backupMenu) backupMenu.hidden=!admin;
   if(hoursMenu) hoursMenu.hidden=!admin;
+  if(deviceSalesMenu) deviceSalesMenu.hidden=!admin;
   if(!admin){
     usersView.hidden=true;
     if(catalogView) catalogView.hidden=true;
     usersTab.classList.remove("active");
     document.getElementById("hoursView").hidden=true;
-    if(["Utenti","GestioneMagazzino","Backup","Orari"].includes(currentCategory)) setCategory("Dashboard");
+    const dsv=document.getElementById("deviceSalesView"); if(dsv) dsv.hidden=true;
+    if(["Utenti","GestioneMagazzino","Backup","Orari","VenditeAdmin"].includes(currentCategory)) setCategory("Dashboard");
   }
   const menuUser=document.getElementById("menuUserName"), menuRole=document.getElementById("menuUserRole");
   if(menuUser) menuUser.textContent=currentProfile?.username||currentUser?.email||"Utente";
@@ -274,19 +277,19 @@ document.getElementById("logoutBtn").onclick=async()=>{await sb.auth.signOut(); 
 
 
 function setCategory(category){
-  const isDashboard=category==="Dashboard", isSales=category==="Vendite", isAudit=category==="Cronologia", isUsers=category==="Utenti", isCatalog=category==="GestioneMagazzino", isBackup=category==="Backup", isHours=category==="Orari";
+  const isDashboard=category==="Dashboard", isSales=category==="Vendite", isAudit=category==="Cronologia", isUsers=category==="Utenti", isCatalog=category==="GestioneMagazzino", isBackup=category==="Backup", isHours=category==="Orari", isDeviceSales=category==="VenditeAdmin";
   const isCustom=String(category).startsWith("custom:");
-  if((isUsers||isCatalog||isBackup||isHours)&&!isAdmin()) return;
+  if((isUsers||isCatalog||isBackup||isHours||isDeviceSales)&&!isAdmin()) return;
   currentCategory=category;
   currentCustomSectionId=isCustom?Number(String(category).split(":")[1]):null;
   const sec=isCustom?customSections.find(s=>Number(s.id)===currentCustomSectionId):null;
-  const title=isDashboard?"Dashboard":isAudit?"Cronologia":isSales?"Vendute":isUsers?"Utenti":isCatalog?"Gestione magazzino":isBackup?"Backup":isHours?"I miei orari":sec?.name||category;
-  const desc=isDashboard?"Riepilogo generale":isAudit?"Tutte le attività del gestionale":isSales?"Vendite, note, stampa DYMO e rientri":isUsers?"Gestione accessi":isCatalog?"Crea e gestisci sezioni e prodotti":isBackup?"Esporta una copia dei dati":isHours?"Area privata Admin · ore lavorate ed extra":sec?.description||"Sezione magazzino";
+  const title=isDashboard?"Dashboard":isAudit?"Cronologia":isSales?"Vendute":isUsers?"Utenti":isCatalog?"Gestione magazzino":isBackup?"Backup":isHours?"I miei orari":isDeviceSales?"Vendite ricambi":sec?.name||category;
+  const desc=isDashboard?"Riepilogo generale":isAudit?"Tutte le attività del gestionale":isSales?"Vendite, note, stampa DYMO e rientri":isUsers?"Gestione accessi":isCatalog?"Crea e gestisci sezioni e prodotti":isBackup?"Esporta una copia dei dati":isHours?"Area privata Admin · ore lavorate ed extra":isDeviceSales?"Area privata Admin · ricambi elettronici, IVA e acquisti":sec?.description||"Sezione magazzino";
   document.getElementById("categoryName").textContent=title;
   document.getElementById("categoryDescription").textContent=desc;
-  document.querySelector(".tools").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isBackup||isHours;
-  document.querySelector(".stats").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isBackup||isHours;
-  inventory.hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isBackup||isHours;
+  document.querySelector(".tools").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isBackup||isHours||isDeviceSales;
+  document.querySelector(".stats").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isBackup||isHours||isDeviceSales;
+  inventory.hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isBackup||isHours||isDeviceSales;
   document.getElementById("dashboardView").hidden=!isDashboard;
   document.getElementById("salesView").hidden=!isSales;
   document.getElementById("auditView").hidden=!isAudit;
@@ -294,9 +297,10 @@ function setCategory(category){
   document.getElementById("catalogView").hidden=!isCatalog;
   document.getElementById("backupView").hidden=!isBackup;
   document.getElementById("hoursView").hidden=!isHours;
+  const deviceSalesView=document.getElementById("deviceSalesView"); if(deviceSalesView) deviceSalesView.hidden=!isDeviceSales;
   document.querySelectorAll(".menuItem[data-category]").forEach(b=>b.classList.toggle("active",b.dataset.category===category));
   search.value=""; filter.value="all"; closeMainMenu();
-  if(isDashboard) loadDashboard(); else if(isAudit) loadAudit(); else if(isSales) loadSales(); else if(isUsers) loadUsers(); else if(isCatalog) renderCatalogAdmin(); else if(isBackup){} else if(isHours) loadHours(); else if(isCustom) renderCustomSection();
+  if(isDashboard) loadDashboard(); else if(isAudit) loadAudit(); else if(isSales) loadSales(); else if(isUsers) loadUsers(); else if(isCatalog) renderCatalogAdmin(); else if(isBackup){} else if(isHours) loadHours(); else if(isDeviceSales) loadDeviceSales(); else if(isCustom) renderCustomSection();
 }
 
 async function loadUsers(){
@@ -310,6 +314,7 @@ async function loadUsers(){
   }
   const users=data?.users||[];
   document.getElementById("usersCount").textContent=users.length;
+  const loginPwSelect=document.getElementById("adminLoginPasswordUser"); if(loginPwSelect){ loginPwSelect.innerHTML=`<option value="">Seleziona utente…</option>`+users.map(u=>`<option value="${escapeHtml(u.user_id)}">${escapeHtml(u.username||u.email||"Utente")}${u.email?` · ${escapeHtml(u.email)}`:""}</option>`).join(""); }
   if(!users.length){list.innerHTML='<div class="emptyState">Nessun utente.</div>';return;}
   list.innerHTML=users.map(u=>{
     const initial=(u.username||u.email||"U").trim().charAt(0).toUpperCase();
@@ -983,6 +988,50 @@ applyTheme(initialTheme);
 themeToggle.addEventListener("click",()=>applyTheme(document.body.dataset.theme==="light" ? "dark" : "light"));
 
 
+
+const euroFmt=new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR"});
+function supplierFromUrl(value){
+  const raw=String(value||"").trim(); if(!raw) return "";
+  try{const u=new URL(raw); const h=u.hostname.toLowerCase().replace(/^www\./,"");
+    if(h.includes("aliexpress.")) return "AliExpress";
+    if(h.includes("ebay.")) return "eBay";
+    if(h.includes("amazon.")) return "Amazon";
+    if(h.includes("temu.")) return "Temu";
+    if(h.includes("backmarket.")) return "Back Market";
+    return h.split(".").slice(0,-1).join(".")||h;
+  }catch(_){return "";}
+}
+function updateDeviceSaleVatPreview(){
+  const gross=Math.max(0,Number(document.getElementById("deviceSalePrice")?.value)||0);
+  const rate=Math.min(100,Math.max(0,Number(document.getElementById("deviceSaleVatRate")?.value)||0));
+  const net=gross/(1+rate/100), vat=gross-net;
+  document.getElementById("deviceSaleNet").textContent=euroFmt.format(net||0);
+  document.getElementById("deviceSaleVat").textContent=euroFmt.format(vat||0);
+  document.getElementById("deviceSaleGross").textContent=euroFmt.format(gross||0);
+}
+async function loadDeviceSales(){
+  if(!isAdmin()) return;
+  const list=document.getElementById("deviceSalesList"), sum=document.getElementById("deviceSalesSummary"); if(!list)return;
+  list.innerHTML='<div class="emptyState">Caricamento…</div>';
+  const {data,error}=await sb.from("beparytech_admin_device_sales").select("*").order("sold_at",{ascending:false}).order("id",{ascending:false}).limit(300);
+  if(error){list.innerHTML='<div class="emptyState">Impossibile caricare le vendite.</div>';return;}
+  const rows=data||[], gross=rows.reduce((a,r)=>a+Number(r.sale_price||0),0), vat=rows.reduce((a,r)=>a+Number(r.vat_amount||0),0);
+  sum.innerHTML=`<div><span>Vendite</span><strong>${rows.length}</strong></div><div><span>Totale</span><strong>${euroFmt.format(gross)}</strong></div><div><span>IVA</span><strong>${euroFmt.format(vat)}</strong></div>`;
+  if(!rows.length){list.innerHTML='<div class="emptyState">Nessuna vendita registrata.</div>';return;}
+  list.innerHTML=rows.map(r=>`<article class="deviceAdminSaleRow"><div class="deviceAdminSaleTop"><div><strong>${escapeHtml(r.device_name)}</strong><span>${escapeHtml(r.store)} · ${new Date(r.sold_at+"T12:00:00").toLocaleDateString("it-IT")}</span></div><div class="deviceAdminSalePrice"><strong>${euroFmt.format(Number(r.sale_price||0))}</strong><span>IVA ${Number(r.vat_rate||0).toLocaleString("it-IT")}% · ${euroFmt.format(Number(r.vat_amount||0))}</span></div></div><div class="deviceAdminSaleMeta"><span>Imponibile ${euroFmt.format(Number(r.net_amount||0))}</span>${r.supplier_name?`<span>Fornitore: ${escapeHtml(r.supplier_name)}</span>`:""}${r.note?`<span>Nota: ${escapeHtml(r.note)}</span>`:""}</div>${r.purchase_url?`<a class="deviceAdminSaleLink" href="${escapeHtml(safeExternalUrl(r.purchase_url))}" target="_blank" rel="noopener noreferrer">Apri riferimento acquisto ↗</a>`:""}<div class="deviceAdminSaleActions"><button class="rowAction deleteDeviceSale" data-id="${r.id}" type="button">Elimina</button></div></article>`).join("");
+  list.querySelectorAll(".deleteDeviceSale").forEach(b=>b.onclick=async()=>{if(!confirm("Eliminare questa vendita?"))return; const {error}=await sb.from("beparytech_admin_device_sales").delete().eq("id",Number(b.dataset.id)); if(error)alert(error.message); else loadDeviceSales();});
+}
+const dsDate=document.getElementById("deviceSaleDate"); if(dsDate) dsDate.value=new Date().toISOString().slice(0,10);
+["deviceSalePrice","deviceSaleVatRate"].forEach(id=>document.getElementById(id)?.addEventListener("input",updateDeviceSaleVatPreview));
+document.getElementById("deviceSalePurchaseUrl")?.addEventListener("input",e=>{const supplier=supplierFromUrl(e.target.value); if(supplier)document.getElementById("deviceSaleSupplier").value=supplier;});
+document.getElementById("refreshDeviceSalesBtn")?.addEventListener("click",loadDeviceSales);
+document.getElementById("deviceSaleForm")?.addEventListener("submit",async e=>{e.preventDefault(); if(!isAdmin())return; const msg=document.getElementById("deviceSaleMsg");
+  const url=document.getElementById("deviceSalePurchaseUrl").value.trim(); if(url && safeExternalUrl(url)==="#"){msg.className="createUserMsg error";msg.textContent="Link acquisto non valido.";return;}
+  const row={workspace_owner_id:workspaceOwnerId,created_by:currentUser.id,sold_at:document.getElementById("deviceSaleDate").value,store:document.getElementById("deviceSaleStore").value,device_name:document.getElementById("deviceSaleName").value.trim(),sale_price:Number(document.getElementById("deviceSalePrice").value),vat_rate:Number(document.getElementById("deviceSaleVatRate").value)||0,purchase_url:url||null,supplier_name:document.getElementById("deviceSaleSupplier").value.trim()||supplierFromUrl(url)||null,note:document.getElementById("deviceSaleNote").value.trim()||null};
+  const {error}=await sb.from("beparytech_admin_device_sales").insert(row); msg.className=`createUserMsg ${error?"error":"ok"}`; msg.textContent=error?error.message:"Vendita salvata."; if(!error){e.target.reset();document.getElementById("deviceSaleDate").value=new Date().toISOString().slice(0,10);document.getElementById("deviceSaleVatRate").value="22";updateDeviceSaleVatPreview();loadDeviceSales();}
+});
+document.getElementById("adminLoginPasswordForm")?.addEventListener("submit",async e=>{e.preventDefault(); if(!isAdmin())return; const msg=document.getElementById("adminLoginPasswordMsg"),btn=document.getElementById("adminLoginPasswordSave"), userId=document.getElementById("adminLoginPasswordUser").value,p1=document.getElementById("adminLoginPasswordValue").value,p2=document.getElementById("adminLoginPasswordValue2").value; msg.textContent=""; if(!userId){msg.textContent="Seleziona un utente.";return;} if(p1.length<10){msg.textContent="La password deve avere almeno 10 caratteri.";return;} if(p1!==p2){msg.textContent="Le password non coincidono.";return;} btn.disabled=true; const {data,error}=await sb.functions.invoke("beparytech-users",{method:"POST",body:{action:"set_login_password",user_id:userId,password:p1}}); btn.disabled=false; if(error||data?.error){msg.className="createUserMsg error";msg.textContent=data?.error||error?.message||"Impossibile aggiornare la password.";return;} msg.className="createUserMsg ok";msg.textContent="Password login aggiornata correttamente.";e.target.reset();});
+
 function openPasswordRecovery(){
   const modal=document.getElementById("passwordRecoveryModal");
   if(modal) modal.hidden=false;
@@ -1044,11 +1093,11 @@ document.getElementById("saveRecoveryPassword").onclick=async()=>{
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("./sw.js?v=28", { updateViaCache: "none" });
+      const reg = await navigator.serviceWorker.register("./sw.js?v=39", { updateViaCache: "none" });
       await reg.update();
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (!sessionStorage.getItem("bt-cache-reloaded-v28")) {
-          sessionStorage.setItem("bt-cache-reloaded-v28", "1");
+        if (!sessionStorage.getItem("bt-cache-reloaded-v39")) {
+          sessionStorage.setItem("bt-cache-reloaded-v39", "1");
           location.reload();
         }
       });
