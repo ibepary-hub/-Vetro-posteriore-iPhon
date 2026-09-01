@@ -1107,9 +1107,9 @@ if ("serviceWorker" in navigator) {
 
 
 async function btGetWorkspaceOwnerId(){
-  const {data:{user}}=await supabaseClient.auth.getUser();
+  const {data:{user}}=await sb.auth.getUser();
   if(!user) throw new Error("Sessione non valida");
-  const {data,error}=await supabaseClient.from("beparytech_profiles").select("workspace_owner_id,role,active").eq("user_id",user.id).single();
+  const {data,error}=await sb.from("beparytech_profiles").select("workspace_owner_id,role,active").eq("user_id",user.id).single();
   if(error||!data||data.role!=="admin"||!data.active) throw new Error("Accesso riservato agli amministratori");
   return {owner:data.workspace_owner_id,user:user.id};
 }
@@ -1125,7 +1125,7 @@ async function loadAdminRepairs(){
   const list=document.getElementById("adminRepairsList"); if(!list)return;
   try{
     const ctx=await btGetWorkspaceOwnerId();
-    const {data,error}=await supabaseClient.from("beparytech_admin_repairs").select("*").eq("workspace_owner_id",ctx.owner).order("repaired_at",{ascending:false}).order("id",{ascending:false}).limit(300);
+    const {data,error}=await sb.from("beparytech_admin_repairs").select("*").eq("workspace_owner_id",ctx.owner).order("repaired_at",{ascending:false}).order("id",{ascending:false}).limit(300);
     if(error)throw error;
     const rows=data||[];
     const net=rows.reduce((x,r)=>x+Number(r.price_ex_vat||0),0), vat=rows.reduce((x,r)=>x+Number(r.vat_amount||0),0), total=rows.reduce((x,r)=>x+Number(r.total_inc_vat||0),0);
@@ -1145,7 +1145,7 @@ function bindAdminRepairs(){
    try{
     const ctx=await btGetWorkspaceOwnerId();
     const payload={workspace_owner_id:ctx.owner,created_by:ctx.user,repaired_at:document.getElementById("adminRepairDate").value,store:document.getElementById("adminRepairStore").value,device:document.getElementById("adminRepairDevice").value.trim(),repair_type:document.getElementById("adminRepairType").value.trim(),price_ex_vat:Number(document.getElementById("adminRepairPrice").value||0),vat_rate:Number(document.getElementById("adminRepairVatRate").value||22),note:document.getElementById("adminRepairNote").value.trim()||null};
-    const {error}=await supabaseClient.from("beparytech_admin_repairs").insert(payload); if(error)throw error;
+    const {error}=await sb.from("beparytech_admin_repairs").insert(payload); if(error)throw error;
     if(msg)msg.textContent="Riparazione salvata.";
     document.getElementById("adminRepairDevice").value=""; document.getElementById("adminRepairType").value=""; document.getElementById("adminRepairPrice").value=""; document.getElementById("adminRepairNote").value=""; updateAdminRepairVatPreview(); await loadAdminRepairs();
    }catch(e){if(msg)msg.textContent=e.message||"Errore salvataggio";}
@@ -1166,7 +1166,7 @@ function bindBeparyProductTitle(){
    const old=name.value.trim();
    name.placeholder="Recupero descrizione dal link…";
    try{
-     const {data,error}=await supabaseClient.functions.invoke("beparytech-product-title",{body:{url:v}});
+     const {data,error}=await sb.functions.invoke("beparytech-product-title",{body:{url:v}});
      const title=String(data?.title||"").trim();
      if(!error&&title&&(!old||name.dataset.autoTitle==="1")){name.value=title;name.dataset.autoTitle="1";name.dispatchEvent(new Event("input",{bubbles:true}));}
    }catch(e){}

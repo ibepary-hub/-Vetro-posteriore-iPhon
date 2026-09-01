@@ -14,8 +14,6 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
   <link rel="stylesheet" href="style.css?v=39">
-<script>window.BEPARYTECH_PRODUCT_TITLE_FUNCTION_URL="https://kqdcbrpykaboabjglwxu.supabase.co/functions/v1/beparytech-product-title";</script>
-
 <style>
 #adminRepairsCard.repairModernShell{
   margin:24px 0;
@@ -549,86 +547,7 @@
   <script src="app.js?v=39"></script>
 
 
-<script>
-(function(){
-  async function btFetchProductTitleFromUrl(rawUrl){
-    const url = String(rawUrl || '').trim();
-    if(!url) return '';
-    try{
-      const { data: { session } } = await window.supabaseClient.auth.getSession();
-      if(!session?.access_token) return '';
-      const fnUrl = window.BEPARYTECH_PRODUCT_TITLE_FUNCTION_URL || '';
-      if(!fnUrl) return '';
-      const { data, error } = await window.supabaseClient.functions.invoke('beparytech-product-title', {
-        body: { url }
-      });
-      if(error) return '';
-      return String(data?.title || '').trim();
-    }catch(e){
-      console.warn('Titolo prodotto non recuperabile:', e);
-      return '';
-    }
-  }
 
-  function btFindField(selectors){
-    for(const sel of selectors){
-      const el = document.querySelector(sel);
-      if(el) return el;
-    }
-    return null;
-  }
-
-  function btBindProductTitleAutofill(){
-    const urlInput = btFindField([
-      '#deviceSalePurchaseUrl',
-      '#adminSalePurchaseUrl',
-      '#purchase_url',
-      'input[name="purchase_url"]',
-      'input[data-field="purchase_url"]',
-      'input[placeholder*="http"]'
-    ]);
-    const itemInput = btFindField([
-      '#deviceSaleName',
-      '#adminSaleDeviceName',
-      '#device_name',
-      'input[name="device_name"]',
-      'input[data-field="device_name"]',
-      'input[placeholder*="Ricambio"]',
-      'input[placeholder*="Articolo"]'
-    ]);
-    if(!urlInput || !itemInput || urlInput.dataset.btTitleBound === '1') return;
-    urlInput.dataset.btTitleBound = '1';
-
-    let lastUrl = '';
-    let timer = null;
-    const run = async ()=>{
-      const url = String(urlInput.value || '').trim();
-      if(!url || url === lastUrl) return;
-      lastUrl = url;
-      const previous = itemInput.value;
-      itemInput.placeholder = 'Recupero descrizione…';
-      const title = await btFetchProductTitleFromUrl(url);
-      if(title){
-        // Avoid overwriting a deliberately-entered description unless it was empty.
-        if(!previous.trim() || itemInput.dataset.btAutoFilled === '1'){
-          itemInput.value = title;
-          itemInput.dataset.btAutoFilled = '1';
-          itemInput.dispatchEvent(new Event('input', {bubbles:true}));
-          itemInput.dispatchEvent(new Event('change', {bubbles:true}));
-        }
-      }
-      itemInput.placeholder = 'Es. Display iPhone 14 Pro OLED';
-    };
-
-    urlInput.addEventListener('change', run);
-    urlInput.addEventListener('blur', run);
-    urlInput.addEventListener('paste', ()=>{ clearTimeout(timer); timer = setTimeout(run, 500); });
-  }
-
-  document.addEventListener('DOMContentLoaded', btBindProductTitleAutofill);
-  setInterval(btBindProductTitleAutofill, 1500);
-})();
-</script>
 
 </body>
 </html>
