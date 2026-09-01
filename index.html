@@ -129,8 +129,8 @@
           <div class="deviceSaleGrid">
             <label><span>Data vendita *</span><input id="deviceSaleDate" type="date" required></label>
             <label><span>Negozio *</span><select id="deviceSaleStore" required><option value="">Seleziona negozio…</option><option>RPL Piacenza</option><option>RPL Manerbio</option><option>MELA Piacenza</option><option>MELA Lime Store</option><option>MELA Repubblica</option><option>MELA Emilia Est</option><option>DP Udine</option><option>DP Majano</option><option>DP Tolmezzo</option><option>DP Cividale</option><option>DP Codroipo</option><option>DP Colugna</option><option>E-POL</option></select></label>
-            <label class="wide"><span>Ricambio / Articolo *</span><input id="deviceSaleName" type="text" maxlength="160" placeholder="es. Display iPhone 15 Pro, batteria, flat, connettore..." required></label>
-            <label><span>Prezzo escluso IVA IVA inclusa *</span><div class="moneyInput"><span>€</span><input id="deviceSalePrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" required></div></label>
+            <label class="wide"><span>Ricambio / Articolo *</span><input id="deviceSaleName" type="text" maxlength="160" placeholder="Si compila dal link oppure scrivi manualmente" required></label>
+            <label><span>Prezzo escluso IVA *</span><div class="moneyInput"><span>€</span><input id="deviceSalePrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" required></div></label>
             <label><span>IVA %</span><input id="deviceSaleVatRate" type="number" min="0" max="100" step="0.01" value="22" inputmode="decimal"></label>
             <label class="wide"><span>Link acquisto / riferimento</span><input id="deviceSalePurchaseUrl" type="url" maxlength="2000" placeholder="https://www.aliexpress.com/... oppure https://www.ebay.it/..."></label>
             <label class="wide"><span>Fornitore riconosciuto</span><input id="deviceSaleSupplier" type="text" maxlength="160" placeholder="Si compila automaticamente dal link"></label>
@@ -391,16 +391,10 @@
       if(!session?.access_token) return '';
       const fnUrl = window.BEPARYTECH_PRODUCT_TITLE_FUNCTION_URL || '';
       if(!fnUrl) return '';
-      const res = await fetch(fnUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + session.access_token,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ url })
+      const { data, error } = await window.supabaseClient.functions.invoke('beparytech-product-title', {
+        body: { url }
       });
-      if(!res.ok) return '';
-      const data = await res.json().catch(()=>({}));
+      if(error) return '';
       return String(data?.title || '').trim();
     }catch(e){
       console.warn('Titolo prodotto non recuperabile:', e);
@@ -418,6 +412,7 @@
 
   function btBindProductTitleAutofill(){
     const urlInput = btFindField([
+      '#deviceSalePurchaseUrl',
       '#adminSalePurchaseUrl',
       '#purchase_url',
       'input[name="purchase_url"]',
@@ -425,6 +420,7 @@
       'input[placeholder*="http"]'
     ]);
     const itemInput = btFindField([
+      '#deviceSaleName',
       '#adminSaleDeviceName',
       '#device_name',
       'input[name="device_name"]',
