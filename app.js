@@ -1227,14 +1227,34 @@ function bindAdminFinanceTabs(){
 
 
 
-function bindCleanAdminTabs(){
- const tabs=document.getElementById("cleanAdminTabs"); if(!tabs||tabs.dataset.bound==="1")return; tabs.dataset.bound="1";
- const sales=document.getElementById("cleanSalesPanel"), repairs=document.getElementById("adminRepairsCard"), history=document.getElementById("cleanSalesHistory");
- if(sales&&history&&history.parentElement!==sales)sales.appendChild(history);
- const buttons=[...tabs.querySelectorAll(".cleanAdminTab")];
- function show(name){const isSales=name==="sales"; if(sales)sales.hidden=!isSales;if(repairs)repairs.hidden=isSales;
- buttons.forEach(b=>b.classList.toggle("active",b.dataset.cleanTab===name));
- if(isSales){try{loadAdminDeviceSales()}catch(e){}}else{const p=document.getElementById("adminRepairsPanel");if(p)p.hidden=false;try{bindAdminRepairs();loadAdminRepairs()}catch(e){}}}
- buttons.forEach(b=>b.addEventListener("click",()=>show(b.dataset.cleanTab)));show("sales");
+
+
+function bindAdminWorkTabs(){
+  const tabs=document.getElementById("adminWorkTabs");
+  if(!tabs || tabs.dataset.bound==="1") return;
+  tabs.dataset.bound="1";
+  const buttons=[...tabs.querySelectorAll(".adminWorkTab")];
+  const sales=document.getElementById("adminSalesPanel");
+  const repairs=document.getElementById("adminRepairsPanel");
+
+  function show(panel){
+    const salesOn=panel==="sales";
+    if(sales) sales.hidden=!salesOn;
+    if(repairs) repairs.hidden=salesOn;
+    buttons.forEach(btn=>{
+      const on=btn.dataset.workTab===panel;
+      btn.classList.toggle("active",on);
+      btn.setAttribute("aria-selected",on?"true":"false");
+    });
+    if(salesOn){
+      try{ loadDeviceSales(); }catch(_){}
+    }else{
+      try{ bindAdminRepairs(); loadAdminRepairs(); }catch(_){}
+    }
+  }
+  buttons.forEach(btn=>btn.addEventListener("click",()=>show(btn.dataset.workTab)));
+  show("sales");
 }
-document.addEventListener("DOMContentLoaded",bindCleanAdminTabs);setInterval(bindCleanAdminTabs,1500);
+document.addEventListener("DOMContentLoaded",bindAdminWorkTabs);
+setInterval(bindAdminWorkTabs,1500);
+

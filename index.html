@@ -199,7 +199,83 @@
 #deviceSalesView #adminRepairsCard .adminSectionInner{padding:0!important}
 #deviceSalesView #adminRepairsCard .repairModernToggle{display:none!important}
 @media(max-width:480px){#deviceSalesView .cleanAdminTab{font-size:12px;padding:8px 5px;gap:5px}}
-</style></head>
+</style>
+<style>
+#deviceSalesView{max-width:1180px;margin:0 auto}
+#deviceSalesView .adminWorkHero{
+  display:flex;justify-content:space-between;gap:18px;align-items:flex-start;
+  margin:0 0 18px;
+}
+#deviceSalesView .adminWorkHero h2{margin:7px 0 7px;font-size:30px;line-height:1.05}
+#deviceSalesView .adminWorkHero p{margin:0;max-width:720px;opacity:.7}
+#deviceSalesView .adminWorkTabs{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;
+  margin:20px 0 24px;padding:6px;border-radius:18px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.09);
+}
+#deviceSalesView .adminWorkTab{
+  min-width:0;display:flex;align-items:center;gap:12px;
+  padding:14px 16px;border-radius:13px;border:1px solid transparent;
+  background:transparent;color:inherit;text-align:left;cursor:pointer;
+}
+#deviceSalesView .adminWorkTab.active{
+  background:linear-gradient(145deg,rgba(230,178,62,.18),rgba(230,178,62,.08));
+  border-color:rgba(230,178,62,.34);
+  box-shadow:0 8px 24px rgba(0,0,0,.16);
+}
+#deviceSalesView .adminWorkIcon{
+  flex:0 0 42px;width:42px;height:42px;display:grid;place-items:center;
+  border-radius:12px;background:rgba(255,255,255,.06);font-size:20px;
+}
+#deviceSalesView .adminWorkText{min-width:0;display:flex;flex-direction:column;gap:2px}
+#deviceSalesView .adminWorkText strong{font-size:15px}
+#deviceSalesView .adminWorkText small{font-size:11px;opacity:.6}
+#deviceSalesView .adminWorkPanel[hidden]{display:none!important}
+#deviceSalesView .adminWorkPanel{display:block}
+#deviceSalesView .adminPanelHeader{
+  display:flex;justify-content:space-between;align-items:center;
+  margin:0 0 14px;padding:0 2px;
+}
+#deviceSalesView .adminPanelHeader>div{display:flex;flex-direction:column;gap:3px}
+#deviceSalesView .adminPanelHeader strong{font-size:22px}
+#deviceSalesView .adminPanelHeader small{opacity:.62}
+#deviceSalesView .adminUniformCard{
+  margin:0 0 18px;
+  border-radius:20px!important;
+}
+#deviceSalesView #adminRepairForm,
+#deviceSalesView #deviceSaleForm{
+  padding:18px;
+  background:rgba(255,255,255,.025);
+  border:1px solid rgba(255,255,255,.08);
+}
+#deviceSalesView .deviceSaleHistoryCard{padding:18px}
+#deviceSalesView .deviceSaleGrid input,
+#deviceSalesView .deviceSaleGrid select,
+#deviceSalesView .deviceSaleGrid textarea{width:100%;box-sizing:border-box}
+#deviceSalesView .vatPreview{margin-top:16px}
+#deviceSalesView .primaryAction{margin-top:14px}
+#deviceSalesView .repairModernShell,
+#deviceSalesView .cleanAdminTabs,
+#deviceSalesView .adminFinanceSwitcher,
+#deviceSalesView .repairModernToggle{display:none!important}
+@media(max-width:700px){
+  #deviceSalesView .adminWorkHero{display:block}
+  #deviceSalesView .adminWorkHero .adminBadge{display:inline-flex;margin-top:12px}
+  #deviceSalesView .adminWorkHero h2{font-size:26px}
+  #deviceSalesView .adminWorkTabs{grid-template-columns:1fr 1fr;gap:6px;padding:5px;border-radius:15px}
+  #deviceSalesView .adminWorkTab{padding:10px 8px;gap:7px;justify-content:center}
+  #deviceSalesView .adminWorkIcon{flex:0 0 32px;width:32px;height:32px;border-radius:9px;font-size:16px}
+  #deviceSalesView .adminWorkText strong{font-size:12px;white-space:nowrap}
+  #deviceSalesView .adminWorkText small{display:none}
+  #deviceSalesView .adminPanelHeader strong{font-size:19px}
+  #deviceSalesView #adminRepairForm,
+  #deviceSalesView #deviceSaleForm,
+  #deviceSalesView .deviceSaleHistoryCard{padding:14px}
+}
+</style>
+
+</head>
 <body>
   <div id="menuOverlay" class="menuOverlay" hidden></div>
   <aside id="mainMenu" class="mainMenu" aria-hidden="true">
@@ -302,79 +378,110 @@
     </section>
 
 
-    <section id="deviceSalesView" class="deviceSalesView" hidden>
-      
+    
+<section id="deviceSalesView" class="deviceSalesView" hidden>
+  <div class="adminWorkHero">
+    <div>
+      <span class="usersKicker">AREA PRIVATA ADMIN</span>
+      <h2>Vendite e riparazioni</h2>
+      <p>Scegli cosa vuoi registrare. Le due aree sono separate e una sola resta visibile alla volta.</p>
+    </div>
+    <span class="adminBadge">SOLO ADMIN</span>
+  </div>
 
-      <div class="deviceSalesHero">
-        <div><span class="usersKicker">AREA PRIVATA ADMIN</span><h2>Vendite ricambi</h2><p>Registra le vendite di ricambi e articoli elettronici, calcola l’IVA e conserva il riferimento dell’acquisto.</p></div>
-        <span class="adminBadge">SOLO ADMIN</span>
+  <div class="adminWorkTabs" id="adminWorkTabs" role="tablist" aria-label="Vendite e riparazioni">
+    <button type="button" class="adminWorkTab active" data-work-tab="sales" role="tab" aria-selected="true">
+      <span class="adminWorkIcon">📦</span>
+      <span class="adminWorkText"><strong>Vendite ricambi</strong><small>Ricambi e articoli elettronici</small></span>
+    </button>
+    <button type="button" class="adminWorkTab" data-work-tab="repairs" role="tab" aria-selected="false">
+      <span class="adminWorkIcon">🛠️</span>
+      <span class="adminWorkText"><strong>Riparazioni</strong><small>Scheda madre e altre lavorazioni</small></span>
+    </button>
+  </div>
+
+  <div id="adminSalesPanel" class="adminWorkPanel" data-work-panel="sales">
+    <div class="adminPanelHeader">
+      <div><strong>Vendite ricambi</strong><small>Registra una vendita e conserva il riferimento dell’acquisto.</small></div>
+    </div>
+
+    <form id="deviceSaleForm" class="deviceSaleCard adminUniformCard">
+      <div class="deviceSaleCardHead"><div><strong>Nuova vendita</strong><small>Prezzo inserito escluso IVA</small></div></div>
+      <div class="deviceSaleGrid">
+        <label><span>Data vendita *</span><input id="deviceSaleDate" type="date" required></label>
+        <label><span>Negozio *</span><select id="deviceSaleStore" required><option value="">Seleziona negozio…</option>
+<option>RPL Piacenza</option><option>RPL Manerbio</option>
+<option>MELA Piacenza</option><option>MELA Lime Store</option><option>MELA Repubblica</option><option>MELA Emilia Est</option>
+<option>DP Udine</option><option>DP Majano</option><option>DP Tolmezzo</option><option>DP Cividale</option><option>DP Codroipo</option><option>DP Colugna</option>
+<option>E-POL</option></select></label>
+        <label class="wide"><span>Ricambio / Articolo *</span><input id="deviceSaleName" type="text" maxlength="160" placeholder="Si compila dal link oppure scrivi manualmente" required></label>
+        <label><span>Prezzo escluso IVA *</span><div class="moneyInput"><span>€</span><input id="deviceSalePrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" required></div></label>
+        <label><span>IVA %</span><input id="deviceSaleVatRate" type="number" min="0" max="100" step="0.01" value="22" inputmode="decimal"></label>
+        <label class="wide"><span>Link acquisto / riferimento</span><input id="deviceSalePurchaseUrl" type="url" maxlength="2000" placeholder="Incolla il link del prodotto"></label>
+        <label class="wide"><span>Fornitore riconosciuto</span><input id="deviceSaleSupplier" type="text" maxlength="160" placeholder="Si compila automaticamente dal link"></label>
+        <label class="wide"><span>Nota</span><textarea id="deviceSaleNote" maxlength="1000" rows="3" placeholder="Facoltativa"></textarea></label>
       </div>
-      <div class="deviceSalesLayout">
-        <div class="cleanAdminTabs" id="cleanAdminTabs">
-<button class="cleanAdminTab active" type="button" data-clean-tab="sales"><span>📦</span><strong>Vendite ricambi</strong></button>
-<button class="cleanAdminTab" type="button" data-clean-tab="repairs"><span>🛠️</span><strong>Riparazioni</strong></button>
-</div>
-<div id="cleanSalesPanel"><form id="deviceSaleForm" class="deviceSaleCard">
-          <div class="deviceSaleCardHead"><div><strong>Nuova vendita</strong><small>I dati economici vengono calcolati automaticamente</small></div></div>
-          <div class="deviceSaleGrid">
-            <label><span>Data vendita *</span><input id="deviceSaleDate" type="date" required></label>
-            <label><span>Negozio *</span><select id="deviceSaleStore" required><option value="">Seleziona negozio…</option><option>RPL Piacenza</option><option>RPL Manerbio</option><option>MELA Piacenza</option><option>MELA Lime Store</option><option>MELA Repubblica</option><option>MELA Emilia Est</option><option>DP Udine</option><option>DP Majano</option><option>DP Tolmezzo</option><option>DP Cividale</option><option>DP Codroipo</option><option>DP Colugna</option><option>E-POL</option></select></label>
-            <label class="wide"><span>Ricambio / Articolo *</span><input id="deviceSaleName" type="text" maxlength="160" placeholder="Si compila dal link oppure scrivi manualmente" required></label>
-            <label><span>Prezzo escluso IVA *</span><div class="moneyInput"><span>€</span><input id="deviceSalePrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" required></div></label>
-            <label><span>IVA %</span><input id="deviceSaleVatRate" type="number" min="0" max="100" step="0.01" value="22" inputmode="decimal"></label>
-            <label class="wide"><span>Link acquisto / riferimento</span><input id="deviceSalePurchaseUrl" type="url" maxlength="2000" placeholder="https://www.aliexpress.com/... oppure https://www.ebay.it/..."></label>
-            <label class="wide"><span>Fornitore riconosciuto</span><input id="deviceSaleSupplier" type="text" maxlength="160" placeholder="Si compila automaticamente dal link"></label>
-            <label class="wide"><span>Nota</span><textarea id="deviceSaleNote" maxlength="1000" rows="3" placeholder="Facoltativa"></textarea></label>
-          </div>
-          <div class="vatPreview">
-            <div><span>Imponibile</span><strong id="deviceSaleNet">€ 0,00</strong></div>
-            <div><span>IVA</span><strong id="deviceSaleVat">€ 0,00</strong></div>
-            <div class="total"><span>Totale IVA inclusa</span><strong id="deviceSaleGross">€ 0,00</strong></div>
-          </div>
-          <button class="primaryAction animatedBtn" type="submit">Salva vendita</button>
-          <div id="deviceSaleMsg" class="createUserMsg" aria-live="polite"></div>
-        </form>
-        
-        
-        </div><section class="adminSectionPanel" id="adminRepairsCard" hidden>
-<div id="adminRepairsPanel">
-            <div class="adminSectionInner">
-
-          <div class="deviceSaleCardHead"><div><strong>Riparazioni dispositivi</strong><small>Scheda madre, display, connettori e altre riparazioni effettuate</small></div><span class="adminBadge">SOLO ADMIN</span></div>
-          <form id="adminRepairForm">
-            <div class="deviceSaleGrid">
-              <label><span>Data riparazione *</span><input id="adminRepairDate" type="date" required></label>
-              <label><span>Negozio *</span><select id="adminRepairStore" required><option value="">Seleziona negozio…</option><option>RPL Piacenza</option><option>RPL Manerbio</option><option>MELA Piacenza</option><option>MELA Lime Store</option><option>MELA Repubblica</option><option>MELA Emilia Est</option><option>DP Udine</option><option>DP Majano</option><option>DP Tolmezzo</option><option>DP Cividale</option><option>DP Codroipo</option><option>DP Colugna</option><option>E-POL</option></select></label>
-              <label class="wide"><span>Dispositivo *</span><input id="adminRepairDevice" maxlength="160" placeholder="es. iPhone 15 Pro, Samsung S24, notebook..." required></label>
-              <label class="wide"><span>Tipo di riparazione *</span><input id="adminRepairType" maxlength="240" placeholder="es. Riparazione scheda madre, sostituzione connettore..." required></label>
-              <label><span>Prezzo escluso IVA *</span><div class="moneyInput"><span>€</span><input id="adminRepairPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" required></div></label>
-              <label><span>IVA %</span><input id="adminRepairVatRate" type="number" min="0" max="100" step="0.01" value="22" inputmode="decimal"></label>
-              <label class="wide"><span>Nota</span><textarea id="adminRepairNote" maxlength="1000" rows="3" placeholder="Facoltativa"></textarea></label>
-            </div>
-            <div class="vatPreview">
-              <div><span>Imponibile</span><strong id="adminRepairNet">€ 0,00</strong></div>
-              <div><span>IVA</span><strong id="adminRepairVat">€ 0,00</strong></div>
-              <div class="total"><span>Totale IVA inclusa</span><strong id="adminRepairGross">€ 0,00</strong></div>
-            </div>
-            <button class="primaryAction animatedBtn" type="submit">Salva riparazione</button>
-            <div id="adminRepairMsg" class="createUserMsg" aria-live="polite"></div>
-          </form>
-          <div class="deviceSaleCardHead" style="margin-top:22px"><div><strong>Riparazioni registrate</strong><small>Storico delle lavorazioni</small></div><button id="refreshAdminRepairsBtn" class="miniBtn" type="button">Aggiorna</button></div>
-          <div id="adminRepairsSummary" class="deviceSalesSummary"></div>
-          <div id="adminRepairsList"><div class="emptyState">Nessuna riparazione caricata</div></div>
-        
-            </div>
-          </div>
-        </section>
-<div class="deviceSaleCard deviceSaleHistoryCard" id="cleanSalesHistory">
-          <div class="deviceSaleCardHead"><div><strong>Vendite registrate</strong><small>Solo gli amministratori possono visualizzarle</small></div><button id="refreshDeviceSalesBtn" class="miniBtn" type="button">Aggiorna</button></div>
-          <div id="deviceSalesSummary" class="deviceSalesSummary"></div>
-          <div id="deviceSalesList"><div class="emptyState">Caricamento…</div></div>
-        </div>
+      <div class="vatPreview">
+        <div><span>Imponibile</span><strong id="deviceSaleNet">€ 0,00</strong></div>
+        <div><span>IVA</span><strong id="deviceSaleVat">€ 0,00</strong></div>
+        <div class="total"><span>Totale IVA inclusa</span><strong id="deviceSaleGross">€ 0,00</strong></div>
       </div>
-    </section>
+      <button class="primaryAction animatedBtn" type="submit">Salva vendita</button>
+      <div id="deviceSaleMsg" class="createUserMsg" aria-live="polite"></div>
+    </form>
 
-    <section id="hoursView" class="hoursView" hidden>
+    <div class="deviceSaleCard deviceSaleHistoryCard adminUniformCard">
+      <div class="deviceSaleCardHead">
+        <div><strong>Vendite registrate</strong><small>Storico vendite ricambi</small></div>
+        <button id="refreshDeviceSalesBtn" class="miniBtn" type="button">Aggiorna</button>
+      </div>
+      <div id="deviceSalesSummary" class="deviceSalesSummary"></div>
+      <div id="deviceSalesList"><div class="emptyState">Caricamento…</div></div>
+    </div>
+  </div>
+
+  <div id="adminRepairsPanel" class="adminWorkPanel" data-work-panel="repairs" hidden>
+    <div class="adminPanelHeader">
+      <div><strong>Riparazioni dispositivi</strong><small>Registra le lavorazioni effettuate sui dispositivi.</small></div>
+    </div>
+
+    <form id="adminRepairForm" class="deviceSaleCard adminUniformCard">
+      <div class="deviceSaleCardHead"><div><strong>Nuova riparazione</strong><small>Prezzo inserito escluso IVA</small></div></div>
+      <div class="deviceSaleGrid">
+        <label><span>Data riparazione *</span><input id="adminRepairDate" type="date" required></label>
+        <label><span>Negozio *</span><select id="adminRepairStore" required><option value="">Seleziona negozio…</option>
+<option>RPL Piacenza</option><option>RPL Manerbio</option>
+<option>MELA Piacenza</option><option>MELA Lime Store</option><option>MELA Repubblica</option><option>MELA Emilia Est</option>
+<option>DP Udine</option><option>DP Majano</option><option>DP Tolmezzo</option><option>DP Cividale</option><option>DP Codroipo</option><option>DP Colugna</option>
+<option>E-POL</option></select></label>
+        <label class="wide"><span>Dispositivo *</span><input id="adminRepairDevice" maxlength="160" placeholder="es. iPhone 15 Pro, S21 Ultra 5G..." required></label>
+        <label class="wide"><span>Tipo di riparazione *</span><input id="adminRepairType" maxlength="240" placeholder="es. Reballing CPU, riparazione scheda madre..." required></label>
+        <label><span>Prezzo escluso IVA *</span><div class="moneyInput"><span>€</span><input id="adminRepairPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" required></div></label>
+        <label><span>IVA %</span><input id="adminRepairVatRate" type="number" min="0" max="100" step="0.01" value="22" inputmode="decimal"></label>
+        <label class="wide"><span>Nota</span><textarea id="adminRepairNote" maxlength="1000" rows="3" placeholder="es. Riferimento e-share: 8107"></textarea></label>
+      </div>
+      <div class="vatPreview">
+        <div><span>Imponibile</span><strong id="adminRepairNet">€ 0,00</strong></div>
+        <div><span>IVA</span><strong id="adminRepairVat">€ 0,00</strong></div>
+        <div class="total"><span>Totale IVA inclusa</span><strong id="adminRepairGross">€ 0,00</strong></div>
+      </div>
+      <button class="primaryAction animatedBtn" type="submit">Salva riparazione</button>
+      <div id="adminRepairMsg" class="createUserMsg" aria-live="polite"></div>
+    </form>
+
+    <div class="deviceSaleCard deviceSaleHistoryCard adminUniformCard">
+      <div class="deviceSaleCardHead">
+        <div><strong>Riparazioni registrate</strong><small>Storico delle lavorazioni</small></div>
+        <button id="refreshAdminRepairsBtn" class="miniBtn" type="button">Aggiorna</button>
+      </div>
+      <div id="adminRepairsSummary" class="deviceSalesSummary"></div>
+      <div id="adminRepairsList"><div class="emptyState">Nessuna riparazione caricata</div></div>
+    </div>
+  </div>
+</section>
+
+
+<section id="hoursView" class="hoursView" hidden>
       <div class="hoursHero"><div><span class="usersKicker">AREA PRIVATA ADMIN</span><h2>I miei orari</h2><p>Registra ore lavorate, note e attività extra. Questa sezione è visibile solo a te.</p></div><span class="adminBadge">SOLO ADMIN</span></div>
       <div class="hoursToolbar"><label><span>Mese</span><input id="hoursMonth" type="month"></label><button id="hoursTodayBtn" class="miniBtn animatedBtn" type="button">Oggi</button><button id="hoursRefreshBtn" class="miniBtn animatedBtn" type="button">Aggiorna</button></div>
       <div class="hoursMonthsPanel"><div class="hoursMonthsTitle"><strong>Mesi</strong><small>Scegli un mese</small></div><div id="hoursMonthColumns" class="hoursMonthColumns" aria-label="Mesi dell'anno"></div></div>
