@@ -1199,8 +1199,8 @@ function bindAdminRepairsAccordion(){
     }
   });
 }
-document.addEventListener("DOMContentLoaded",bindAdminRepairsAccordion);
-setInterval(bindAdminRepairsAccordion,1500);
+
+
 
 
 
@@ -1223,6 +1223,18 @@ function bindAdminFinanceTabs(){
  tabs.forEach(t=>t.addEventListener("click",()=>show(t.dataset.adminPanel)));
  show("parts");
 }
-document.addEventListener("DOMContentLoaded",bindAdminFinanceTabs);
-setInterval(bindAdminFinanceTabs,1500);
 
+
+
+
+function bindCleanAdminTabs(){
+ const tabs=document.getElementById("cleanAdminTabs"); if(!tabs||tabs.dataset.bound==="1")return; tabs.dataset.bound="1";
+ const sales=document.getElementById("cleanSalesPanel"), repairs=document.getElementById("adminRepairsCard"), history=document.getElementById("cleanSalesHistory");
+ if(sales&&history&&history.parentElement!==sales)sales.appendChild(history);
+ const buttons=[...tabs.querySelectorAll(".cleanAdminTab")];
+ function show(name){const isSales=name==="sales"; if(sales)sales.hidden=!isSales;if(repairs)repairs.hidden=isSales;
+ buttons.forEach(b=>b.classList.toggle("active",b.dataset.cleanTab===name));
+ if(isSales){try{loadAdminDeviceSales()}catch(e){}}else{const p=document.getElementById("adminRepairsPanel");if(p)p.hidden=false;try{bindAdminRepairs();loadAdminRepairs()}catch(e){}}}
+ buttons.forEach(b=>b.addEventListener("click",()=>show(b.dataset.cleanTab)));show("sales");
+}
+document.addEventListener("DOMContentLoaded",bindCleanAdminTabs);setInterval(bindCleanAdminTabs,1500);

@@ -188,7 +188,18 @@
 }
 </style>
 
-</head>
+<style>
+#deviceSalesView .adminFinanceSwitcher{display:none!important}
+#deviceSalesView .cleanAdminTabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:18px 0;padding:6px;border:1px solid rgba(255,255,255,.09);border-radius:16px;background:rgba(255,255,255,.03)}
+#deviceSalesView .cleanAdminTab{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:10px;border:1px solid transparent;border-radius:12px;background:transparent;color:inherit;font-size:14px}
+#deviceSalesView .cleanAdminTab.active{background:rgba(222,169,58,.15);border-color:rgba(222,169,58,.35)}
+#deviceSalesView .cleanAdminTab strong{white-space:nowrap}
+#deviceSalesView #cleanSalesPanel[hidden],#deviceSalesView #adminRepairsCard[hidden]{display:none!important}
+#deviceSalesView #adminRepairsCard{margin:0!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important}
+#deviceSalesView #adminRepairsCard .adminSectionInner{padding:0!important}
+#deviceSalesView #adminRepairsCard .repairModernToggle{display:none!important}
+@media(max-width:480px){#deviceSalesView .cleanAdminTab{font-size:12px;padding:8px 5px;gap:5px}}
+</style></head>
 <body>
   <div id="menuOverlay" class="menuOverlay" hidden></div>
   <aside id="mainMenu" class="mainMenu" aria-hidden="true">
@@ -292,24 +303,18 @@
 
 
     <section id="deviceSalesView" class="deviceSalesView" hidden>
-      <div class="adminFinanceSwitcher" id="adminFinanceSwitcher">
-        <button type="button" class="adminFinanceTab active" data-admin-panel="parts">
-          <span class="adminFinanceTabIcon">📦</span>
-          <span><strong>Vendite ricambi</strong><small>Ricambi e articoli elettronici</small></span>
-        </button>
-        <button type="button" class="adminFinanceTab" data-admin-panel="repairs">
-          <span class="adminFinanceTabIcon">🛠️</span>
-          <span><strong>Riparazioni</strong><small>Scheda madre e altre lavorazioni</small></span>
-        </button>
-      </div>
+      
 
       <div class="deviceSalesHero">
         <div><span class="usersKicker">AREA PRIVATA ADMIN</span><h2>Vendite ricambi</h2><p>Registra le vendite di ricambi e articoli elettronici, calcola l’IVA e conserva il riferimento dell’acquisto.</p></div>
         <span class="adminBadge">SOLO ADMIN</span>
       </div>
       <div class="deviceSalesLayout">
-        <div class="adminFinancePanel" data-admin-finance-panel="parts">
-<form id="deviceSaleForm" class="deviceSaleCard">
+        <div class="cleanAdminTabs" id="cleanAdminTabs">
+<button class="cleanAdminTab active" type="button" data-clean-tab="sales"><span>📦</span><strong>Vendite ricambi</strong></button>
+<button class="cleanAdminTab" type="button" data-clean-tab="repairs"><span>🛠️</span><strong>Riparazioni</strong></button>
+</div>
+<div id="cleanSalesPanel"><form id="deviceSaleForm" class="deviceSaleCard">
           <div class="deviceSaleCardHead"><div><strong>Nuova vendita</strong><small>I dati economici vengono calcolati automaticamente</small></div></div>
           <div class="deviceSaleGrid">
             <label><span>Data vendita *</span><input id="deviceSaleDate" type="date" required></label>
@@ -331,19 +336,9 @@
         </form>
         
         
-        </div>
-<section class="repairModernShell adminFinancePanel" id="adminRepairsCard" data-admin-finance-panel="repairs" hidden>
-          <button class="repairModernToggle repairLegacyToggle" id="adminRepairsToggle" type="button" aria-expanded="false" aria-controls="adminRepairsPanel">
-            <span class="repairModernIcon" aria-hidden="true">🛠️</span>
-            <span class="repairModernTitleWrap">
-              <strong>Riparazioni dispositivi</strong>
-              <small>Scheda madre, connettori e altre lavorazioni</small>
-            </span>
-            <span class="repairModernBadge">SOLO ADMIN</span>
-            <span class="repairModernChevron" aria-hidden="true">⌄</span>
-          </button>
-          <div class="repairModernPanel" id="adminRepairsPanel">
-            <div class="repairModernInner">
+        </div><section class="adminSectionPanel" id="adminRepairsCard" hidden>
+<div id="adminRepairsPanel">
+            <div class="adminSectionInner">
 
           <div class="deviceSaleCardHead"><div><strong>Riparazioni dispositivi</strong><small>Scheda madre, display, connettori e altre riparazioni effettuate</small></div><span class="adminBadge">SOLO ADMIN</span></div>
           <form id="adminRepairForm">
@@ -371,7 +366,7 @@
             </div>
           </div>
         </section>
-<div class="deviceSaleCard deviceSaleHistoryCard adminFinancePanel" data-admin-finance-panel="parts">
+<div class="deviceSaleCard deviceSaleHistoryCard" id="cleanSalesHistory">
           <div class="deviceSaleCardHead"><div><strong>Vendite registrate</strong><small>Solo gli amministratori possono visualizzarle</small></div><button id="refreshDeviceSalesBtn" class="miniBtn" type="button">Aggiorna</button></div>
           <div id="deviceSalesSummary" class="deviceSalesSummary"></div>
           <div id="deviceSalesList"><div class="emptyState">Caricamento…</div></div>
