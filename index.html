@@ -14,6 +14,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
   <link rel="stylesheet" href="style.css?v=39">
+<script>window.BEPARYTECH_PRODUCT_TITLE_FUNCTION_URL="https://kqdcbrpykaboabjglwxu.supabase.co/functions/v1/beparytech-product-title";</script>
 </head>
 <body>
   <div id="menuOverlay" class="menuOverlay" hidden></div>
@@ -129,7 +130,7 @@
             <label><span>Data vendita *</span><input id="deviceSaleDate" type="date" required></label>
             <label><span>Negozio *</span><select id="deviceSaleStore" required><option value="">Seleziona negozio…</option><option>RPL Piacenza</option><option>RPL Manerbio</option><option>MELA Piacenza</option><option>MELA Lime Store</option><option>MELA Repubblica</option><option>MELA Emilia Est</option><option>DP Udine</option><option>DP Majano</option><option>DP Tolmezzo</option><option>DP Cividale</option><option>DP Codroipo</option><option>DP Colugna</option><option>E-POL</option></select></label>
             <label class="wide"><span>Ricambio / Articolo *</span><input id="deviceSaleName" type="text" maxlength="160" placeholder="es. Display iPhone 15 Pro, batteria, flat, connettore..." required></label>
-            <label><span>Prezzo vendita IVA inclusa *</span><div class="moneyInput"><span>€</span><input id="deviceSalePrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" required></div></label>
+            <label><span>Prezzo escluso IVA IVA inclusa *</span><div class="moneyInput"><span>€</span><input id="deviceSalePrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" required></div></label>
             <label><span>IVA %</span><input id="deviceSaleVatRate" type="number" min="0" max="100" step="0.01" value="22" inputmode="decimal"></label>
             <label class="wide"><span>Link acquisto / riferimento</span><input id="deviceSalePurchaseUrl" type="url" maxlength="2000" placeholder="https://www.aliexpress.com/... oppure https://www.ebay.it/..."></label>
             <label class="wide"><span>Fornitore riconosciuto</span><input id="deviceSaleSupplier" type="text" maxlength="160" placeholder="Si compila automaticamente dal link"></label>
@@ -138,7 +139,7 @@
           <div class="vatPreview">
             <div><span>Imponibile</span><strong id="deviceSaleNet">€ 0,00</strong></div>
             <div><span>IVA</span><strong id="deviceSaleVat">€ 0,00</strong></div>
-            <div class="total"><span>Totale vendita</span><strong id="deviceSaleGross">€ 0,00</strong></div>
+            <div class="total"><span>Totale IVA inclusa</span><strong id="deviceSaleGross">€ 0,00</strong></div>
           </div>
           <button class="primaryAction animatedBtn" type="submit">Salva vendita</button>
           <div id="deviceSaleMsg" class="createUserMsg" aria-live="polite"></div>
@@ -378,6 +379,92 @@
   </div>
 
   <script src="app.js?v=39"></script>
+
+
+<script>
+(function(){
+  async function btFetchProductTitleFromUrl(rawUrl){
+    const url = String(rawUrl || '').trim();
+    if(!url) return '';
+    try{
+      const { data: { session } } = await window.supabaseClient.auth.getSession();
+      if(!session?.access_token) return '';
+      const fnUrl = window.BEPARYTECH_PRODUCT_TITLE_FUNCTION_URL || '';
+      if(!fnUrl) return '';
+      const res = await fetch(fnUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + session.access_token,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ url })
+      });
+      if(!res.ok) return '';
+      const data = await res.json().catch(()=>({}));
+      return String(data?.title || '').trim();
+    }catch(e){
+      console.warn('Titolo prodotto non recuperabile:', e);
+      return '';
+    }
+  }
+
+  function btFindField(selectors){
+    for(const sel of selectors){
+      const el = document.querySelector(sel);
+      if(el) return el;
+    }
+    return null;
+  }
+
+  function btBindProductTitleAutofill(){
+    const urlInput = btFindField([
+      '#adminSalePurchaseUrl',
+      '#purchase_url',
+      'input[name="purchase_url"]',
+      'input[data-field="purchase_url"]',
+      'input[placeholder*="http"]'
+    ]);
+    const itemInput = btFindField([
+      '#adminSaleDeviceName',
+      '#device_name',
+      'input[name="device_name"]',
+      'input[data-field="device_name"]',
+      'input[placeholder*="Ricambio"]',
+      'input[placeholder*="Articolo"]'
+    ]);
+    if(!urlInput || !itemInput || urlInput.dataset.btTitleBound === '1') return;
+    urlInput.dataset.btTitleBound = '1';
+
+    let lastUrl = '';
+    let timer = null;
+    const run = async ()=>{
+      const url = String(urlInput.value || '').trim();
+      if(!url || url === lastUrl) return;
+      lastUrl = url;
+      const previous = itemInput.value;
+      itemInput.placeholder = 'Recupero descrizione…';
+      const title = await btFetchProductTitleFromUrl(url);
+      if(title){
+        // Avoid overwriting a deliberately-entered description unless it was empty.
+        if(!previous.trim() || itemInput.dataset.btAutoFilled === '1'){
+          itemInput.value = title;
+          itemInput.dataset.btAutoFilled = '1';
+          itemInput.dispatchEvent(new Event('input', {bubbles:true}));
+          itemInput.dispatchEvent(new Event('change', {bubbles:true}));
+        }
+      }
+      itemInput.placeholder = 'Es. Display iPhone 14 Pro OLED';
+    };
+
+    urlInput.addEventListener('change', run);
+    urlInput.addEventListener('blur', run);
+    urlInput.addEventListener('paste', ()=>{ clearTimeout(timer); timer = setTimeout(run, 500); });
+  }
+
+  document.addEventListener('DOMContentLoaded', btBindProductTitleAutofill);
+  setInterval(btBindProductTitleAutofill, 1500);
+})();
+</script>
 
 </body>
 </html>
