@@ -657,3 +657,18 @@ body[data-theme="light"] .authPanel input:-webkit-autofill:active{
 .hoursOtherWrap{grid-column:1/-1;border-top:1px solid var(--line,#2b2b2b);padding-top:10px}.hoursOtherTitle{font-size:13px;font-weight:800;margin-bottom:8px}.hoursOtherGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 @media(max-width:900px){.hoursSeparatedGrid{grid-template-columns:1fr 1fr}.hoursNotesColumn{grid-column:1/-1}.hoursMonthColumns{grid-template-columns:repeat(12,82px)}}
 @media(max-width:620px){.hoursSeparatedGrid{grid-template-columns:1fr}.hoursNotesColumn{grid-column:auto}.hoursOtherGrid{grid-template-columns:1fr}.hoursMonthBtn{min-width:78px}.hoursMonthsPanel{padding:12px}.hoursColumnHead strong{font-size:18px}.hoursCompactDay{padding:12px}}
+
+/* v33 - Vendute, note versionate e stampa DYMO */
+.saleStockAction{width:auto!important;min-width:72px!important;padding:0 10px!important;font-size:11px!important;letter-spacing:.02em}
+.noteTools{display:flex;gap:9px;flex-wrap:wrap;margin:10px 0 14px}.noteTools .secondaryAction{flex:1;min-width:130px}
+.noteHistoryHead{display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin:14px 0 8px}.noteHistoryHead strong,.noteHistoryHead small{display:block}.noteHistoryHead small{color:var(--muted);font-size:10px;text-align:right}
+.noteHistory{max-height:210px;overflow:auto;border:1px solid var(--line);border-radius:14px;padding:8px;background:rgba(0,0,0,.08)}
+.noteHistoryItem{padding:9px 10px;border-bottom:1px solid var(--line)}.noteHistoryItem:last-child{border-bottom:0}.noteHistoryItem strong,.noteHistoryItem span,.noteHistoryItem small{display:block}.noteHistoryItem strong{font-size:11px}.noteHistoryItem span{margin-top:4px;white-space:pre-wrap;overflow-wrap:anywhere}.noteHistoryItem small{color:var(--muted);margin-top:3px;font-size:10px}
+.saleNoteActions{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}.saleNoteActions .rowAction{font-size:10px;padding:7px 9px}
+.dymoPrintLabel{display:none}
+@media print{
+ body.printingDymo>*:not(.dymoPrintLabel){display:none!important}
+ body.printingDymo .dymoPrintLabel{display:block!important;position:fixed;inset:0;width:54mm;height:25mm;padding:2.5mm;box-sizing:border-box;background:#fff;color:#000;font-family:Arial,sans-serif;overflow:hidden}
+ body.printingDymo .dymoPrintLabel strong{display:block;font-size:10pt;line-height:1.05}.dymoPrintLabel span{display:block;font-size:7pt;margin-top:1mm}.dymoPrintLabel p{font-size:8pt;line-height:1.15;margin:1.5mm 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
+ @page{size:54mm 25mm;margin:0}
+}

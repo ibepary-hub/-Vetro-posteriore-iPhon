@@ -10,10 +10,10 @@
   <meta name="apple-mobile-web-app-title" content="BeparyTech">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
   <title>BeparyTech • Magazzino Ricambi iPhone</title>
-  <link rel="manifest" href="manifest.json?v=30">
+  <link rel="manifest" href="manifest.json?v=33">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=30">
+  <link rel="stylesheet" href="style.css?v=33">
 </head>
 <body>
   <div id="menuOverlay" class="menuOverlay" hidden></div>
@@ -24,7 +24,7 @@
       <div id="customMenuSections" class="customMenuSections"></div>
       <div class="menuDivider"></div>
       <button class="menuItem" type="button" data-category="Cronologia"><span class="menuIcon">≋</span><span><strong>Cronologia</strong><small>Tutte le attività</small></span></button>
-      <button class="menuItem" type="button" data-category="Vendite"><span class="menuIcon">↺</span><span><strong>Vendite / rientri</strong><small>Storico scarichi</small></span></button>
+      <button class="menuItem" type="button" data-category="Vendite"><span class="menuIcon">✓</span><span><strong>Vendute</strong><small>Vendite, note e rientri</small></span></button>
       <button id="catalogMenuItem" class="menuItem adminOnly" type="button" data-category="GestioneMagazzino" hidden><span class="menuIcon">＋</span><span><strong>Gestione magazzino</strong><small>Sezioni e prodotti</small></span></button>
       <button id="hoursMenuItem" class="menuItem adminOnly" type="button" data-category="Orari" hidden><span class="menuIcon">◷</span><span><strong>Orari</strong><small>Ore lavorate ed extra</small></span></button>
       <button id="backupMenuItem" class="menuItem adminOnly" type="button" data-category="Backup" hidden><span class="menuIcon">⇩</span><span><strong>Backup</strong><small>Esporta dati</small></span></button>
@@ -107,9 +107,9 @@
     <section id="auditView" class="salesView" hidden><div class="salesHeader"><div><strong>Cronologia completa</strong><span>Movimenti, richieste e modifiche</span></div><button id="refreshAuditBtn" class="miniBtn animatedBtn" type="button">Aggiorna</button></div><div id="auditList"></div></section>
     <section id="backupView" class="catalogView" hidden><div class="adminHero"><div><span class="usersKicker">BACKUP</span><h2>Esporta i dati</h2><p>Scarica una copia del magazzino e della cronologia.</p></div><span class="adminBadge">ADMIN</span></div><div class="backupGrid"><button id="exportInventoryCsv" class="catalogCard backupAction" type="button"><strong>CSV Magazzino</strong><span>Prodotti, sezioni e quantità</span></button><button id="exportRequestsCsv" class="catalogCard backupAction" type="button"><strong>CSV Da ordinare</strong><span>Tutte le richieste</span></button><button id="exportFullBackup" class="catalogCard backupAction" type="button"><strong>Backup JSON completo</strong><span>Magazzino, richieste, vendite e cronologia</span></button></div></section>
     <section id="salesView" class="salesView" hidden>
-      <div class="salesHeader"><div><strong>Vendite</strong><span>Storico dei ricambi scaricati</span></div><button id="refreshSalesBtn" class="miniBtn" type="button">Aggiorna</button></div>
+      <div class="salesHeader"><div><strong>Vendute</strong><span>Storico vendite, note, stampa DYMO e rientri</span></div><button id="refreshSalesBtn" class="miniBtn" type="button">Aggiorna</button></div>
       <div class="salesSubTabs" role="tablist" aria-label="Vendite e archivio">
-        <button id="activeSalesTab" class="salesSubTab active" type="button">Vendite attive</button>
+        <button id="activeSalesTab" class="salesSubTab active" type="button">Vendute</button>
         <button id="archiveSalesTab" class="salesSubTab" type="button">Archivio</button>
       </div>
       <div id="salesList"></div>
@@ -256,6 +256,22 @@
     </div>
   </div>
 
+
+  <div id="saleNoteModal" class="saleModal" hidden>
+    <div class="saleDialog noteDialog" role="dialog" aria-modal="true" aria-labelledby="saleNoteEditTitle">
+      <div class="saleDialogHead"><div><span class="saleKicker">NOTA VENDITA</span><h2 id="saleNoteEditTitle">Modifica nota</h2></div><button id="saleNoteEditX" class="closeBtn" type="button" aria-label="Chiudi">×</button></div>
+      <div id="saleNoteEditItem" class="saleItemLabel"></div>
+      <label class="fieldLabel" for="saleNoteEditText">Nota</label>
+      <textarea id="saleNoteEditText" class="reasonInput" maxlength="1000" rows="5" placeholder="Scrivi la nota…"></textarea>
+      <div class="noteTools"><button id="saleNotePrint" class="secondaryAction" type="button">Stampa DYMO</button><button id="saleNoteExport" class="secondaryAction" type="button">Esporta nota</button></div>
+      <div class="noteHistoryHead"><strong>Storico modifiche</strong><small>Le versioni precedenti non vengono cancellate</small></div>
+      <div id="saleNoteHistory" class="noteHistory"><div class="emptyState">Caricamento…</div></div>
+      <div id="saleNoteEditError" class="saleError"></div>
+      <div class="saleActions"><button id="saleNoteEditCancel" class="secondaryAction" type="button">Chiudi</button><button id="saleNoteEditSave" class="primaryAction" type="button">Salva modifica</button></div>
+    </div>
+  </div>
+  <div id="dymoPrintLabel" class="dymoPrintLabel" aria-hidden="true"><strong id="dymoPrintTitle"></strong><span id="dymoPrintMeta"></span><p id="dymoPrintNote"></p></div>
+
   <div id="operatorPasswordModal" class="saleModal" hidden>
     <div class="saleDialog compactDialog" role="dialog" aria-modal="true" aria-labelledby="operatorPasswordTitle">
       <div class="saleDialogHead"><div><span class="saleKicker">SICUREZZA OPERATORE</span><h2 id="operatorPasswordTitle">Imposta password operatore</h2></div><button id="operatorPasswordX" class="closeBtn" type="button" aria-label="Chiudi">×</button></div>
@@ -283,7 +299,7 @@
   <template id="colorTemplate">
     <div class="colorRow">
       <div class="colorInfo"><span class="dot"></span><div><strong class="colorName"></strong><span class="status"></span></div></div>
-      <div class="stepper"><button class="minus">−</button><input class="qty" inputmode="numeric" pattern="[0-9]*" value="0"><button class="plus">+</button></div>
+      <div class="stepper"><button class="minus saleStockAction" title="Segna come venduta">Venduta</button><input class="qty" inputmode="numeric" pattern="[0-9]*" value="0"><button class="plus">+</button></div>
     </div>
   </template>
 
@@ -315,7 +331,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=31"></script>
+  <script src="app.js?v=33"></script>
 
 </body>
 </html>

@@ -1,0 +1,29 @@
+BeparyTech – Security Scan v33
+Data: 01/09/2026
+
+NOVITÀ E CONTROLLI
+- Nuova tabella beparytech_sale_note_history con RLS attiva.
+- La cronologia note è leggibile solo da utenti autenticati dello stesso workspace.
+- Modifica nota eseguita tramite RPC update_beparytech_sale_note: controllo Admin lato database, non solo nell'interfaccia.
+- La RPC limita la nota a 1000 caratteri e registra vecchia nota, nuova nota, utente e data/ora.
+- Ogni modifica nota genera anche un evento nella cronologia audit.
+- Nessun service_role/secret key aggiunto al frontend; resta solo la publishable key Supabase.
+- Rendering di note e storico passa da escapeHtml/textContent per ridurre rischio XSS.
+- Eliminazione/archiviazione vendita resta riservata all'Admin lato database.
+- Ripristino magazzino resta gestito da RPC transazionale già presente.
+- CSP continua a bloccare script inline, frame, object e protocolli non previsti.
+
+SUPABASE ADVISOR
+- RLS note history: attiva.
+- Le RPC SECURITY DEFINER esposte generano warning dell'advisor: per le RPC operative è intenzionale perché il frontend deve chiamarle; ogni RPC sensibile deve verificare auth/ruolo/workspace internamente.
+- beparytech_account_operators ha RLS senza policy intenzionalmente: accesso diretto negato, gestione tramite RPC.
+- Leaked Password Protection risulta ancora disattivata: consigliato abilitarla da Supabase Auth.
+
+RISCHI RESIDUI
+1. MEDIO: supabase-js viene ancora caricato da jsDelivr. La versione è bloccata a 2.112.4, ma resta una dipendenza CDN.
+2. MEDIO: codici operatore da 4 cifre hanno entropia bassa; preferire 6-8 cifre casuali.
+3. BASSO/MEDIO: GitHub Pages non permette tutti gli header HTTP di sicurezza personalizzati. Per hardening massimo usare hosting/reverse proxy con HSTS, CSP header, frame-ancestors e Permissions-Policy.
+4. BASSO: Leaked Password Protection Supabase non è attiva.
+
+NOTA
+Nessuna applicazione Internet può essere definita invulnerabile. I controlli frontend non sostituiscono RLS/RPC e verifiche server-side.

@@ -280,8 +280,8 @@ function setCategory(category){
   currentCategory=category;
   currentCustomSectionId=isCustom?Number(String(category).split(":")[1]):null;
   const sec=isCustom?customSections.find(s=>Number(s.id)===currentCustomSectionId):null;
-  const title=isDashboard?"Dashboard":isAudit?"Cronologia":isSales?"Vendite / rientri":isUsers?"Utenti":isCatalog?"Gestione magazzino":isBackup?"Backup":isHours?"I miei orari":sec?.name||category;
-  const desc=isDashboard?"Riepilogo generale":isAudit?"Tutte le attività del gestionale":isSales?"Scarichi, rientri e archivio":isUsers?"Gestione accessi":isCatalog?"Crea e gestisci sezioni e prodotti":isBackup?"Esporta una copia dei dati":isHours?"Area privata Admin · ore lavorate ed extra":sec?.description||"Sezione magazzino";
+  const title=isDashboard?"Dashboard":isAudit?"Cronologia":isSales?"Vendute":isUsers?"Utenti":isCatalog?"Gestione magazzino":isBackup?"Backup":isHours?"I miei orari":sec?.name||category;
+  const desc=isDashboard?"Riepilogo generale":isAudit?"Tutte le attività del gestionale":isSales?"Vendite, note, stampa DYMO e rientri":isUsers?"Gestione accessi":isCatalog?"Crea e gestisci sezioni e prodotti":isBackup?"Esporta una copia dei dati":isHours?"Area privata Admin · ore lavorate ed extra":sec?.description||"Sezione magazzino";
   document.getElementById("categoryName").textContent=title;
   document.getElementById("categoryDescription").textContent=desc;
   document.querySelector(".tools").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isBackup||isHours;
@@ -425,14 +425,17 @@ function renderSales(){
     const sold=fmt.format(new Date(s.sold_at));
     if(archived){
       const deleted=s.deleted_at?fmt.format(new Date(s.deleted_at)):"—";
-      return `<article class="saleRow archiveRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${escapeHtml(s.category)}</span><b class="archiveBadge">ARCHIVIATA</b></div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · Vendita ${sold}</span><span>Eliminata ${deleted}</span>${s.restored_to_inventory?`<span class="restoredBadge">↩ Rimesso in magazzino +${s.quantity}</span>`:""}</div><div class="archiveReason"><strong>Motivo:</strong> ${escapeHtml(s.delete_reason||"Nessun motivo registrato")}</div></article>`;
+      return `<article class="saleRow archiveRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${escapeHtml(s.category)}</span><b class="archiveBadge">ARCHIVIATA</b></div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · Vendita ${sold}</span><span>Eliminata ${deleted}</span>${s.operator_note?`<span class="saleNoteText">Nota: ${escapeHtml(s.operator_note)}</span>`:""}${s.restored_to_inventory?`<span class="restoredBadge">↩ Rimesso in magazzino +${s.quantity}</span>`:""}</div><div class="archiveReason"><strong>Motivo:</strong> ${escapeHtml(s.delete_reason||"Nessun motivo registrato")}</div><div class="saleNoteActions"><button class="rowAction printSaleNote" type="button" data-id="${s.id}">Stampa DYMO</button><button class="rowAction exportSaleNote" type="button" data-id="${s.id}">Esporta nota</button>${isAdmin()?`<button class="rowAction editSaleNote" type="button" data-id="${s.id}">Modifica nota / storico</button>`:""}</div></article>`;
     }
     const ownSale=String(s.actor_user_id||"")===String(currentUser?.id||"");
     const actions=isAdmin()
-      ? `<div class="saleActionsRow"><button class="rowAction editStore" type="button" data-id="${s.id}">Modifica negozio</button><button class="rowAction restoreSale" type="button" data-id="${s.id}">Rimetti in magazzino</button><button class="rowAction delete archiveSale" type="button" data-id="${s.id}">Elimina</button></div>`
-      : ownSale ? `<div class="saleActionsRow"><button class="rowAction restoreSale" type="button" data-id="${s.id}">Rimetti in magazzino</button></div>` : `<div class="saleActionsRow readOnlyHistory"><span>Solo visualizzazione</span></div>`;
+      ? `<div class="saleActionsRow"><button class="rowAction editStore" type="button" data-id="${s.id}">Modifica negozio</button><button class="rowAction editSaleNote" type="button" data-id="${s.id}">Modifica nota / storico</button><button class="rowAction printSaleNote" type="button" data-id="${s.id}">Stampa DYMO</button><button class="rowAction exportSaleNote" type="button" data-id="${s.id}">Esporta nota</button><button class="rowAction restoreSale" type="button" data-id="${s.id}">Rimetti in magazzino</button><button class="rowAction delete archiveSale" type="button" data-id="${s.id}">Elimina</button></div>`
+      : ownSale ? `<div class="saleActionsRow"><button class="rowAction printSaleNote" type="button" data-id="${s.id}">Stampa DYMO</button><button class="rowAction exportSaleNote" type="button" data-id="${s.id}">Esporta nota</button><button class="rowAction restoreSale" type="button" data-id="${s.id}">Rimetti in magazzino</button></div>` : `<div class="saleActionsRow"><button class="rowAction printSaleNote" type="button" data-id="${s.id}">Stampa DYMO</button><button class="rowAction exportSaleNote" type="button" data-id="${s.id}">Esporta nota</button></div>`;
     return `<article class="saleRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${escapeHtml(s.category)}</span>${s.operator_name?`<span class="operatorTag">Operatore: ${escapeHtml(s.operator_name)}</span>`:""}</div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · ${sold}</span>${s.operator_note?`<span class="saleNoteText">Nota: ${escapeHtml(s.operator_note)}</span>`:""}</div>${actions}</article>`;
   }).join("");
+  list.querySelectorAll(".printSaleNote").forEach(btn=>btn.addEventListener("click",()=>printSaleNote(Number(btn.dataset.id))));
+  list.querySelectorAll(".exportSaleNote").forEach(btn=>btn.addEventListener("click",()=>exportSaleNote(Number(btn.dataset.id))));
+  if(isAdmin()) list.querySelectorAll(".editSaleNote").forEach(btn=>btn.addEventListener("click",()=>openSaleNoteEditor(Number(btn.dataset.id))));
   if(!archived){
     list.querySelectorAll(".restoreSale").forEach(btn=>btn.addEventListener("click",()=>openRestoreSale(Number(btn.dataset.id))));
     if(isAdmin()){
@@ -443,6 +446,61 @@ function renderSales(){
 }
 function saleById(id){ return sales.find(s=>Number(s.id)===Number(id)); }
 function saleLabelHtml(s){ return `<strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${escapeHtml(s.category)} · ${escapeHtml(s.customer)}</span>`; }
+
+
+function saleNoteText(s){ return (s?.operator_note||"").trim(); }
+function prepareDymoLabel(s){
+  document.getElementById("dymoPrintTitle").textContent=s?.model||"Vendita";
+  document.getElementById("dymoPrintMeta").textContent=[s?.color,s?.customer].filter(Boolean).join(" · ");
+  document.getElementById("dymoPrintNote").textContent=saleNoteText(s)||"Nessuna nota";
+}
+function printSaleNote(id){
+  const s=saleById(id); if(!s)return;
+  prepareDymoLabel(s);
+  document.body.classList.add("printingDymo");
+  const cleanup=()=>document.body.classList.remove("printingDymo");
+  window.addEventListener("afterprint",cleanup,{once:true});
+  setTimeout(()=>{window.print();setTimeout(cleanup,1200);},50);
+}
+function safeFilePart(v){return String(v||"nota").normalize("NFKD").replace(/[^a-zA-Z0-9_-]+/g,"_").replace(/^_+|_+$/g,"").slice(0,60)||"nota";}
+function exportSaleNote(id){
+  const s=saleById(id); if(!s)return;
+  const text=`BEPARYTECH - NOTA VENDITA\nArticolo: ${s.model}\nVariante: ${s.color}\nNegozio: ${s.customer}\nOperatore: ${s.operator_name||"—"}\nData: ${new Date(s.sold_at).toLocaleString("it-IT")}\n\nNOTA\n${saleNoteText(s)||"Nessuna nota"}\n`;
+  const blob=new Blob([text],{type:"text/plain;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download=`nota_${safeFilePart(s.model)}_${s.id}.txt`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+async function loadSaleNoteHistory(id){
+  const box=document.getElementById("saleNoteHistory");box.innerHTML='<div class="emptyState">Caricamento…</div>';
+  const {data,error}=await sb.from("beparytech_sale_note_history").select("id,old_note,new_note,changed_by_name,changed_at").eq("sale_id",id).order("changed_at",{ascending:false}).limit(100);
+  if(error){box.innerHTML='<div class="emptyState">Impossibile caricare lo storico.</div>';return;}
+  if(!data?.length){box.innerHTML='<div class="emptyState">Nessuna modifica precedente.</div>';return;}
+  const fmt=new Intl.DateTimeFormat("it-IT",{dateStyle:"short",timeStyle:"short"});
+  box.innerHTML=data.map(h=>`<div class="noteHistoryItem"><strong>${escapeHtml(h.changed_by_name||"Admin")} · ${escapeHtml(fmt.format(new Date(h.changed_at)))}</strong><span>${escapeHtml(h.new_note||"(nota vuota)")}</span><small>Prima: ${escapeHtml(h.old_note||"(nota vuota)")}</small></div>`).join("");
+}
+async function openSaleNoteEditor(id){
+  if(!isAdmin())return; selectedSale=saleById(id);if(!selectedSale)return;
+  document.getElementById("saleNoteEditItem").innerHTML=saleLabelHtml(selectedSale);
+  document.getElementById("saleNoteEditText").value=saleNoteText(selectedSale);
+  document.getElementById("saleNoteEditError").textContent="";
+  document.getElementById("saleNoteModal").hidden=false;
+  await loadSaleNoteHistory(id);
+}
+function closeSaleNoteEditor(){document.getElementById("saleNoteModal").hidden=true;selectedSale=null;}
+document.getElementById("saleNoteEditX").onclick=closeSaleNoteEditor;
+document.getElementById("saleNoteEditCancel").onclick=closeSaleNoteEditor;
+document.getElementById("saleNoteModal").addEventListener("click",e=>{if(e.target.id==="saleNoteModal")closeSaleNoteEditor();});
+document.getElementById("saleNotePrint").onclick=()=>{if(selectedSale)printSaleNote(selectedSale.id);};
+document.getElementById("saleNoteExport").onclick=()=>{if(selectedSale)exportSaleNote(selectedSale.id);};
+document.getElementById("saleNoteEditSave").onclick=async()=>{
+  if(!selectedSale||!isAdmin())return;
+  const btn=document.getElementById("saleNoteEditSave"),note=document.getElementById("saleNoteEditText").value.trim();
+  btn.disabled=true;btn.textContent="Salvo…";document.getElementById("saleNoteEditError").textContent="";
+  const {error}=await sb.rpc("update_beparytech_sale_note",{p_id:selectedSale.id,p_note:note});
+  btn.disabled=false;btn.textContent="Salva modifica";
+  if(error){document.getElementById("saleNoteEditError").textContent=error.message||"Impossibile modificare la nota.";return;}
+  selectedSale.operator_note=note||null;
+  await loadSaleNoteHistory(selectedSale.id);renderSales();document.getElementById("cloudStatus").textContent="☁︎ Nota salvata con storico";
+};
 
 function openEditStore(id){
   if(!isAdmin()) return;
@@ -626,7 +684,7 @@ function renderCustomSection(){
     products.sort((a,b)=>String(a.variant||"").localeCompare(String(b.variant||""),"it",{numeric:true,sensitivity:"base"})).forEach(p=>{
       const q=Number(p.quantity||0),[status,cls]=customStatus(q,Number(p.low_stock_threshold||2));
       const card=document.createElement("article");card.className="customProductCard";card.dataset.productId=String(p.id);
-      card.innerHTML=`<div class="customProductTop"><div class="productVisual"><img class="productModelImage" src="${escapeHtml(imageForModel(p.name))}" alt="${escapeHtml(p.name)}"><span>${escapeHtml(p.name).charAt(0).toUpperCase()}</span></div><div class="customProductInfo"><strong>${escapeHtml(p.variant||p.name)}</strong><span>${escapeHtml(p.variant? p.name : (section?.name||""))}</span>${p.sku||p.barcode?`<small>${escapeHtml(p.sku||p.barcode)}</small>`:""}<b class="status ${cls}">${status}</b></div></div><div class="customProductBottom"><div class="customQty"><small>Giacenza</small><strong>${q}</strong></div><div class="customActions"><button class="minus customMinus animatedBtn" type="button" ${q<=0?"disabled":""}>−1</button>${isAdmin()?'<button class="plus customPlus animatedBtn" type="button">+1</button><button class="edit customEdit animatedBtn" type="button" title="Modifica prodotto">✎</button>':""}</div></div>`;
+      card.innerHTML=`<div class="customProductTop"><div class="productVisual"><img class="productModelImage" src="${escapeHtml(imageForModel(p.name))}" alt="${escapeHtml(p.name)}"><span>${escapeHtml(p.name).charAt(0).toUpperCase()}</span></div><div class="customProductInfo"><strong>${escapeHtml(p.variant||p.name)}</strong><span>${escapeHtml(p.variant? p.name : (section?.name||""))}</span>${p.sku||p.barcode?`<small>${escapeHtml(p.sku||p.barcode)}</small>`:""}<b class="status ${cls}">${status}</b></div></div><div class="customProductBottom"><div class="customQty"><small>Giacenza</small><strong>${q}</strong></div><div class="customActions"><button class="minus customMinus animatedBtn" type="button" ${q<=0?"disabled":""}>Venduta</button>${isAdmin()?'<button class="plus customPlus animatedBtn" type="button">+1</button><button class="edit customEdit animatedBtn" type="button" title="Modifica prodotto">✎</button>':""}</div></div>`;
       const modelImg=card.querySelector(".productModelImage");modelImg.onerror=()=>{modelImg.hidden=true;modelImg.nextElementSibling.hidden=false};modelImg.onload=()=>{modelImg.nextElementSibling.hidden=true};
       card.querySelector(".customMinus").onclick=()=>openCustomSaleModal(p,section);
       const plus=card.querySelector(".customPlus"); if(plus)plus.onclick=()=>updateCustomProductQty(p,q+1);

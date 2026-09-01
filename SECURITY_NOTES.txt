@@ -1,0 +1,20 @@
+BeparyTech security hardening – 31/08/2026
+
+Backend Supabase:
+- RLS retained on all application tables.
+- Anonymous table access revoked.
+- Authenticated grants reduced to the minimum needed by the UI.
+- Workspace helper no longer falls back to auth.uid() for users without an active BeparyTech profile.
+- Privileged RPC execution explicitly denied to PUBLIC/anon and granted only to authenticated/service_role.
+- New operator passwords require at least 6 characters (max 128).
+- beparytech-users Edge Function requires JWT, validates admin profile server-side, caps request size and validates inputs.
+
+Frontend:
+- Supabase JS pinned to 2.112.4.
+- Content Security Policy added.
+- Referrer policy set to no-referrer.
+- Inline service-worker bootstrap removed so CSP can disallow inline scripts.
+- New login passwords require 10+ characters in account creation/recovery UI.
+- New operator passwords require 6+ characters.
+
+Important: server/hosting HTTP headers (HSTS, X-Frame-Options/frame-ancestors, Permissions-Policy) should also be configured at the hosting provider because HTML meta tags cannot enforce every security header.

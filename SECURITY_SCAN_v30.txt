@@ -1,0 +1,29 @@
+BeparyTech – Security Scan v30
+Data: 31/08/2026
+
+CORREZIONI APPLICATE
+- Corretto un punto XSS nel modal vendita: modello/colore ora vengono sempre escaped prima di entrare in innerHTML.
+- Link esterni delle richieste limitati ai soli protocolli http/https; aggiunto rel=noopener noreferrer.
+- CSP rafforzata: frame-src none, child-src none, manifest/font self-only, blocco handler JS inline, upgrade-insecure-requests.
+- Cache PWA versionata v30 per evitare vecchie copie del frontend.
+- Nessuna service_role/secret key presente nel frontend. La chiave sb_publishable è pubblicabile per design.
+
+BACKEND SUPABASE VERIFICATO
+- RLS attiva sulle tabelle applicative critiche.
+- Orari ed Extra leggibili/modificabili solo dall'Admin proprietario.
+- RPC amministrative verificano il ruolo Admin lato database.
+- RPC di vendita verificano sessione, workspace e operatore/password/codice.
+- Edge Function beparytech-users richiede JWT e ricontrolla il ruolo Admin lato server.
+
+RISCHI RESIDUI
+1. MEDIO: libreria supabase-js caricata da jsDelivr. Versione bloccata (2.112.4), ma resta una dipendenza CDN esterna. La difesa massima sarebbe servire una copia locale verificata del bundle.
+2. MEDIO: codici operatore consentono 4-8 cifre. Un codice a 4 cifre ha entropia bassa. Preferire almeno 6-8 cifre casuali.
+3. BASSO/MEDIO: GitHub Pages non consente configurazione completa di header HTTP custom. Per hardening massimo usare reverse proxy/hosting che consenta HSTS, frame-ancestors, Permissions-Policy e CSP come header HTTP.
+4. BASSO: Supabase segnala Leaked Password Protection disattivata; abilitarla nel pannello Auth se disponibile sul piano.
+
+VALUTAZIONE
+Prima delle correzioni: rischio stimato 4.0/10 (medio-basso).
+Dopo le correzioni del file: rischio stimato 2.5/10 (basso), assumendo password Admin forte e HTTPS.
+Con bundle Supabase locale + header HTTP completi + leaked-password protection + MFA/passkey Admin: ~1.5/10.
+
+Nota: nessuna applicazione esposta a Internet può essere definita 0/10 o “invulnerabile”. Il punteggio è una stima tecnica, non una certificazione penetration-test.
