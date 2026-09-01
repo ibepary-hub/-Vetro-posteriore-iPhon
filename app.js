@@ -1150,7 +1150,7 @@ function bindAdminRepairs(){
     document.getElementById("adminRepairDevice").value=""; document.getElementById("adminRepairType").value=""; document.getElementById("adminRepairPrice").value=""; document.getElementById("adminRepairNote").value=""; updateAdminRepairVatPreview(); await loadAdminRepairs();
    }catch(e){if(msg)msg.textContent=e.message||"Errore salvataggio";}
  });
- updateAdminRepairVatPreview(); loadAdminRepairs();
+ updateAdminRepairVatPreview();
 }
 document.addEventListener("DOMContentLoaded",bindAdminRepairs);
 setInterval(bindAdminRepairs,1500);
@@ -1176,4 +1176,28 @@ function bindBeparyProductTitle(){
 }
 document.addEventListener("DOMContentLoaded",bindBeparyProductTitle);
 setInterval(bindBeparyProductTitle,1500);
+
+
+
+function bindAdminRepairsAccordion(){
+  const shell=document.getElementById("adminRepairsCard");
+  const btn=document.getElementById("adminRepairsToggle");
+  const panel=document.getElementById("adminRepairsPanel");
+  if(!shell||!btn||!panel||btn.dataset.bound==="1")return;
+  btn.dataset.bound="1";
+  panel.hidden=true;
+  shell.classList.remove("open");
+  btn.setAttribute("aria-expanded","false");
+  btn.addEventListener("click",()=>{
+    const willOpen=panel.hidden;
+    panel.hidden=!willOpen;
+    shell.classList.toggle("open",willOpen);
+    btn.setAttribute("aria-expanded",willOpen?"true":"false");
+    if(willOpen){
+      try{ bindAdminRepairs(); loadAdminRepairs(); }catch(e){}
+    }
+  });
+}
+document.addEventListener("DOMContentLoaded",bindAdminRepairsAccordion);
+setInterval(bindAdminRepairsAccordion,1500);
 

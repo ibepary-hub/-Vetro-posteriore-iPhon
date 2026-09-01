@@ -15,6 +15,133 @@
   <link rel="icon" type="image/png" href="favicon-64.png">
   <link rel="stylesheet" href="style.css?v=39">
 <script>window.BEPARYTECH_PRODUCT_TITLE_FUNCTION_URL="https://kqdcbrpykaboabjglwxu.supabase.co/functions/v1/beparytech-product-title";</script>
+
+<style>
+#adminRepairsCard.repairModernShell{
+  margin:24px 0;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:24px;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at top right, rgba(255,184,0,.12), transparent 34%),
+    linear-gradient(180deg, rgba(26,29,38,.96), rgba(18,20,27,.96));
+  box-shadow:0 18px 50px rgba(0,0,0,.24);
+  backdrop-filter:blur(14px);
+}
+#adminRepairsCard .repairModernToggle{
+  width:100%;
+  display:grid;
+  grid-template-columns:auto 1fr auto auto;
+  gap:16px;
+  align-items:center;
+  padding:20px 22px;
+  border:0;
+  background:transparent;
+  color:inherit;
+  text-align:left;
+  cursor:pointer;
+}
+#adminRepairsCard .repairModernToggle:hover{
+  background:rgba(255,255,255,.035);
+}
+#adminRepairsCard .repairModernIcon{
+  width:48px;height:48px;
+  display:grid;place-items:center;
+  border-radius:16px;
+  font-size:23px;
+  background:linear-gradient(145deg,rgba(255,190,40,.22),rgba(255,153,0,.08));
+  border:1px solid rgba(255,190,40,.22);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+}
+#adminRepairsCard .repairModernTitleWrap{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  min-width:0;
+}
+#adminRepairsCard .repairModernTitleWrap strong{
+  font-size:18px;
+  letter-spacing:-.02em;
+}
+#adminRepairsCard .repairModernTitleWrap small{
+  opacity:.66;
+  font-size:13px;
+}
+#adminRepairsCard .repairModernBadge{
+  padding:7px 10px;
+  border-radius:999px;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.08em;
+  background:rgba(255,184,0,.13);
+  border:1px solid rgba(255,184,0,.28);
+  color:#ffc84d;
+  white-space:nowrap;
+}
+#adminRepairsCard .repairModernChevron{
+  font-size:26px;
+  line-height:1;
+  opacity:.72;
+  transform:rotate(0deg);
+  transition:transform .22s ease;
+}
+#adminRepairsCard.open .repairModernChevron{
+  transform:rotate(180deg);
+}
+#adminRepairsCard .repairModernPanel{
+  border-top:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.018);
+}
+#adminRepairsCard .repairModernInner{
+  padding:22px;
+}
+#adminRepairsCard .deviceSaleCardHead{
+  padding:0 0 16px 0;
+  border:0;
+}
+#adminRepairsCard form{
+  background:rgba(255,255,255,.025);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:20px;
+  padding:18px;
+}
+#adminRepairsCard input,
+#adminRepairsCard select,
+#adminRepairsCard textarea{
+  border-radius:14px !important;
+}
+#adminRepairsCard .vatPreview{
+  margin-top:16px;
+  gap:12px;
+}
+#adminRepairsCard .vatPreview>div{
+  border-radius:16px;
+  background:rgba(255,255,255,.035);
+}
+#adminRepairsCard .primaryAction{
+  border-radius:14px;
+  min-height:48px;
+  font-weight:800;
+}
+#adminRepairsCard #adminRepairsSummary{
+  margin-top:12px;
+}
+#adminRepairsCard #adminRepairsList{
+  margin-top:12px;
+}
+@media(max-width:700px){
+  #adminRepairsCard .repairModernToggle{
+    grid-template-columns:auto 1fr auto;
+    gap:12px;
+    padding:16px;
+  }
+  #adminRepairsCard .repairModernBadge{display:none}
+  #adminRepairsCard .repairModernIcon{width:42px;height:42px;border-radius:14px}
+  #adminRepairsCard .repairModernInner{padding:14px}
+  #adminRepairsCard form{padding:14px}
+}
+</style>
+
 </head>
 <body>
   <div id="menuOverlay" class="menuOverlay" hidden></div>
@@ -145,7 +272,20 @@
           <div id="deviceSaleMsg" class="createUserMsg" aria-live="polite"></div>
         </form>
         
-        <div class="deviceSaleCard" id="adminRepairsCard">
+        
+        <section class="repairModernShell" id="adminRepairsCard">
+          <button class="repairModernToggle" id="adminRepairsToggle" type="button" aria-expanded="false" aria-controls="adminRepairsPanel">
+            <span class="repairModernIcon" aria-hidden="true">🛠️</span>
+            <span class="repairModernTitleWrap">
+              <strong>Riparazioni dispositivi</strong>
+              <small>Scheda madre, connettori e altre lavorazioni</small>
+            </span>
+            <span class="repairModernBadge">SOLO ADMIN</span>
+            <span class="repairModernChevron" aria-hidden="true">⌄</span>
+          </button>
+          <div class="repairModernPanel" id="adminRepairsPanel" hidden>
+            <div class="repairModernInner">
+
           <div class="deviceSaleCardHead"><div><strong>Riparazioni dispositivi</strong><small>Scheda madre, display, connettori e altre riparazioni effettuate</small></div><span class="adminBadge">SOLO ADMIN</span></div>
           <form id="adminRepairForm">
             <div class="deviceSaleGrid">
@@ -168,7 +308,10 @@
           <div class="deviceSaleCardHead" style="margin-top:22px"><div><strong>Riparazioni registrate</strong><small>Storico delle lavorazioni</small></div><button id="refreshAdminRepairsBtn" class="miniBtn" type="button">Aggiorna</button></div>
           <div id="adminRepairsSummary" class="deviceSalesSummary"></div>
           <div id="adminRepairsList"><div class="emptyState">Nessuna riparazione caricata</div></div>
-        </div>
+        
+            </div>
+          </div>
+        </section>
 <div class="deviceSaleCard deviceSaleHistoryCard">
           <div class="deviceSaleCardHead"><div><strong>Vendite registrate</strong><small>Solo gli amministratori possono visualizzarle</small></div><button id="refreshDeviceSalesBtn" class="miniBtn" type="button">Aggiorna</button></div>
           <div id="deviceSalesSummary" class="deviceSalesSummary"></div>
