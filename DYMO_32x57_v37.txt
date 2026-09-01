@@ -1,0 +1,8 @@
+DYMO FIX v37
+- Formato pagina corretto a 32 x 57 mm.
+- Larghezza CSS: 32 mm; altezza: 57 mm.
+- @page: 32mm 57mm; margini 0.
+- Rimossa l impostazione 57 x 32 che poteva causare rotazione/taglio nel driver DYMO.
+- Cache aggiornata a v37.
+
+Nel dialogo di stampa selezionare il formato etichetta 32 x 57 mm e scala 100%.

@@ -668,15 +668,15 @@ body[data-theme="light"] .authPanel input:-webkit-autofill:active{
 .dymoPrintLabel{display:none}
 @media print{
  body.printingDymo>*:not(.dymoPrintLabel){display:none!important}
- body.printingDymo .dymoPrintLabel{display:block!important;position:fixed;inset:0;width:57mm;height:32mm;padding:2.5mm;box-sizing:border-box;background:#fff;color:#000;font-family:Arial,sans-serif;overflow:hidden}
+ body.printingDymo .dymoPrintLabel{display:block!important;position:fixed;inset:0;width:32mm;height:57mm;padding:2.5mm;box-sizing:border-box;background:#fff;color:#000;font-family:Arial,sans-serif;overflow:hidden}
  body.printingDymo .dymoPrintLabel strong{display:block;font-size:10pt;line-height:1.05}.dymoPrintLabel span{display:block;font-size:7pt;margin-top:1mm}.dymoPrintLabel p{font-size:8pt;line-height:1.15;margin:1.5mm 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
- @page{size:57mm 32mm;margin:0}
+ @page{size:32mm 57mm;margin:0}
 }
 
-/* v34 - adattamento automatico etichetta DYMO 57x32 */
+/* v37 - formato DYMO corretto 32x57 mm */
 @media print{
-  html,body{width:57mm!important;height:32mm!important;margin:0!important;padding:0!important}
-  body.printingDymo .dymoPrintLabel{width:57mm!important;height:32mm!important;padding:2mm!important;display:flex!important;flex-direction:column!important;justify-content:flex-start!important;gap:.65mm!important}
+  html,body{width:32mm!important;height:57mm!important;margin:0!important;padding:0!important}
+  body.printingDymo .dymoPrintLabel{width:32mm!important;height:57mm!important;padding:2mm!important;display:flex!important;flex-direction:column!important;justify-content:flex-start!important;gap:.65mm!important}
   body.printingDymo .dymoPrintLabel strong{font-size:10pt!important;line-height:1!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
   body.printingDymo .dymoPrintLabel span{font-size:7pt!important;line-height:1.05!important;margin:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
   body.printingDymo .dymoPrintLabel p{font-size:8pt!important;line-height:1.08!important;margin:.4mm 0 0!important;white-space:pre-wrap!important;overflow-wrap:anywhere!important;word-break:break-word!important;overflow:hidden!important;flex:1!important}
@@ -691,5 +691,85 @@ body[data-theme="light"] .authPanel input:-webkit-autofill:active{
   body.printingDymo .dymoPrintLabel[data-fit="micro"] strong{font-size:7pt!important}
   body.printingDymo .dymoPrintLabel[data-fit="micro"] span{font-size:5.2pt!important}
   body.printingDymo .dymoPrintLabel[data-fit="micro"] p{font-size:5.3pt!important;line-height:.98!important;margin:.1mm 0 0!important}
-  @page{size:57mm 32mm;margin:0}
+  @page{size:32mm 57mm;margin:0}
+}
+
+/* v36 - FIX pulsanti Venduta/+1/Modifica: mai tagliati o compressi */
+.customProductBottom{
+  grid-template-columns:minmax(58px,1fr) auto!important;
+  gap:10px!important;
+}
+.customActions{
+  display:grid!important;
+  grid-template-columns:minmax(78px,max-content) 48px 48px;
+  align-items:center!important;
+  justify-content:end!important;
+  gap:6px!important;
+  width:auto!important;
+  max-width:100%!important;
+}
+.customActions button{
+  box-sizing:border-box!important;
+  white-space:nowrap!important;
+  overflow:visible!important;
+  text-overflow:clip!important;
+}
+.customActions .minus{
+  width:auto!important;
+  min-width:78px!important;
+  padding:0 12px!important;
+  font-size:12px!important;
+}
+.customActions .plus,.customActions .edit{
+  width:48px!important;
+  min-width:48px!important;
+  padding:0!important;
+}
+
+/* Il numero di card dipende dallo spazio reale: niente 3 colonne forzate su PC medio */
+@media (min-width:701px){
+  .customModelGroup .customProductGrid{
+    grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))!important;
+  }
+}
+
+/* Tablet / finestre strette: i comandi restano completi e vanno sotto la giacenza se serve */
+@media (min-width:701px) and (max-width:900px){
+  .customProductBottom{
+    grid-template-columns:1fr!important;
+    align-items:start!important;
+  }
+  .customActions{justify-self:start!important;}
+}
+
+/* Mobile: Venduta mantiene il testo intero senza allargare eccessivamente la card */
+@media (max-width:700px){
+  .customProductBottom{
+    display:grid!important;
+    grid-template-columns:minmax(44px,1fr) auto!important;
+    align-items:center!important;
+  }
+  .customActions{
+    display:grid!important;
+    grid-template-columns:minmax(72px,max-content) 42px 42px!important;
+    gap:5px!important;
+  }
+  .customActions .minus{
+    width:auto!important;
+    min-width:72px!important;
+    height:38px!important;
+    min-height:38px!important;
+    padding:0 9px!important;
+    font-size:11px!important;
+  }
+  .customActions .plus,.customActions .edit{
+    width:42px!important;
+    min-width:42px!important;
+    height:38px!important;
+    min-height:38px!important;
+  }
+}
+@media (max-width:380px){
+  .customProductBottom{grid-template-columns:1fr!important;gap:7px!important;}
+  .customActions{justify-self:end!important;}
 }

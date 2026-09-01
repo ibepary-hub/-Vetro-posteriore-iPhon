@@ -1,0 +1,10 @@
+BEPARYTECH MAGAZZINO v36
+
+Correzioni:
+- Pulsante Venduta non viene più tagliato.
+- +1 e Modifica mantengono dimensione e allineamento.
+- Griglia desktop adattiva: evita card troppo strette.
+- Tablet: i comandi vanno su una riga dedicata quando manca spazio.
+- Mobile: layout compatto senza troncare Venduta.
+- Cache Service Worker aggiornata a v36 per caricare subito il nuovo CSS.
+- Mantiene il fix DYMO 57x32 della v35.

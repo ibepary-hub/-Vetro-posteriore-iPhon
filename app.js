@@ -459,7 +459,7 @@ function prepareDymoLabel(s){
   meta.textContent=[s?.color,s?.customer].filter(Boolean).join(" · ");
   note.textContent=noteText;
 
-  // Adattamento automatico DYMO 57x32 mm: il testo si compatta in base alla nota.
+  // Adattamento automatico DYMO 32x57 mm: il testo si compatta in base alla nota.
   const score=noteText.length + Math.max(0,(title.textContent.length-20)*2) + Math.max(0,(meta.textContent.length-28));
   let fit="normal";
   if(score>230) fit="micro";
