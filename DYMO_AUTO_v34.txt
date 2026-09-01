@@ -1,0 +1,8 @@
+DYMO AUTO v34
+- Formato di stampa impostato automaticamente a 54 x 25 mm.
+- Margini azzerati lato pagina e padding interno ottimizzato.
+- Testo nota adattivo: normal / compact / tiny / micro in base alla lunghezza.
+- Titolo e metadati restano su una riga con ellissi se troppo lunghi.
+- La schermata del gestionale non viene inclusa nella stampa.
+
+Nota tecnica: per motivi di sicurezza del browser, una pagina web non puo' selezionare automaticamente una stampante fisica specifica. La DYMO deve essere selezionata nel dialogo di stampa del sistema/browser; il layout dell'etichetta invece si adatta automaticamente.

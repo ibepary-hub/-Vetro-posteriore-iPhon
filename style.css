@@ -672,3 +672,24 @@ body[data-theme="light"] .authPanel input:-webkit-autofill:active{
  body.printingDymo .dymoPrintLabel strong{display:block;font-size:10pt;line-height:1.05}.dymoPrintLabel span{display:block;font-size:7pt;margin-top:1mm}.dymoPrintLabel p{font-size:8pt;line-height:1.15;margin:1.5mm 0 0;white-space:pre-wrap;overflow-wrap:anywhere}
  @page{size:54mm 25mm;margin:0}
 }
+
+/* v34 - adattamento automatico etichetta DYMO 54x25 */
+@media print{
+  html,body{width:54mm!important;height:25mm!important;margin:0!important;padding:0!important}
+  body.printingDymo .dymoPrintLabel{width:54mm!important;height:25mm!important;padding:2mm!important;display:flex!important;flex-direction:column!important;justify-content:flex-start!important;gap:.65mm!important}
+  body.printingDymo .dymoPrintLabel strong{font-size:10pt!important;line-height:1!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  body.printingDymo .dymoPrintLabel span{font-size:7pt!important;line-height:1.05!important;margin:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  body.printingDymo .dymoPrintLabel p{font-size:8pt!important;line-height:1.08!important;margin:.4mm 0 0!important;white-space:pre-wrap!important;overflow-wrap:anywhere!important;word-break:break-word!important;overflow:hidden!important;flex:1!important}
+  body.printingDymo .dymoPrintLabel[data-fit="compact"] strong{font-size:9pt!important}
+  body.printingDymo .dymoPrintLabel[data-fit="compact"] span{font-size:6.5pt!important}
+  body.printingDymo .dymoPrintLabel[data-fit="compact"] p{font-size:7pt!important;line-height:1.03!important}
+  body.printingDymo .dymoPrintLabel[data-fit="tiny"]{padding:1.5mm!important;gap:.4mm!important}
+  body.printingDymo .dymoPrintLabel[data-fit="tiny"] strong{font-size:8pt!important}
+  body.printingDymo .dymoPrintLabel[data-fit="tiny"] span{font-size:5.8pt!important}
+  body.printingDymo .dymoPrintLabel[data-fit="tiny"] p{font-size:6pt!important;line-height:1!important;margin:.2mm 0 0!important}
+  body.printingDymo .dymoPrintLabel[data-fit="micro"]{padding:1.2mm!important;gap:.25mm!important}
+  body.printingDymo .dymoPrintLabel[data-fit="micro"] strong{font-size:7pt!important}
+  body.printingDymo .dymoPrintLabel[data-fit="micro"] span{font-size:5.2pt!important}
+  body.printingDymo .dymoPrintLabel[data-fit="micro"] p{font-size:5.3pt!important;line-height:.98!important;margin:.1mm 0 0!important}
+  @page{size:54mm 25mm;margin:0}
+}

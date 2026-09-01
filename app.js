@@ -450,9 +450,22 @@ function saleLabelHtml(s){ return `<strong>${escapeHtml(s.model)}</strong><span>
 
 function saleNoteText(s){ return (s?.operator_note||"").trim(); }
 function prepareDymoLabel(s){
-  document.getElementById("dymoPrintTitle").textContent=s?.model||"Vendita";
-  document.getElementById("dymoPrintMeta").textContent=[s?.color,s?.customer].filter(Boolean).join(" · ");
-  document.getElementById("dymoPrintNote").textContent=saleNoteText(s)||"Nessuna nota";
+  const label=document.getElementById("dymoPrintLabel");
+  const title=document.getElementById("dymoPrintTitle");
+  const meta=document.getElementById("dymoPrintMeta");
+  const note=document.getElementById("dymoPrintNote");
+  const noteText=saleNoteText(s)||"Nessuna nota";
+  title.textContent=s?.model||"Vendita";
+  meta.textContent=[s?.color,s?.customer].filter(Boolean).join(" · ");
+  note.textContent=noteText;
+
+  // Adattamento automatico DYMO 54x25 mm: il testo si compatta in base alla nota.
+  const score=noteText.length + Math.max(0,(title.textContent.length-20)*2) + Math.max(0,(meta.textContent.length-28));
+  let fit="normal";
+  if(score>230) fit="micro";
+  else if(score>150) fit="tiny";
+  else if(score>90) fit="compact";
+  label.dataset.fit=fit;
 }
 function printSaleNote(id){
   const s=saleById(id); if(!s)return;
