@@ -773,3 +773,33 @@ body[data-theme="light"] .authPanel input:-webkit-autofill:active{
   .customProductBottom{grid-template-columns:1fr!important;gap:7px!important;}
   .customActions{justify-self:end!important;}
 }
+
+
+/* v38 - DYMO 57x32 mm landscape: matches the physical 57 mm wide x 32 mm high label */
+@media print{
+  @page{size:57mm 32mm;margin:0!important}
+  html,body{width:57mm!important;height:32mm!important;min-width:57mm!important;min-height:32mm!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#fff!important}
+  body.printingDymo{width:57mm!important;height:32mm!important;margin:0!important;padding:0!important;overflow:hidden!important}
+  body.printingDymo>*:not(.dymoPrintLabel){display:none!important}
+  body.printingDymo .dymoPrintLabel{
+    position:absolute!important;left:0!important;top:0!important;right:auto!important;bottom:auto!important;
+    width:57mm!important;height:32mm!important;margin:0!important;padding:2mm 2.2mm!important;
+    box-sizing:border-box!important;overflow:hidden!important;background:#fff!important;color:#000!important;
+    display:flex!important;flex-direction:column!important;justify-content:center!important;align-items:stretch!important;
+    gap:.7mm!important;transform:none!important;writing-mode:horizontal-tb!important;font-family:Arial,sans-serif!important
+  }
+  body.printingDymo .dymoPrintLabel strong{display:block!important;font-size:11pt!important;line-height:1.05!important;margin:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  body.printingDymo .dymoPrintLabel span{display:block!important;font-size:7.5pt!important;line-height:1.05!important;margin:0!important;white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important}
+  body.printingDymo .dymoPrintLabel p{display:block!important;font-size:8.5pt!important;line-height:1.08!important;margin:.5mm 0 0!important;white-space:pre-wrap!important;overflow-wrap:anywhere!important;word-break:normal!important;overflow:hidden!important;flex:0 1 auto!important;max-height:18mm!important}
+  body.printingDymo .dymoPrintLabel[data-fit="compact"] strong{font-size:10pt!important}
+  body.printingDymo .dymoPrintLabel[data-fit="compact"] span{font-size:7pt!important}
+  body.printingDymo .dymoPrintLabel[data-fit="compact"] p{font-size:7.5pt!important;line-height:1.04!important}
+  body.printingDymo .dymoPrintLabel[data-fit="tiny"]{padding:1.7mm 2mm!important;gap:.45mm!important}
+  body.printingDymo .dymoPrintLabel[data-fit="tiny"] strong{font-size:9pt!important}
+  body.printingDymo .dymoPrintLabel[data-fit="tiny"] span{font-size:6.3pt!important}
+  body.printingDymo .dymoPrintLabel[data-fit="tiny"] p{font-size:6.6pt!important;line-height:1.02!important;margin:.25mm 0 0!important;max-height:19mm!important}
+  body.printingDymo .dymoPrintLabel[data-fit="micro"]{padding:1.4mm 1.8mm!important;gap:.3mm!important;justify-content:flex-start!important}
+  body.printingDymo .dymoPrintLabel[data-fit="micro"] strong{font-size:8pt!important}
+  body.printingDymo .dymoPrintLabel[data-fit="micro"] span{font-size:5.8pt!important}
+  body.printingDymo .dymoPrintLabel[data-fit="micro"] p{font-size:5.8pt!important;line-height:1!important;margin:.15mm 0 0!important;max-height:21mm!important}
+}

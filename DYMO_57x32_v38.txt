@@ -1,0 +1,5 @@
+v38 DYMO FIX
+Formato fisico: 57 mm larghezza x 32 mm altezza (orizzontale).
+@page 57mm 32mm, margini 0.
+Contenuto centrato verticalmente, margini interni 2 mm circa, nessuna rotazione CSS.
+Riduzione automatica font per note lunghe.
