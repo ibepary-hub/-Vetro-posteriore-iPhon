@@ -843,3 +843,21 @@ body[data-theme="light"] .authPanel input:-webkit-autofill:active{
 }
 body[data-theme="light"] #deviceSalesView .adminWorkTab{background:#fff!important;color:#2a241b!important;border-color:#ddd3c3!important}
 body[data-theme="light"] #deviceSalesView .adminWorkTab.active{background:#f8f1e3!important;border-color:#c49a45!important}
+
+/* v53 - responsive navigation + collapsible hours */
+.collapsibleHourCard{padding:0!important;overflow:hidden}
+.hourCardToggle{width:100%;border:0;background:transparent;color:inherit;text-align:left;padding:18px;display:flex;align-items:center;gap:12px;cursor:pointer}
+.hourCardToggle>div{flex:1}.hourCardToggle>b{font-size:20px;transition:transform .2s ease}.collapsibleHourCard.open .hourCardToggle>b{transform:rotate(180deg)}
+.hourCardBody{padding:0 18px 18px}.hourCardBody[hidden]{display:none!important}
+.bigSaveAction{width:100%!important;min-height:58px!important;font-size:16px!important;font-weight:900!important;border-radius:15px!important;margin-top:16px!important}
+.smartBackBtn{position:fixed;z-index:70;left:18px;bottom:22px;min-height:48px;padding:0 17px;border-radius:15px;border:1px solid var(--border);background:var(--panel);color:inherit;font-weight:800;box-shadow:0 8px 30px rgba(0,0,0,.18)}
+.mobileBottomNav{display:none}
+@media(max-width:760px){
+ body{padding-bottom:92px!important}
+ .smartBackBtn{left:12px;bottom:82px;min-height:42px;padding:0 13px}
+ .mobileBottomNav{position:fixed;z-index:65;left:0;right:0;bottom:0;display:grid!important;grid-template-columns:repeat(4,1fr);gap:0;padding:7px max(8px,env(safe-area-inset-right)) calc(7px + env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left));background:var(--panel);border-top:1px solid var(--border);box-shadow:0 -8px 25px rgba(0,0,0,.16)}
+ .mobileBottomNav[hidden]{display:none!important}.mobileBottomNav button{border:0;background:transparent;color:inherit;min-width:0;min-height:54px;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font:inherit}.mobileBottomNav button:active{background:rgba(127,127,127,.12)}
+ .mobileBottomNav b{font-size:20px;line-height:1}.mobileBottomNav span{font-size:10px;font-weight:800;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .hoursGrid{grid-template-columns:1fr!important}.hourCardToggle{padding:15px}.hourCardBody{padding:0 15px 15px}
+}
+@media(min-width:761px) and (max-width:1100px){.hoursGrid{grid-template-columns:1fr 1fr}.bigSaveAction{min-height:54px!important}}

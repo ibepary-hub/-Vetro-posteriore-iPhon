@@ -1097,7 +1097,7 @@ document.getElementById("saveRecoveryPassword").onclick=async()=>{
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("./sw.js?v=51", { updateViaCache: "none" });
+      const reg = await navigator.serviceWorker.register("./sw.js?v=53", { updateViaCache: "none" });
       await reg.update();
       navigator.serviceWorker.addEventListener("controllerchange", () => {
         if (!sessionStorage.getItem("bt-cache-reloaded-v51")) {
@@ -1327,3 +1327,39 @@ function bindAdminWorkTabs(){
 document.addEventListener("DOMContentLoaded",bindAdminWorkTabs);
 setInterval(bindAdminWorkTabs,1500);
 
+
+// ===== v53: pannelli Orari chiusi + navigazione contestuale responsive =====
+function bindHourAccordions(){
+ document.querySelectorAll('.collapsibleHourCard').forEach(card=>{
+  const t=card.querySelector('.hourCardToggle'), body=card.querySelector('.hourCardBody');
+  if(!t||!body||t.dataset.bound==='1')return;t.dataset.bound='1';body.hidden=true;
+  t.addEventListener('click',()=>{const open=body.hidden;document.querySelectorAll('.collapsibleHourCard').forEach(c=>{const b=c.querySelector('.hourCardBody'),x=c.querySelector('.hourCardToggle');if(b)b.hidden=true;c.classList.remove('open');if(x)x.setAttribute('aria-expanded','false')});body.hidden=!open;card.classList.toggle('open',open);t.setAttribute('aria-expanded',open?'true':'false')});
+ });
+}
+const btNavStack=[];
+const btOriginalSetCategory=setCategory;
+setCategory=function(category,fromBack=false){
+ if(!fromBack && currentCategory && currentCategory!==category) btNavStack.push(currentCategory);
+ btOriginalSetCategory(category); updateSmartNavigation();
+};
+function smartBack(){const prev=btNavStack.pop(); if(prev) setCategory(prev,true); else setCategory('Dashboard',true)}
+function updateSmartNavigation(){
+ const back=document.getElementById('smartBackBtn'), nav=document.getElementById('mobileBottomNav'); if(!back||!nav)return;
+ const signed=!!currentUser; nav.hidden=!signed; back.hidden=!signed||currentCategory==='Dashboard';
+ const p=nav.querySelector('[data-smart-action="primary"]'), h=nav.querySelector('[data-smart-action="history"]');
+ let pl='Cerca', pi='⌕', hl='Cronologia', hi='≋';
+ if(currentCategory==='Orari'){pl='Orario';pi='◷';hl='Extra';hi='＋'}
+ else if(currentCategory==='VenditeAdmin'){pl='Vendita';pi='−1';hl='Riparazioni';hi='⌁'}
+ else if(currentCategory==='Vendite'){pl='Vendite';pi='✓';hl='Cronologia';hi='≋'}
+ else if(currentCategory==='Utenti'){pl='Nuovo utente';pi='＋';hl='Gestisci';hi='♙'}
+ else if(String(currentCategory).startsWith('custom:')){pl='Cerca';pi='⌕';hl='Cronologia';hi='≋'}
+ p.querySelector('b').textContent=pi;p.querySelector('span').textContent=pl;h.querySelector('b').textContent=hi;h.querySelector('span').textContent=hl;
+}
+document.addEventListener('DOMContentLoaded',()=>{
+ bindHourAccordions(); const nav=document.getElementById('mobileBottomNav'), back=document.getElementById('smartBackBtn');
+ back?.addEventListener('click',smartBack);
+ nav?.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.smartAction;if(a==='home')setCategory('Dashboard');else if(a==='menu')openMainMenu();else if(currentCategory==='Orari'&&a==='primary')document.querySelector('#hoursForm .hourCardToggle')?.click();else if(currentCategory==='Orari'&&a==='history')document.querySelector('#extraForm .hourCardToggle')?.click();else if(currentCategory==='VenditeAdmin'&&a==='primary')document.querySelector('[data-work-tab="sales"]')?.click();else if(currentCategory==='VenditeAdmin'&&a==='history')document.querySelector('[data-work-tab="repairs"]')?.click();else if(a==='history')setCategory('Cronologia');else document.getElementById('globalSearch')?.focus();});
+ let sx=0,sy=0,st=0;document.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;sx=e.touches[0].clientX;sy=e.touches[0].clientY;st=Date.now()},{passive:true});document.addEventListener('touchend',e=>{if(!e.changedTouches?.length||sx>35)return;const dx=e.changedTouches[0].clientX-sx,dy=Math.abs(e.changedTouches[0].clientY-sy);if(dx>85&&dy<70&&Date.now()-st<700)smartBack()},{passive:true});
+ updateSmartNavigation();
+});
+setInterval(()=>{bindHourAccordions();updateSmartNavigation()},1800);
