@@ -1,0 +1,7 @@
+BeparyTech v54
+- Menu mobile ridisegnato con 4 pulsanti separati, arrotondati e più eleganti.
+- Il menu si nasconde automaticamente quando si scorre verso il basso e ricompare quando si scorre verso l'alto.
+- Spazio inferiore riservato per evitare che il menu copra pulsanti e campi.
+- Pulsante Indietro segue lo stesso comportamento del menu su schermi piccoli.
+- Mesi ingranditi e adattivi: 2 colonne su smartphone, 4 su tablet/schermi medi, 6 su desktop.
+- Riepiloghi Orari ingranditi per una lettura più chiara.

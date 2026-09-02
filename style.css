@@ -861,3 +861,94 @@ body[data-theme="light"] #deviceSalesView .adminWorkTab.active{background:#f8f1e
  .hoursGrid{grid-template-columns:1fr!important}.hourCardToggle{padding:15px}.hourCardBody{padding:0 15px 15px}
 }
 @media(min-width:761px) and (max-width:1100px){.hoursGrid{grid-template-columns:1fr 1fr}.bigSaveAction{min-height:54px!important}}
+
+/* v54 - menu mobile elegante auto-hide + mesi responsive */
+.hoursMonthColumns{
+  grid-template-columns:repeat(6,minmax(120px,1fr))!important;
+  gap:12px!important;
+  overflow:visible!important;
+  padding-bottom:0!important;
+}
+.hoursMonthBtn{
+  min-width:0!important;
+  min-height:86px;
+  padding:15px 16px!important;
+  border-radius:18px!important;
+  align-content:center;
+  gap:6px!important;
+}
+.hoursMonthBtn strong{font-size:17px!important;text-transform:lowercase}
+.hoursMonthBtn small{font-size:13px!important}
+.hoursSummary>div{min-height:92px;padding:18px!important;border-radius:19px!important}
+.hoursSummary strong{font-size:24px!important}
+
+@media(max-width:1100px){
+  .hoursMonthColumns{grid-template-columns:repeat(4,minmax(120px,1fr))!important}
+}
+@media(max-width:620px){
+  .hoursMonthsPanel{padding:16px!important;border-radius:22px!important}
+  .hoursMonthColumns{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important}
+  .hoursMonthBtn{min-height:92px!important;padding:16px 18px!important}
+  .hoursMonthBtn strong{font-size:18px!important}
+  .hoursMonthBtn small{font-size:13px!important}
+  .hoursSummary{gap:12px!important}
+  .hoursSummary>div{min-height:104px!important;padding:19px!important}
+}
+
+@media(max-width:760px){
+  body{padding-bottom:calc(112px + env(safe-area-inset-bottom))!important}
+  .mobileBottomNav{
+    position:fixed!important;
+    z-index:65;
+    left:10px!important;
+    right:10px!important;
+    bottom:calc(8px + env(safe-area-inset-bottom))!important;
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:8px!important;
+    padding:8px!important;
+    border:1px solid rgba(215,168,79,.22)!important;
+    border-radius:24px!important;
+    background:rgba(16,16,17,.88)!important;
+    -webkit-backdrop-filter:blur(18px) saturate(140%);
+    backdrop-filter:blur(18px) saturate(140%);
+    box-shadow:0 14px 42px rgba(0,0,0,.36)!important;
+    transform:translateY(0);
+    opacity:1;
+    transition:transform .28s cubic-bezier(.2,.8,.2,1),opacity .22s ease;
+    will-change:transform;
+  }
+  body[data-theme="light"] .mobileBottomNav{background:rgba(250,247,240,.9)!important}
+  .mobileBottomNav.nav-hidden{transform:translateY(calc(125% + env(safe-area-inset-bottom)));opacity:.18;pointer-events:none}
+  .mobileBottomNav[hidden]{display:none!important}
+  .mobileBottomNav button{
+    border:1px solid rgba(255,255,255,.07)!important;
+    background:rgba(255,255,255,.045)!important;
+    color:inherit;
+    min-width:0;
+    min-height:62px!important;
+    padding:7px 4px!important;
+    border-radius:16px!important;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:4px!important;
+    font:inherit;
+    transition:transform .16s ease,background .16s ease,border-color .16s ease;
+  }
+  .mobileBottomNav button:active{transform:scale(.96);background:rgba(215,168,79,.16)!important}
+  .mobileBottomNav button.nav-current{background:linear-gradient(145deg,rgba(229,189,104,.28),rgba(174,126,45,.18))!important;border-color:rgba(215,168,79,.55)!important}
+  .mobileBottomNav b{font-size:21px!important;line-height:1}
+  .mobileBottomNav span{font-size:10.5px!important;font-weight:850;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .smartBackBtn{
+    left:12px!important;
+    bottom:calc(94px + env(safe-area-inset-bottom))!important;
+    min-height:44px!important;
+    border-radius:14px!important;
+    background:rgba(20,20,21,.9)!important;
+    backdrop-filter:blur(12px);
+    transition:transform .28s cubic-bezier(.2,.8,.2,1),opacity .22s ease;
+  }
+  .smartBackBtn.nav-hidden{transform:translateY(85px);opacity:0;pointer-events:none}
+}

@@ -1363,3 +1363,30 @@ document.addEventListener('DOMContentLoaded',()=>{
  updateSmartNavigation();
 });
 setInterval(()=>{bindHourAccordions();updateSmartNavigation()},1800);
+
+// ===== v54: barra mobile elegante, si nasconde scendendo e ricompare salendo =====
+(function(){
+ let lastY=Math.max(0,window.scrollY||0), ticking=false, hidden=false;
+ function setHidden(v){
+   hidden=!!v;
+   document.getElementById('mobileBottomNav')?.classList.toggle('nav-hidden',hidden);
+   document.getElementById('smartBackBtn')?.classList.toggle('nav-hidden',hidden);
+ }
+ function onScroll(){
+   if(ticking)return;ticking=true;
+   requestAnimationFrame(()=>{
+     const y=Math.max(0,window.scrollY||0), delta=y-lastY;
+     if(y<70) setHidden(false);
+     else if(delta>8) setHidden(true);
+     else if(delta<-8) setHidden(false);
+     lastY=y;ticking=false;
+   });
+ }
+ window.addEventListener('scroll',onScroll,{passive:true});
+ document.addEventListener('touchstart',()=>{ if((window.scrollY||0)<70)setHidden(false); },{passive:true});
+ document.addEventListener('DOMContentLoaded',()=>{
+   const nav=document.getElementById('mobileBottomNav');
+   nav?.addEventListener('focusin',()=>setHidden(false));
+   nav?.addEventListener('click',()=>setHidden(false));
+ });
+})();
