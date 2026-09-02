@@ -183,12 +183,14 @@ function applyRoleVisibility(){
   const catalogMenu=document.getElementById("catalogMenuItem");
   const usersMenu=document.getElementById("usersMenuItem");
   const backupMenu=document.getElementById("backupMenuItem");
+  const zeroStockMenu=document.getElementById("zeroStockMenuItem");
   const hoursMenu=document.getElementById("hoursMenuItem");
   const deviceSalesMenu=document.getElementById("deviceSalesMenuItem");
   usersTab.hidden=!admin;
   if(catalogMenu) catalogMenu.hidden=!admin;
   if(usersMenu) usersMenu.hidden=!admin;
   if(backupMenu) backupMenu.hidden=!admin;
+  if(zeroStockMenu) zeroStockMenu.hidden=!admin;
   if(hoursMenu) hoursMenu.hidden=!admin;
   if(deviceSalesMenu) deviceSalesMenu.hidden=!admin;
   if(!admin){
@@ -197,7 +199,7 @@ function applyRoleVisibility(){
     usersTab.classList.remove("active");
     document.getElementById("hoursView").hidden=true;
     const dsv=document.getElementById("deviceSalesView"); if(dsv) dsv.hidden=true;
-    if(["Utenti","GestioneMagazzino","Backup","Orari","VenditeAdmin"].includes(currentCategory)) setCategory("Dashboard");
+    if(["Utenti","GestioneMagazzino","ScorteZero","Backup","Orari","VenditeAdmin"].includes(currentCategory)) setCategory("Dashboard");
   }
   const menuUser=document.getElementById("menuUserName"), menuRole=document.getElementById("menuUserRole");
   if(menuUser) menuUser.textContent=currentProfile?.username||currentUser?.email||"Utente";
@@ -277,30 +279,31 @@ document.getElementById("logoutBtn").onclick=async()=>{await sb.auth.signOut(); 
 
 
 function setCategory(category){
-  const isDashboard=category==="Dashboard", isSales=category==="Vendite", isAudit=category==="Cronologia", isUsers=category==="Utenti", isCatalog=category==="GestioneMagazzino", isBackup=category==="Backup", isHours=category==="Orari", isDeviceSales=category==="VenditeAdmin";
+  const isDashboard=category==="Dashboard", isSales=category==="Vendite", isAudit=category==="Cronologia", isUsers=category==="Utenti", isCatalog=category==="GestioneMagazzino", isZeroStock=category==="ScorteZero", isBackup=category==="Backup", isHours=category==="Orari", isDeviceSales=category==="VenditeAdmin";
   const isCustom=String(category).startsWith("custom:");
-  if((isUsers||isCatalog||isBackup||isHours||isDeviceSales)&&!isAdmin()) return;
+  if((isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales)&&!isAdmin()) return;
   currentCategory=category;
   currentCustomSectionId=isCustom?Number(String(category).split(":")[1]):null;
   const sec=isCustom?customSections.find(s=>Number(s.id)===currentCustomSectionId):null;
-  const title=isDashboard?"Dashboard":isAudit?"Cronologia":isSales?"Vendute":isUsers?"Utenti":isCatalog?"Gestione magazzino":isBackup?"Backup":isHours?"I miei orari":isDeviceSales?"Vendite ricambi":sec?.name||category;
-  const desc=isDashboard?"Riepilogo generale":isAudit?"Tutte le attività del gestionale":isSales?"Vendite, note, stampa DYMO e rientri":isUsers?"Gestione accessi":isCatalog?"Crea e gestisci sezioni e prodotti":isBackup?"Esporta una copia dei dati":isHours?"Area privata Admin · ore lavorate ed extra":isDeviceSales?"Area privata Admin · ricambi elettronici, IVA e acquisti":sec?.description||"Sezione magazzino";
+  const title=isDashboard?"Dashboard":isAudit?"Cronologia":isSales?"Vendute":isUsers?"Utenti":isCatalog?"Gestione magazzino":isZeroStock?"Scorte a zero":isBackup?"Backup":isHours?"I miei orari":isDeviceSales?"Vendite ricambi":sec?.name||category;
+  const desc=isDashboard?"Riepilogo generale":isAudit?"Tutte le attività del gestionale":isSales?"Vendite, note, stampa DYMO e rientri":isUsers?"Gestione accessi":isCatalog?"Crea e gestisci sezioni e prodotti":isZeroStock?"BackGlass e Housing esauriti, separati":isBackup?"Esporta una copia dei dati":isHours?"Area privata Admin · ore lavorate ed extra":isDeviceSales?"Area privata Admin · ricambi elettronici, IVA e acquisti":sec?.description||"Sezione magazzino";
   document.getElementById("categoryName").textContent=title;
   document.getElementById("categoryDescription").textContent=desc;
-  document.querySelector(".tools").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isBackup||isHours||isDeviceSales;
-  document.querySelector(".stats").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isBackup||isHours||isDeviceSales;
-  inventory.hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isBackup||isHours||isDeviceSales;
+  document.querySelector(".tools").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales;
+  document.querySelector(".stats").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales;
+  inventory.hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales;
   document.getElementById("dashboardView").hidden=!isDashboard;
   document.getElementById("salesView").hidden=!isSales;
   document.getElementById("auditView").hidden=!isAudit;
   document.getElementById("usersView").hidden=!isUsers;
   document.getElementById("catalogView").hidden=!isCatalog;
+  document.getElementById("zeroStockView").hidden=!isZeroStock;
   document.getElementById("backupView").hidden=!isBackup;
   document.getElementById("hoursView").hidden=!isHours;
   const deviceSalesView=document.getElementById("deviceSalesView"); if(deviceSalesView) deviceSalesView.hidden=!isDeviceSales;
   document.querySelectorAll(".menuItem[data-category]").forEach(b=>b.classList.toggle("active",b.dataset.category===category));
   search.value=""; filter.value="all"; closeMainMenu();
-  if(isDashboard) loadDashboard(); else if(isAudit) loadAudit(); else if(isSales) loadSales(); else if(isUsers) loadUsers(); else if(isCatalog) renderCatalogAdmin(); else if(isBackup){} else if(isHours) loadHours(); else if(isDeviceSales) loadDeviceSales(); else if(isCustom) renderCustomSection();
+  if(isDashboard) loadDashboard(); else if(isAudit) loadAudit(); else if(isSales) loadSales(); else if(isUsers) loadUsers(); else if(isCatalog) renderCatalogAdmin(); else if(isZeroStock) renderZeroStock(); else if(isBackup){} else if(isHours) loadHours(); else if(isDeviceSales) loadDeviceSales(); else if(isCustom) renderCustomSection();
 }
 
 async function loadUsers(){
@@ -919,6 +922,60 @@ async function exportFull(){const [requests,sales,audit]=await Promise.all([sb.f
 document.getElementById("exportInventoryCsv").onclick=exportInventory;document.getElementById("exportRequestsCsv").onclick=exportRequests;document.getElementById("exportFullBackup").onclick=exportFull;
 
 
+
+
+// ===== v55: sezione Scorte a zero =====
+function zeroStockRows(category){
+  return Object.entries(MODEL_COLORS)
+    .filter(([model])=>!(category==="BackGlass" && (model==="iPhone 7"||model==="iPhone 7 Plus")))
+    .flatMap(([model,colors])=>colors.map(color=>({model,color,qty:Number(stock[category==="BackGlass"?model+"||"+color:"Housing||"+model+"||"+color]||0)})))
+    .filter(x=>x.qty===0)
+    .sort((a,b)=>compareModels(a.model,b.model)||String(a.color).localeCompare(String(b.color),"it",{numeric:true,sensitivity:"base"}));
+}
+function renderZeroStock(){
+  if(!isAdmin())return;
+  const bg=zeroStockRows("BackGlass"),hs=zeroStockRows("Housing");
+  document.getElementById("zeroBackglassCount").textContent=bg.length;
+  document.getElementById("zeroHousingCount").textContent=hs.length;
+  const render=(rows,kind)=>rows.length?rows.map(x=>`<div class="zeroStockRow"><span><strong>${escapeHtml(x.model)}</strong><small>${escapeHtml(x.color)} · ${kind}</small></span><b class="zeroStockBadge">0</b></div>`).join(""):'<div class="emptyState">Nessun articolo a quantità 0.</div>';
+  document.getElementById("zeroBackglassList").innerHTML=render(bg,"BackGlass");
+  document.getElementById("zeroHousingList").innerHTML=render(hs,"Housing");
+}
+function exportZeroStock(category){
+  const rows=zeroStockRows(category);
+  const csv=[["Categoria","Modello","Colore","Quantità"],...rows.map(x=>[category,x.model,x.color,0])];
+  downloadText(`BeparyTech_${category}_quantita_0_${new Date().toISOString().slice(0,10)}.csv`,csv.map(r=>r.map(csvEscape).join(",")).join("\n"),"text/csv;charset=utf-8");
+}
+document.getElementById("exportZeroBackglass")?.addEventListener("click",()=>exportZeroStock("BackGlass"));
+document.getElementById("exportZeroHousing")?.addEventListener("click",()=>exportZeroStock("Housing"));
+
+// ===== v55: pull-to-refresh sui dispositivi touch =====
+(function(){
+  let startY=0,pull=0,tracking=false,refreshing=false;
+  const threshold=78;
+  const indicator=()=>document.getElementById("pullRefreshIndicator");
+  function paint(){const el=indicator();if(!el)return;el.classList.toggle("show",pull>8||refreshing);el.classList.toggle("ready",pull>=threshold&&!refreshing);el.style.transform=`translate(-50%, ${Math.min(68,Math.max(-60,pull-54))}px)`;el.querySelector("b").textContent=refreshing?"Aggiornamento…":pull>=threshold?"Rilascia per aggiornare":"Tira giù per aggiornare";}
+  async function refreshCurrent(){
+    if(refreshing)return;refreshing=true;const el=indicator();el?.classList.add("refreshing");paint();
+    try{
+      await loadStock();
+      if(typeof loadCustomCatalog==="function") await loadCustomCatalog();
+      if(currentCategory==="Dashboard") await loadDashboard();
+      else if(currentCategory==="Cronologia") await loadAudit();
+      else if(currentCategory==="Vendite") await loadSales();
+      else if(currentCategory==="ScorteZero") renderZeroStock();
+      else if(currentCategory==="Orari") await loadHours();
+      else if(currentCategory==="VenditeAdmin") await loadDeviceSales();
+      else if(String(currentCategory).startsWith("custom:")) renderCustomSection();
+      else if(currentCategory==="BackGlass"||currentCategory==="Housing") render();
+      const cs=document.getElementById("cloudStatus");if(cs)cs.textContent="☁︎ Aggiornato";
+    }catch(e){console.error("Pull refresh",e)}
+    finally{setTimeout(()=>{refreshing=false;pull=0;const x=indicator();x?.classList.remove("refreshing","ready","show");if(x)x.style.transform="translate(-50%,-160%)"},350)}
+  }
+  document.addEventListener("touchstart",e=>{if(refreshing||e.touches.length!==1||window.scrollY>1)return;startY=e.touches[0].clientY;pull=0;tracking=true},{passive:true});
+  document.addEventListener("touchmove",e=>{if(!tracking||refreshing)return;const d=e.touches[0].clientY-startY;if(d<=0){pull=0;paint();return;}pull=Math.min(120,d*.55);paint()},{passive:true});
+  document.addEventListener("touchend",()=>{if(!tracking)return;tracking=false;if(pull>=threshold)refreshCurrent();else{pull=0;const el=indicator();el?.classList.remove("show","ready");if(el)el.style.transform="translate(-50%,-160%)"}},{passive:true});
+})();
 
 // v28 - Orari privati Admin
 function timeToMinutes(v){if(!v)return null;const [h,m]=String(v).split(":").map(Number);return h*60+m;}

@@ -289,6 +289,7 @@
       <button id="catalogMenuItem" class="menuItem adminOnly" type="button" data-category="GestioneMagazzino" hidden><span class="menuIcon">＋</span><span><strong>Gestione magazzino</strong><small>Sezioni e prodotti</small></span></button>
       <button id="deviceSalesMenuItem" class="menuItem adminOnly" type="button" data-category="VenditeAdmin" hidden><span class="menuIcon">€</span><span><strong>Vendite ricambi</strong><small>Prezzi, IVA e riferimenti acquisto</small></span></button>
       <button id="hoursMenuItem" class="menuItem adminOnly" type="button" data-category="Orari" hidden><span class="menuIcon">◷</span><span><strong>Orari</strong><small>Ore lavorate ed extra</small></span></button>
+      <button id="zeroStockMenuItem" class="menuItem adminOnly" type="button" data-category="ScorteZero" hidden><span class="menuIcon">0</span><span><strong>Scorte a zero</strong><small>BackGlass e Housing separati</small></span></button>
       <button id="backupMenuItem" class="menuItem adminOnly" type="button" data-category="Backup" hidden><span class="menuIcon">⇩</span><span><strong>Backup</strong><small>Esporta dati</small></span></button>
       <button id="usersMenuItem" class="menuItem adminOnly" type="button" data-category="Utenti" hidden><span class="menuIcon">♙</span><span><strong>Utenti</strong><small>Accessi e password</small></span></button>
     </nav>
@@ -367,6 +368,17 @@
     </section>
     <main id="inventory"></main>
     <section id="auditView" class="salesView" hidden><div class="salesHeader"><div><strong>Cronologia completa</strong><span>Movimenti, richieste e modifiche</span></div><button id="refreshAuditBtn" class="miniBtn animatedBtn" type="button">Aggiorna</button></div><div id="auditList"></div></section>
+    <section id="zeroStockView" class="catalogView zeroStockView" hidden>
+      <div class="adminHero"><div><span class="usersKicker">SCORTE A ZERO</span><h2>Articoli esauriti</h2><p>BackGlass e Housing sono separati. Puoi controllare ed esportare solo gli articoli con quantità 0.</p></div><span class="adminBadge">ADMIN</span></div>
+      <div class="zeroStockSummary">
+        <div class="zeroStockStat"><span>BackGlass a 0</span><strong id="zeroBackglassCount">0</strong></div>
+        <div class="zeroStockStat"><span>Housing a 0</span><strong id="zeroHousingCount">0</strong></div>
+      </div>
+      <div class="zeroStockGrid">
+        <section class="zeroStockPanel"><div class="zeroStockHead"><div><strong>BackGlass</strong><small>Vetri posteriori con giacenza zero</small></div><button id="exportZeroBackglass" class="miniBtn animatedBtn" type="button">Esporta CSV</button></div><div id="zeroBackglassList" class="zeroStockList"></div></section>
+        <section class="zeroStockPanel"><div class="zeroStockHead"><div><strong>Housing</strong><small>Scocche complete con giacenza zero</small></div><button id="exportZeroHousing" class="miniBtn animatedBtn" type="button">Esporta CSV</button></div><div id="zeroHousingList" class="zeroStockList"></div></section>
+      </div>
+    </section>
     <section id="backupView" class="catalogView" hidden><div class="adminHero"><div><span class="usersKicker">BACKUP</span><h2>Esporta i dati</h2><p>Scarica una copia del magazzino e della cronologia.</p></div><span class="adminBadge">ADMIN</span></div><div class="backupGrid"><button id="exportInventoryCsv" class="catalogCard backupAction" type="button"><strong>CSV Magazzino</strong><span>Prodotti, sezioni e quantità</span></button><button id="exportRequestsCsv" class="catalogCard backupAction" type="button"><strong>CSV Da ordinare</strong><span>Tutte le richieste</span></button><button id="exportFullBackup" class="catalogCard backupAction" type="button"><strong>Backup JSON completo</strong><span>Magazzino, richieste, vendite e cronologia</span></button></div></section>
     <section id="salesView" class="salesView" hidden>
       <div class="salesHeader"><div><strong>Vendute</strong><span>Storico vendite, note, stampa DYMO e rientri</span></div><button id="refreshSalesBtn" class="miniBtn" type="button">Aggiorna</button></div>
@@ -712,13 +724,14 @@
 
   
 <button id="smartBackBtn" class="smartBackBtn animatedBtn" type="button" hidden>← <span>Indietro</span></button>
+<div id="pullRefreshIndicator" class="pullRefreshIndicator" aria-hidden="true"><span>↻</span><b>Aggiorna</b></div>
 <nav id="mobileBottomNav" class="mobileBottomNav" aria-label="Azioni rapide" hidden>
  <button type="button" data-smart-action="home"><b>⌂</b><span>Home</span></button>
  <button type="button" data-smart-action="primary"><b>＋</b><span>Azione</span></button>
  <button type="button" data-smart-action="history"><b>≋</b><span>Storico</span></button>
  <button type="button" data-smart-action="menu"><b>☰</b><span>Menu</span></button>
 </nav>
-<script src="app.js?v=54"></script>
+<script src="app.js?v=55"></script>
 
 
 

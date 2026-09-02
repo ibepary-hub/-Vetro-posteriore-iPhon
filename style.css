@@ -952,3 +952,20 @@ body[data-theme="light"] #deviceSalesView .adminWorkTab.active{background:#f8f1e
   }
   .smartBackBtn.nav-hidden{transform:translateY(85px);opacity:0;pointer-events:none}
 }
+
+/* ===== v55: Scorte a zero + pull to refresh ===== */
+.zeroStockView{display:grid;gap:18px}
+.zeroStockSummary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.zeroStockStat{padding:20px;border:1px solid var(--border);border-radius:22px;background:var(--card);display:flex;align-items:center;justify-content:space-between;gap:16px}
+.zeroStockStat span{color:var(--muted);font-weight:700}.zeroStockStat strong{font-size:32px}
+.zeroStockGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.zeroStockPanel{border:1px solid var(--border);border-radius:24px;background:var(--card);overflow:hidden}
+.zeroStockHead{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:18px;border-bottom:1px solid var(--border)}
+.zeroStockHead>div{display:flex;flex-direction:column;gap:4px}.zeroStockHead strong{font-size:21px}.zeroStockHead small{color:var(--muted)}
+.zeroStockList{display:grid;gap:0;max-height:620px;overflow:auto}
+.zeroStockRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border)}
+.zeroStockRow:last-child{border-bottom:0}.zeroStockRow>span{display:flex;flex-direction:column;gap:3px;min-width:0}.zeroStockRow strong{font-size:16px}.zeroStockRow small{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.zeroStockBadge{min-width:42px;text-align:center;padding:8px 10px;border-radius:13px;background:rgba(210,68,68,.10);border:1px solid rgba(210,68,68,.20);font-weight:800}
+.pullRefreshIndicator{position:fixed;z-index:100;left:50%;top:calc(10px + env(safe-area-inset-top));transform:translate(-50%,-160%);display:flex;align-items:center;gap:8px;padding:10px 15px;border-radius:999px;background:rgba(18,18,19,.93);border:1px solid rgba(215,168,79,.30);box-shadow:0 10px 32px rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:transform .18s ease,opacity .18s ease;color:#fff}
+.pullRefreshIndicator.show{opacity:1}.pullRefreshIndicator.ready{border-color:rgba(215,168,79,.70)}.pullRefreshIndicator.refreshing span{animation:btSpin .8s linear infinite}@keyframes btSpin{to{transform:rotate(360deg)}}
+@media(max-width:850px){.zeroStockGrid{grid-template-columns:1fr}.zeroStockList{max-height:none}}
+@media(max-width:620px){.zeroStockSummary{grid-template-columns:1fr 1fr;gap:10px}.zeroStockStat{padding:16px;border-radius:18px;flex-direction:column;align-items:flex-start}.zeroStockStat strong{font-size:28px}.zeroStockHead{align-items:flex-start;flex-direction:column}.zeroStockHead .miniBtn{width:100%;min-height:48px}.zeroStockRow{padding:14px}}
