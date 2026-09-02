@@ -1,0 +1,9 @@
+BeparyTech v51
+
+- Vendite ricambi e Riparazioni sono chiuse all’apertura della pagina.
+- Si apre una sezione solo quando viene premuto il relativo pulsante.
+- Premendo di nuovo il pulsante attivo la sezione si richiude.
+- I due pulsanti sono grandi e puliti, nello stile del pulsante Esci.
+- Riparazioni: aggiunti pulsanti Modifica ed Elimina.
+- Modifica riparazione usa lo stesso modulo e permette di annullare la modifica.
+- Operazioni update/delete limitate al workspace Admin corrente.

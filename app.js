@@ -1093,11 +1093,11 @@ document.getElementById("saveRecoveryPassword").onclick=async()=>{
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("./sw.js?v=39", { updateViaCache: "none" });
+      const reg = await navigator.serviceWorker.register("./sw.js?v=51", { updateViaCache: "none" });
       await reg.update();
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (!sessionStorage.getItem("bt-cache-reloaded-v39")) {
-          sessionStorage.setItem("bt-cache-reloaded-v39", "1");
+        if (!sessionStorage.getItem("bt-cache-reloaded-v51")) {
+          sessionStorage.setItem("bt-cache-reloaded-v51", "1");
           location.reload();
         }
       });
@@ -1121,18 +1121,68 @@ function updateAdminRepairVatPreview(){
   if(document.getElementById("adminRepairVat")) document.getElementById("adminRepairVat").textContent=euroFmt.format(vat);
   if(document.getElementById("adminRepairGross")) document.getElementById("adminRepairGross").textContent=euroFmt.format(gross);
 }
+let adminRepairRows=[];
+let adminRepairEditingId=null;
+
+function resetAdminRepairEditor(){
+  adminRepairEditingId=null;
+  const form=document.getElementById("adminRepairForm");
+  if(form) form.dataset.editing="0";
+  const submit=document.getElementById("adminRepairSubmitBtn");
+  const cancel=document.getElementById("adminRepairCancelEdit");
+  if(submit) submit.textContent="Salva riparazione";
+  if(cancel) cancel.hidden=true;
+  const d=document.getElementById("adminRepairDate");
+  if(d) d.value=new Date().toISOString().slice(0,10);
+  ["adminRepairStore","adminRepairDevice","adminRepairType","adminRepairPrice","adminRepairNote"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
+  const vat=document.getElementById("adminRepairVatRate"); if(vat)vat.value="22";
+  updateAdminRepairVatPreview();
+}
+
+function startAdminRepairEdit(id){
+  const r=adminRepairRows.find(x=>Number(x.id)===Number(id)); if(!r)return;
+  adminRepairEditingId=Number(r.id);
+  const form=document.getElementById("adminRepairForm"); if(form)form.dataset.editing="1";
+  document.getElementById("adminRepairDate").value=r.repaired_at||"";
+  document.getElementById("adminRepairStore").value=r.store||"";
+  document.getElementById("adminRepairDevice").value=r.device||"";
+  document.getElementById("adminRepairType").value=r.repair_type||"";
+  document.getElementById("adminRepairPrice").value=Number(r.price_ex_vat||0);
+  document.getElementById("adminRepairVatRate").value=Number(r.vat_rate??22);
+  document.getElementById("adminRepairNote").value=r.note||"";
+  const submit=document.getElementById("adminRepairSubmitBtn"); if(submit)submit.textContent="Salva modifiche";
+  const cancel=document.getElementById("adminRepairCancelEdit"); if(cancel)cancel.hidden=false;
+  const msg=document.getElementById("adminRepairMsg"); if(msg){msg.className="createUserMsg";msg.textContent="Stai modificando una riparazione registrata.";}
+  updateAdminRepairVatPreview();
+  form?.scrollIntoView({behavior:"smooth",block:"start"});
+}
+
+async function deleteAdminRepair(id){
+  if(!confirm("Eliminare definitivamente questa riparazione?"))return;
+  try{
+    const ctx=await btGetWorkspaceOwnerId();
+    const {error}=await sb.from("beparytech_admin_repairs").delete().eq("id",Number(id)).eq("workspace_owner_id",ctx.owner);
+    if(error)throw error;
+    if(adminRepairEditingId===Number(id)) resetAdminRepairEditor();
+    await loadAdminRepairs();
+  }catch(e){alert(e.message||"Impossibile eliminare la riparazione.");}
+}
+
 async function loadAdminRepairs(){
   const list=document.getElementById("adminRepairsList"); if(!list)return;
+  list.innerHTML='<div class="emptyState">Caricamento…</div>';
   try{
     const ctx=await btGetWorkspaceOwnerId();
     const {data,error}=await sb.from("beparytech_admin_repairs").select("*").eq("workspace_owner_id",ctx.owner).order("repaired_at",{ascending:false}).order("id",{ascending:false}).limit(300);
     if(error)throw error;
-    const rows=data||[];
+    const rows=data||[]; adminRepairRows=rows;
     const net=rows.reduce((x,r)=>x+Number(r.price_ex_vat||0),0), vat=rows.reduce((x,r)=>x+Number(r.vat_amount||0),0), total=rows.reduce((x,r)=>x+Number(r.total_inc_vat||0),0);
     const sum=document.getElementById("adminRepairsSummary");
     if(sum)sum.innerHTML=`<div><span>Riparazioni</span><strong>${rows.length}</strong></div><div><span>Imponibile</span><strong>${euroFmt.format(net)}</strong></div><div><span>IVA</span><strong>${euroFmt.format(vat)}</strong></div><div><span>Totale</span><strong>${euroFmt.format(total)}</strong></div>`;
-    list.innerHTML=rows.length?rows.map(r=>`<div class="deviceAdminSaleRow"><div><strong>${escapeHtml(r.device)}</strong><span>${escapeHtml(r.repair_type)} · ${escapeHtml(r.store)} · ${new Date(r.repaired_at+"T12:00:00").toLocaleDateString("it-IT")}</span>${r.note?`<small>${escapeHtml(r.note)}</small>`:""}</div><div class="deviceAdminSalePrice"><strong>${euroFmt.format(Number(r.total_inc_vat||0))}</strong><span>IVA ${euroFmt.format(Number(r.vat_amount||0))}</span></div></div>`).join(""):'<div class="emptyState">Nessuna riparazione registrata</div>';
-  }catch(e){list.innerHTML=`<div class="emptyState">${escapeHtml(e.message||"Errore caricamento")}</div>`}
+    list.innerHTML=rows.length?rows.map(r=>`<article class="deviceAdminSaleRow"><div class="deviceAdminSaleTop"><div><strong>${escapeHtml(r.device)}</strong><span>${escapeHtml(r.repair_type)} · ${escapeHtml(r.store)} · ${new Date(r.repaired_at+"T12:00:00").toLocaleDateString("it-IT")}</span>${r.note?`<small>${escapeHtml(r.note)}</small>`:""}</div><div class="deviceAdminSalePrice"><strong>${euroFmt.format(Number(r.total_inc_vat||0))}</strong><span>IVA ${Number(r.vat_rate||0).toLocaleString("it-IT")}% · ${euroFmt.format(Number(r.vat_amount||0))}</span></div></div><div class="deviceAdminSaleMeta"><span>Imponibile ${euroFmt.format(Number(r.price_ex_vat||0))}</span></div><div class="deviceAdminSaleActions repairRowActions"><button class="rowAction editAdminRepair" data-id="${r.id}" type="button">Modifica</button><button class="rowAction delete deleteAdminRepair" data-id="${r.id}" type="button">Elimina</button></div></article>`).join(""):'<div class="emptyState">Nessuna riparazione registrata</div>';
+    list.querySelectorAll(".editAdminRepair").forEach(b=>b.onclick=()=>startAdminRepairEdit(Number(b.dataset.id)));
+    list.querySelectorAll(".deleteAdminRepair").forEach(b=>b.onclick=()=>deleteAdminRepair(Number(b.dataset.id)));
+  }catch(e){list.innerHTML=`<div class="emptyState">${escapeHtml(e.message||"Errore caricamento")}</div>`;}
 }
 function bindAdminRepairs(){
  const form=document.getElementById("adminRepairForm"); if(!form||form.dataset.bound==="1")return; form.dataset.bound="1";
@@ -1140,15 +1190,22 @@ function bindAdminRepairs(){
  document.getElementById("adminRepairPrice")?.addEventListener("input",updateAdminRepairVatPreview);
  document.getElementById("adminRepairVatRate")?.addEventListener("input",updateAdminRepairVatPreview);
  document.getElementById("refreshAdminRepairsBtn")?.addEventListener("click",loadAdminRepairs);
+ document.getElementById("adminRepairCancelEdit")?.addEventListener("click",()=>{resetAdminRepairEditor();const msg=document.getElementById("adminRepairMsg");if(msg)msg.textContent="Modifica annullata.";});
  form.addEventListener("submit",async ev=>{
-   ev.preventDefault(); const msg=document.getElementById("adminRepairMsg"); if(msg)msg.textContent="Salvataggio…";
+   ev.preventDefault(); const msg=document.getElementById("adminRepairMsg"); if(msg){msg.className="createUserMsg";msg.textContent=adminRepairEditingId?"Salvataggio modifiche…":"Salvataggio…";}
    try{
     const ctx=await btGetWorkspaceOwnerId();
-    const payload={workspace_owner_id:ctx.owner,created_by:ctx.user,repaired_at:document.getElementById("adminRepairDate").value,store:document.getElementById("adminRepairStore").value,device:document.getElementById("adminRepairDevice").value.trim(),repair_type:document.getElementById("adminRepairType").value.trim(),price_ex_vat:Number(document.getElementById("adminRepairPrice").value||0),vat_rate:Number(document.getElementById("adminRepairVatRate").value||22),note:document.getElementById("adminRepairNote").value.trim()||null};
-    const {error}=await sb.from("beparytech_admin_repairs").insert(payload); if(error)throw error;
-    if(msg)msg.textContent="Riparazione salvata.";
-    document.getElementById("adminRepairDevice").value=""; document.getElementById("adminRepairType").value=""; document.getElementById("adminRepairPrice").value=""; document.getElementById("adminRepairNote").value=""; updateAdminRepairVatPreview(); await loadAdminRepairs();
-   }catch(e){if(msg)msg.textContent=e.message||"Errore salvataggio";}
+    const payload={repaired_at:document.getElementById("adminRepairDate").value,store:document.getElementById("adminRepairStore").value,device:document.getElementById("adminRepairDevice").value.trim(),repair_type:document.getElementById("adminRepairType").value.trim(),price_ex_vat:Number(document.getElementById("adminRepairPrice").value||0),vat_rate:Number(document.getElementById("adminRepairVatRate").value||22),note:document.getElementById("adminRepairNote").value.trim()||null};
+    let error;
+    if(adminRepairEditingId){
+      ({error}=await sb.from("beparytech_admin_repairs").update(payload).eq("id",adminRepairEditingId).eq("workspace_owner_id",ctx.owner));
+    }else{
+      ({error}=await sb.from("beparytech_admin_repairs").insert({...payload,workspace_owner_id:ctx.owner,created_by:ctx.user}));
+    }
+    if(error)throw error;
+    if(msg){msg.className="createUserMsg ok";msg.textContent=adminRepairEditingId?"Riparazione modificata.":"Riparazione salvata.";}
+    resetAdminRepairEditor(); await loadAdminRepairs();
+   }catch(e){if(msg){msg.className="createUserMsg error";msg.textContent=e.message||"Errore salvataggio";}}
  });
  updateAdminRepairVatPreview();
 }
@@ -1236,24 +1293,30 @@ function bindAdminWorkTabs(){
   const buttons=[...tabs.querySelectorAll(".adminWorkTab")];
   const sales=document.getElementById("adminSalesPanel");
   const repairs=document.getElementById("adminRepairsPanel");
+  let current=null;
 
   function show(panel){
-    const salesOn=panel==="sales";
-    if(sales) sales.hidden=!salesOn;
-    if(repairs) repairs.hidden=salesOn;
+    // Se tocchi il pulsante già aperto, richiude tutto.
+    current=current===panel?null:panel;
+    if(sales) sales.hidden=current!=="sales";
+    if(repairs) repairs.hidden=current!=="repairs";
     buttons.forEach(btn=>{
-      const on=btn.dataset.workTab===panel;
+      const on=btn.dataset.workTab===current;
       btn.classList.toggle("active",on);
       btn.setAttribute("aria-selected",on?"true":"false");
+      btn.setAttribute("aria-expanded",on?"true":"false");
     });
-    if(salesOn){
+    if(current==="sales"){
       try{ loadDeviceSales(); }catch(_){}
-    }else{
+    }else if(current==="repairs"){
       try{ bindAdminRepairs(); loadAdminRepairs(); }catch(_){}
     }
   }
   buttons.forEach(btn=>btn.addEventListener("click",()=>show(btn.dataset.workTab)));
-  show("sales");
+  // All'apertura della pagina nessuna finestra è già aperta.
+  if(sales) sales.hidden=true;
+  if(repairs) repairs.hidden=true;
+  buttons.forEach(btn=>{btn.classList.remove("active");btn.setAttribute("aria-selected","false");btn.setAttribute("aria-expanded","false");});
 }
 document.addEventListener("DOMContentLoaded",bindAdminWorkTabs);
 setInterval(bindAdminWorkTabs,1500);

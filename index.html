@@ -390,7 +390,7 @@
   </div>
 
   <div class="adminWorkTabs" id="adminWorkTabs" role="tablist" aria-label="Vendite e riparazioni">
-    <button type="button" class="adminWorkTab active" data-work-tab="sales" role="tab" aria-selected="true">
+    <button type="button" class="adminWorkTab" data-work-tab="sales" role="tab" aria-selected="false">
       <span class="adminWorkIcon">📦</span>
       <span class="adminWorkText"><strong>Vendite ricambi</strong><small>Ricambi e articoli elettronici</small></span>
     </button>
@@ -400,7 +400,7 @@
     </button>
   </div>
 
-  <div id="adminSalesPanel" class="adminWorkPanel" data-work-panel="sales">
+  <div id="adminSalesPanel" class="adminWorkPanel" data-work-panel="sales" hidden>
     <div class="adminPanelHeader">
       <div><strong>Vendite ricambi</strong><small>Registra una vendita e conserva il riferimento dell’acquisto.</small></div>
     </div>
@@ -465,7 +465,7 @@
         <div><span>IVA</span><strong id="adminRepairVat">€ 0,00</strong></div>
         <div class="total"><span>Totale IVA inclusa</span><strong id="adminRepairGross">€ 0,00</strong></div>
       </div>
-      <button class="primaryAction animatedBtn" type="submit">Salva riparazione</button>
+      <div class="repairFormActions"><button id="adminRepairSubmitBtn" class="primaryAction animatedBtn" type="submit">Salva riparazione</button><button id="adminRepairCancelEdit" class="secondaryAction animatedBtn" type="button" hidden>Annulla modifica</button></div>
       <div id="adminRepairMsg" class="createUserMsg" aria-live="polite"></div>
     </form>
 
