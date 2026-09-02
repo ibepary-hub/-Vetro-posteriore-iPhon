@@ -456,6 +456,7 @@
 <option>E-POL</option></select></label>
         <label class="wide"><span>Dispositivo *</span><input id="adminRepairDevice" maxlength="160" placeholder="es. iPhone 15 Pro, S21 Ultra 5G..." required></label>
         <label class="wide"><span>Tipo di riparazione *</span><input id="adminRepairType" maxlength="240" placeholder="es. Reballing CPU, riparazione scheda madre..." required></label>
+        <label class="wide"><span>Riferimento e-Share *</span><input id="adminRepairEShareRef" maxlength="120" placeholder="es. 8107" required></label>
         <label><span>Prezzo escluso IVA *</span><div class="moneyInput"><span>€</span><input id="adminRepairPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" required></div></label>
         <label><span>IVA %</span><input id="adminRepairVatRate" type="number" min="0" max="100" step="0.01" value="22" inputmode="decimal"></label>
         <label class="wide"><span>Nota</span><textarea id="adminRepairNote" maxlength="1000" rows="3" placeholder="es. Riferimento e-share: 8107"></textarea></label>
@@ -562,7 +563,7 @@
 
   <div id="saleModal" class="saleModal" hidden>
     <div class="saleDialog" role="dialog" aria-modal="true" aria-labelledby="saleTitle">
-      <div class="saleDialogHead"><div><span class="saleKicker">REGISTRA VENDITA</span><h2 id="saleTitle">A chi è destinato?</h2></div><button id="cancelSaleX" class="closeBtn" type="button" aria-label="Chiudi">×</button></div>
+      <div class="saleDialogHead"><div><span class="saleKicker">SCARICO MAGAZZINO</span><h2 id="saleTitle">Scarica 1 dalla giacenza</h2></div><button id="cancelSaleX" class="closeBtn" type="button" aria-label="Chiudi">×</button></div>
       <div id="saleItemLabel" class="saleItemLabel"></div>
       <div class="operatorGrid">
         <label><span class="fieldLabel">Nome operatore *</span><select id="saleOperatorName" class="modalSelect"><option value="">Operatore</option></select></label>
@@ -585,6 +586,8 @@
         <option>DP Colugna</option>
         <option>E-POL</option>
       </select>
+      <label class="fieldLabel" for="saleEShareRef">Riferimento e-Share *</label>
+      <input id="saleEShareRef" class="modalInput" type="text" maxlength="120" autocomplete="off" placeholder="es. 8107" required>
       <label class="fieldLabel" for="saleNote">Nota <span class="optionalText">(facoltativa)</span></label>
       <textarea id="saleNote" class="reasonInput" rows="3" placeholder="Scrivi una nota sull'operazione…"></textarea>
       <div id="saleError" class="saleError"></div>
@@ -675,7 +678,7 @@
   <template id="colorTemplate">
     <div class="colorRow">
       <div class="colorInfo"><span class="dot"></span><div><strong class="colorName"></strong><span class="status"></span></div></div>
-      <div class="stepper"><button class="minus saleStockAction" title="Segna come venduta">Venduta</button><input class="qty" inputmode="numeric" pattern="[0-9]*" value="0"><button class="plus">+</button></div>
+      <div class="stepper"><button class="minus saleStockAction" title="Scarica 1 dalla giacenza">−1 Scarica</button><input class="qty" inputmode="numeric" pattern="[0-9]*" value="0"><button class="plus">+</button></div>
     </div>
   </template>
 
@@ -707,7 +710,7 @@
     </div>
   </div>
 
-  <script src="app.js?v=39"></script>
+  <script src="app.js?v=52"></script>
 
 
 

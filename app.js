@@ -356,6 +356,7 @@ async function openSaleModal(model,color,qty){
   populateSaleOperatorControl();
   document.getElementById("saleOperatorPassword").value="";
   document.getElementById("saleNote").value="";
+  document.getElementById("saleEShareRef").value="";
   document.getElementById("saleItemLabel").innerHTML=`<strong>${escapeHtml(model)}</strong><span>${escapeHtml(color)} · ${currentCategory === "BackGlass" ? "Vetro posteriore" : "Scocca completa"}</span>`;
   const customerSelect=document.getElementById("saleCustomerSelect");
   customerSelect.value="";
@@ -370,11 +371,13 @@ function updateSaleConfirmState(){
   selectedCustomer=document.getElementById("saleCustomerSelect").value||null;
   const operator=document.getElementById("saleOperatorName").value.trim();
   const pass=document.getElementById("saleOperatorPassword").value;
-  document.getElementById("confirmSaleBtn").disabled=!(selectedCustomer&&operator&&pass.length>=4);
+  const eShare=document.getElementById("saleEShareRef").value.trim();
+  document.getElementById("confirmSaleBtn").disabled=!(selectedCustomer&&operator&&pass.length>=4&&eShare);
 }
 document.getElementById("saleCustomerSelect").addEventListener("change",updateSaleConfirmState);
 document.getElementById("saleOperatorName").addEventListener("change",updateSaleConfirmState);
 document.getElementById("saleOperatorPassword").addEventListener("input",updateSaleConfirmState);
+document.getElementById("saleEShareRef").addEventListener("input",updateSaleConfirmState);
 document.getElementById("cancelSaleBtn").onclick=closeSaleModal;
 document.getElementById("cancelSaleX").onclick=closeSaleModal;
 document.getElementById("saleModal").addEventListener("click",e=>{if(e.target.id==="saleModal") closeSaleModal();});
@@ -388,7 +391,7 @@ document.getElementById("confirmSaleBtn").onclick=async()=>{
     p_customer:selectedCustomer,
     p_operator_name:document.getElementById("saleOperatorName").value.trim(),
     p_operator_password:document.getElementById("saleOperatorPassword").value,
-    p_note:document.getElementById("saleNote").value.trim()||null
+    p_note:(()=>{const r=document.getElementById("saleEShareRef").value.trim();const n=document.getElementById("saleNote").value.trim();return `Rif. e-Share: ${r}${n?` · ${n}`:""}`;})()
   };
   const result=p.kind==="custom"
     ? await sb.rpc("record_beparytech_product_sale",{p_product_id:p.productId,...commonOperator})
@@ -407,7 +410,7 @@ document.getElementById("confirmSaleBtn").onclick=async()=>{
     stock[p.itemKey]=Number(data);
     closeSaleModal(); render();
   }
-  document.getElementById("cloudStatus").textContent="☁︎ Vendita salvata";
+  document.getElementById("cloudStatus").textContent="☁︎ Scarico −1 salvato";
 };
 
 async function loadSales(){
@@ -760,6 +763,7 @@ async function openCustomSaleModal(product,section){
   await loadAccountOperators();
   populateSaleOperatorControl();
   document.getElementById("saleOperatorPassword").value="";document.getElementById("saleNote").value="";
+  document.getElementById("saleEShareRef").value="";
   document.getElementById("saleItemLabel").innerHTML=`<strong>${escapeHtml(product.name)}</strong><span>${escapeHtml(product.variant||section?.name||"")}</span>`;
   document.getElementById("saleCustomerSelect").value="";document.getElementById("confirmSaleBtn").disabled=true;document.getElementById("saleError").textContent="";document.getElementById("saleModal").hidden=false;
 }
@@ -1134,7 +1138,7 @@ function resetAdminRepairEditor(){
   if(cancel) cancel.hidden=true;
   const d=document.getElementById("adminRepairDate");
   if(d) d.value=new Date().toISOString().slice(0,10);
-  ["adminRepairStore","adminRepairDevice","adminRepairType","adminRepairPrice","adminRepairNote"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
+  ["adminRepairStore","adminRepairDevice","adminRepairType","adminRepairPrice","adminRepairNote","adminRepairEShareRef"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
   const vat=document.getElementById("adminRepairVatRate"); if(vat)vat.value="22";
   updateAdminRepairVatPreview();
 }
@@ -1149,7 +1153,9 @@ function startAdminRepairEdit(id){
   document.getElementById("adminRepairType").value=r.repair_type||"";
   document.getElementById("adminRepairPrice").value=Number(r.price_ex_vat||0);
   document.getElementById("adminRepairVatRate").value=Number(r.vat_rate??22);
-  document.getElementById("adminRepairNote").value=r.note||"";
+  const repairNote=r.note||""; const em=repairNote.match(/^Rif\. e-Share:\s*([^·]+?)(?:\s*·\s*(.*))?$/);
+  document.getElementById("adminRepairEShareRef").value=em?em[1].trim():"";
+  document.getElementById("adminRepairNote").value=em?(em[2]||"").trim():repairNote;
   const submit=document.getElementById("adminRepairSubmitBtn"); if(submit)submit.textContent="Salva modifiche";
   const cancel=document.getElementById("adminRepairCancelEdit"); if(cancel)cancel.hidden=false;
   const msg=document.getElementById("adminRepairMsg"); if(msg){msg.className="createUserMsg";msg.textContent="Stai modificando una riparazione registrata.";}
@@ -1195,7 +1201,7 @@ function bindAdminRepairs(){
    ev.preventDefault(); const msg=document.getElementById("adminRepairMsg"); if(msg){msg.className="createUserMsg";msg.textContent=adminRepairEditingId?"Salvataggio modifiche…":"Salvataggio…";}
    try{
     const ctx=await btGetWorkspaceOwnerId();
-    const payload={repaired_at:document.getElementById("adminRepairDate").value,store:document.getElementById("adminRepairStore").value,device:document.getElementById("adminRepairDevice").value.trim(),repair_type:document.getElementById("adminRepairType").value.trim(),price_ex_vat:Number(document.getElementById("adminRepairPrice").value||0),vat_rate:Number(document.getElementById("adminRepairVatRate").value||22),note:document.getElementById("adminRepairNote").value.trim()||null};
+    const payload={repaired_at:document.getElementById("adminRepairDate").value,store:document.getElementById("adminRepairStore").value,device:document.getElementById("adminRepairDevice").value.trim(),repair_type:document.getElementById("adminRepairType").value.trim(),price_ex_vat:Number(document.getElementById("adminRepairPrice").value||0),vat_rate:Number(document.getElementById("adminRepairVatRate").value||22),note:(()=>{const r=document.getElementById("adminRepairEShareRef").value.trim();const n=document.getElementById("adminRepairNote").value.trim();return `Rif. e-Share: ${r}${n?` · ${n}`:""}`;})()};
     let error;
     if(adminRepairEditingId){
       ({error}=await sb.from("beparytech_admin_repairs").update(payload).eq("id",adminRepairEditingId).eq("workspace_owner_id",ctx.owner));
