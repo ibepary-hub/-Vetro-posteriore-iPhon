@@ -4,6 +4,7 @@
 :root{
   --bg:#0a0a0b; --card:#151516; --card2:#1d1d1f; --text:#f7f4ec; --muted:#a8a29a; --line:#2d2a26;
   --gold:#d7a84f; --gold2:#f3cf79; --green:#46c979; --amber:#e8aa3e; --red:#f05d5e;
+  --panel:#121213; --surface:#19191b; --input:#0d0d0e; --border:#302c26; --accent:#8db0ff;
 }
 *{box-sizing:border-box}
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif;background:radial-gradient(circle at 50% -10%,#252017 0,#0a0a0b 34%);color:var(--text,inherit);-webkit-tap-highlight-color:transparent}
@@ -211,6 +212,7 @@ header{gap:12px}
 body[data-theme="light"]{
   --bg:#f4f1ea;--card:#ffffff;--card2:#f7f4ed;--text:#1c1a17;--muted:#716a60;--line:#ddd5c8;
   --gold:#a87624;--gold2:#8b621d;--green:#167a43;--amber:#a86508;--red:#bd3e3f;
+  --panel:#ffffff;--surface:#faf7f1;--input:#ffffff;--border:#ddd5c8;--accent:#315ea8;
   background:radial-gradient(circle at 50% -10%,#fff8e8 0,#f4f1ea 38%);
   color:var(--text,inherit);
 }
@@ -969,3 +971,326 @@ body[data-theme="light"] #deviceSalesView .adminWorkTab.active{background:#f8f1e
 .pullRefreshIndicator.show{opacity:1}.pullRefreshIndicator.ready{border-color:rgba(215,168,79,.70)}.pullRefreshIndicator.refreshing span{animation:btSpin .8s linear infinite}@keyframes btSpin{to{transform:rotate(360deg)}}
 @media(max-width:850px){.zeroStockGrid{grid-template-columns:1fr}.zeroStockList{max-height:none}}
 @media(max-width:620px){.zeroStockSummary{grid-template-columns:1fr 1fr;gap:10px}.zeroStockStat{padding:16px;border-radius:18px;flex-direction:column;align-items:flex-start}.zeroStockStat strong{font-size:28px}.zeroStockHead{align-items:flex-start;flex-direction:column}.zeroStockHead .miniBtn{width:100%;min-height:48px}.zeroStockRow{padding:14px}}
+
+
+/* =========================================================
+   v56 — CORREZIONI MODALITÀ GIORNO + CONTRASTO + CACHE UI
+   ========================================================= */
+body[data-theme="light"]{color-scheme:light}
+body[data-theme="light"] .iconBtn,
+body[data-theme="light"] .menuToggle,
+body[data-theme="light"] .menuClose{
+  background:#fff!important;color:#8b621d!important;border-color:#d9c9aa!important;
+  box-shadow:0 6px 18px rgba(70,50,20,.08)!important;
+}
+body[data-theme="light"] .categoryTitle strong{color:#1c1a17!important}
+body[data-theme="light"] .categoryTitle span{color:#716a60!important}
+body[data-theme="light"] .emptyState{background:#f8f5ee!important;color:#716a60!important}
+body[data-theme="light"] input:not([type="checkbox"]):not([type="radio"]),
+body[data-theme="light"] textarea,
+body[data-theme="light"] select{
+  background:#fff!important;color:#1c1a17!important;border-color:#d9d1c4!important;color-scheme:light;
+}
+body[data-theme="light"] input::placeholder,
+body[data-theme="light"] textarea::placeholder{color:#8a8175!important;opacity:1}
+body[data-theme="light"] .customerChoices button{
+  background:#fff!important;color:#302b24!important;border-color:#ddd5c8!important;
+}
+body[data-theme="light"] .customerChoices button.selected{
+  background:linear-gradient(145deg,#fff5dc,#f5e6c4)!important;color:#6e4a0d!important;border-color:#c89a49!important;
+}
+body[data-theme="light"] .archiveRow,
+body[data-theme="light"] .customModelGroup,
+body[data-theme="light"] .orderRequestCard,
+body[data-theme="light"] .hoursHero,
+body[data-theme="light"] .hoursCard,
+body[data-theme="light"] .hoursMonthsPanel,
+body[data-theme="light"] .hoursSummary>div,
+body[data-theme="light"] .deviceSalesHero,
+body[data-theme="light"] .deviceSaleCard,
+body[data-theme="light"] .deviceAdminSaleRow,
+body[data-theme="light"] .vatPreview>div,
+body[data-theme="light"] .deviceSalesSummary>div,
+body[data-theme="light"] .zeroStockStat,
+body[data-theme="light"] .zeroStockPanel{
+  background:#fff!important;color:#1c1a17!important;border-color:#ddd5c8!important;
+  box-shadow:0 7px 22px rgba(60,45,20,.06);
+}
+body[data-theme="light"] .archiveReason{color:#655f57!important;border-color:#e2dbcf!important}
+body[data-theme="light"] .archiveReason strong{color:#1c1a17!important}
+body[data-theme="light"] .fieldLabel{color:#655f57!important}
+body[data-theme="light"] .restoreStockOption small{color:#716a60!important}
+body[data-theme="light"] .customActions .edit{background:#fff!important;color:#302b24!important;border-color:#ddd5c8!important}
+body[data-theme="light"] .dashboardLine:hover{background:#f8f5ee!important}
+body[data-theme="light"] .pullRefreshIndicator{
+  background:rgba(255,255,255,.96)!important;color:#1c1a17!important;border-color:rgba(168,118,36,.32)!important;
+  box-shadow:0 10px 28px rgba(70,50,20,.14)!important;
+}
+@media(max-width:760px){
+  body[data-theme="light"] .mobileBottomNav{
+    background:rgba(255,253,248,.94)!important;border-color:rgba(168,118,36,.24)!important;
+    box-shadow:0 14px 38px rgba(70,50,20,.16)!important;
+  }
+  body[data-theme="light"] .mobileBottomNav button{
+    background:#fff!important;color:#1c1a17!important;border-color:#e3dccf!important;
+  }
+  body[data-theme="light"] .mobileBottomNav button.nav-current{
+    background:linear-gradient(145deg,#fff0c9,#f2ddb0)!important;color:#5f430f!important;border-color:#c89a49!important;
+  }
+  body[data-theme="light"] .smartBackBtn{
+    background:rgba(255,253,248,.96)!important;color:#1c1a17!important;border-color:#d7c9ad!important;
+    box-shadow:0 10px 28px rgba(70,50,20,.14)!important;
+  }
+}
+
+
+/* v57 - styles moved from index.html for strict CSP */
+#adminRepairsCard.repairModernShell{
+  margin:24px 0;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:24px;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at top right, rgba(255,184,0,.12), transparent 34%),
+    linear-gradient(180deg, rgba(26,29,38,.96), rgba(18,20,27,.96));
+  box-shadow:0 18px 50px rgba(0,0,0,.24);
+  backdrop-filter:blur(14px);
+}
+#adminRepairsCard .repairModernToggle{
+  width:100%;
+  display:grid;
+  grid-template-columns:auto 1fr auto auto;
+  gap:16px;
+  align-items:center;
+  padding:20px 22px;
+  border:0;
+  background:transparent;
+  color:inherit;
+  text-align:left;
+  cursor:pointer;
+}
+#adminRepairsCard .repairModernToggle:hover{
+  background:rgba(255,255,255,.035);
+}
+#adminRepairsCard .repairModernIcon{
+  width:48px;height:48px;
+  display:grid;place-items:center;
+  border-radius:16px;
+  font-size:23px;
+  background:linear-gradient(145deg,rgba(255,190,40,.22),rgba(255,153,0,.08));
+  border:1px solid rgba(255,190,40,.22);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+}
+#adminRepairsCard .repairModernTitleWrap{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+  min-width:0;
+}
+#adminRepairsCard .repairModernTitleWrap strong{
+  font-size:18px;
+  letter-spacing:-.02em;
+}
+#adminRepairsCard .repairModernTitleWrap small{
+  opacity:.66;
+  font-size:13px;
+}
+#adminRepairsCard .repairModernBadge{
+  padding:7px 10px;
+  border-radius:999px;
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.08em;
+  background:rgba(255,184,0,.13);
+  border:1px solid rgba(255,184,0,.28);
+  color:#ffc84d;
+  white-space:nowrap;
+}
+#adminRepairsCard .repairModernChevron{
+  font-size:26px;
+  line-height:1;
+  opacity:.72;
+  transform:rotate(0deg);
+  transition:transform .22s ease;
+}
+#adminRepairsCard.open .repairModernChevron{
+  transform:rotate(180deg);
+}
+#adminRepairsCard .repairModernPanel{
+  border-top:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.018);
+}
+#adminRepairsCard .repairModernInner{
+  padding:22px;
+}
+#adminRepairsCard .deviceSaleCardHead{
+  padding:0 0 16px 0;
+  border:0;
+}
+#adminRepairsCard form{
+  background:rgba(255,255,255,.025);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:20px;
+  padding:18px;
+}
+#adminRepairsCard input,
+#adminRepairsCard select,
+#adminRepairsCard textarea{
+  border-radius:14px !important;
+}
+#adminRepairsCard .vatPreview{
+  margin-top:16px;
+  gap:12px;
+}
+#adminRepairsCard .vatPreview>div{
+  border-radius:16px;
+  background:rgba(255,255,255,.035);
+}
+#adminRepairsCard .primaryAction{
+  border-radius:14px;
+  min-height:48px;
+  font-weight:800;
+}
+#adminRepairsCard #adminRepairsSummary{
+  margin-top:12px;
+}
+#adminRepairsCard #adminRepairsList{
+  margin-top:12px;
+}
+@media(max-width:700px){
+  #adminRepairsCard .repairModernToggle{
+    grid-template-columns:auto 1fr auto;
+    gap:12px;
+    padding:16px;
+  }
+  #adminRepairsCard .repairModernBadge{display:none}
+  #adminRepairsCard .repairModernIcon{width:42px;height:42px;border-radius:14px}
+  #adminRepairsCard .repairModernInner{padding:14px}
+  #adminRepairsCard form{padding:14px}
+}
+#deviceSalesView .adminFinanceSwitcher{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin:18px 0 24px;
+  padding:7px;
+  border-radius:20px;
+  background:rgba(255,255,255,.035);
+  border:1px solid rgba(255,255,255,.08);
+}
+#deviceSalesView .adminFinanceTab{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  width:100%;
+  padding:14px 16px;
+  border:1px solid transparent;
+  border-radius:15px;
+  background:transparent;
+  color:inherit;
+  text-align:left;
+  cursor:pointer;
+}
+#deviceSalesView .adminFinanceTab.active{
+  background:linear-gradient(145deg,rgba(255,190,50,.17),rgba(255,155,0,.08));
+  border-color:rgba(255,190,50,.28);
+  box-shadow:0 8px 24px rgba(0,0,0,.15);
+}
+#deviceSalesView .adminFinanceTabIcon{
+  width:40px;height:40px;display:grid;place-items:center;
+  border-radius:12px;background:rgba(255,255,255,.055);font-size:20px;
+}
+#deviceSalesView .adminFinanceTab span:last-child{display:flex;flex-direction:column;gap:2px}
+#deviceSalesView .adminFinanceTab strong{font-size:14px}
+#deviceSalesView .adminFinanceTab small{font-size:11px;opacity:.62}
+#deviceSalesView .adminFinancePanel[hidden]{display:none!important}
+#deviceSalesView #adminRepairsCard{margin-top:0}
+#deviceSalesView #adminRepairsCard .repairLegacyToggle{display:none!important}
+#deviceSalesView #adminRepairsCard .repairModernPanel{border-top:0}
+#deviceSalesView #adminRepairsCard .repairModernInner{padding-top:20px}
+@media(max-width:620px){
+ #deviceSalesView .adminFinanceSwitcher{grid-template-columns:1fr;gap:7px;padding:6px}
+ #deviceSalesView .adminFinanceTab{padding:12px}
+}
+#deviceSalesView .adminFinanceSwitcher{display:none!important}
+#deviceSalesView .cleanAdminTabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:18px 0;padding:6px;border:1px solid rgba(255,255,255,.09);border-radius:16px;background:rgba(255,255,255,.03)}
+#deviceSalesView .cleanAdminTab{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:10px;border:1px solid transparent;border-radius:12px;background:transparent;color:inherit;font-size:14px}
+#deviceSalesView .cleanAdminTab.active{background:rgba(222,169,58,.15);border-color:rgba(222,169,58,.35)}
+#deviceSalesView .cleanAdminTab strong{white-space:nowrap}
+#deviceSalesView #cleanSalesPanel[hidden],#deviceSalesView #adminRepairsCard[hidden]{display:none!important}
+#deviceSalesView #adminRepairsCard{margin:0!important;padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important}
+#deviceSalesView #adminRepairsCard .adminSectionInner{padding:0!important}
+#deviceSalesView #adminRepairsCard .repairModernToggle{display:none!important}
+@media(max-width:480px){#deviceSalesView .cleanAdminTab{font-size:12px;padding:8px 5px;gap:5px}}
+#deviceSalesView{max-width:1180px;margin:0 auto}
+#deviceSalesView .adminWorkHero{
+  display:flex;justify-content:space-between;gap:18px;align-items:flex-start;
+  margin:0 0 18px;
+}
+#deviceSalesView .adminWorkHero h2{margin:7px 0 7px;font-size:30px;line-height:1.05}
+#deviceSalesView .adminWorkHero p{margin:0;max-width:720px;opacity:.7}
+#deviceSalesView .adminWorkTabs{
+  display:grid;grid-template-columns:1fr 1fr;gap:10px;
+  margin:20px 0 24px;padding:6px;border-radius:18px;
+  background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.09);
+}
+#deviceSalesView .adminWorkTab{
+  min-width:0;display:flex;align-items:center;gap:12px;
+  padding:14px 16px;border-radius:13px;border:1px solid transparent;
+  background:transparent;color:inherit;text-align:left;cursor:pointer;
+}
+#deviceSalesView .adminWorkTab.active{
+  background:linear-gradient(145deg,rgba(230,178,62,.18),rgba(230,178,62,.08));
+  border-color:rgba(230,178,62,.34);
+  box-shadow:0 8px 24px rgba(0,0,0,.16);
+}
+#deviceSalesView .adminWorkIcon{
+  flex:0 0 42px;width:42px;height:42px;display:grid;place-items:center;
+  border-radius:12px;background:rgba(255,255,255,.06);font-size:20px;
+}
+#deviceSalesView .adminWorkText{min-width:0;display:flex;flex-direction:column;gap:2px}
+#deviceSalesView .adminWorkText strong{font-size:15px}
+#deviceSalesView .adminWorkText small{font-size:11px;opacity:.6}
+#deviceSalesView .adminWorkPanel[hidden]{display:none!important}
+#deviceSalesView .adminWorkPanel{display:block}
+#deviceSalesView .adminPanelHeader{
+  display:flex;justify-content:space-between;align-items:center;
+  margin:0 0 14px;padding:0 2px;
+}
+#deviceSalesView .adminPanelHeader>div{display:flex;flex-direction:column;gap:3px}
+#deviceSalesView .adminPanelHeader strong{font-size:22px}
+#deviceSalesView .adminPanelHeader small{opacity:.62}
+#deviceSalesView .adminUniformCard{
+  margin:0 0 18px;
+  border-radius:20px!important;
+}
+#deviceSalesView #adminRepairForm,
+#deviceSalesView #deviceSaleForm{
+  padding:18px;
+  background:rgba(255,255,255,.025);
+  border:1px solid rgba(255,255,255,.08);
+}
+#deviceSalesView .deviceSaleHistoryCard{padding:18px}
+#deviceSalesView .deviceSaleGrid input,
+#deviceSalesView .deviceSaleGrid select,
+#deviceSalesView .deviceSaleGrid textarea{width:100%;box-sizing:border-box}
+#deviceSalesView .vatPreview{margin-top:16px}
+#deviceSalesView .primaryAction{margin-top:14px}
+#deviceSalesView .repairModernShell,
+#deviceSalesView .cleanAdminTabs,
+#deviceSalesView .adminFinanceSwitcher,
+#deviceSalesView .repairModernToggle{display:none!important}
+@media(max-width:700px){
+  #deviceSalesView .adminWorkHero{display:block}
+  #deviceSalesView .adminWorkHero .adminBadge{display:inline-flex;margin-top:12px}
+  #deviceSalesView .adminWorkHero h2{font-size:26px}
+  #deviceSalesView .adminWorkTabs{grid-template-columns:1fr 1fr;gap:6px;padding:5px;border-radius:15px}
+  #deviceSalesView .adminWorkTab{padding:10px 8px;gap:7px;justify-content:center}
+  #deviceSalesView .adminWorkIcon{flex:0 0 32px;width:32px;height:32px;border-radius:9px;font-size:16px}
+  #deviceSalesView .adminWorkText strong{font-size:12px;white-space:nowrap}
+  #deviceSalesView .adminWorkText small{display:none}
+  #deviceSalesView .adminPanelHeader strong{font-size:19px}
+  #deviceSalesView #adminRepairForm,
+  #deviceSalesView #deviceSaleForm,
+  #deviceSalesView .deviceSaleHistoryCard{padding:14px}
+}

@@ -910,7 +910,7 @@ document.getElementById("accountOperatorForm").addEventListener("submit",async e
   e.preventDefault();
   if(!selectedUserForAccountOperators)return;
   const name=document.getElementById("accountOperatorName").value.trim(),code=document.getElementById("accountOperatorCode").value.trim(),msg=document.getElementById("accountOperatorsMsg");
-  if(!/^\d{4,8}$/.test(code)){msg.textContent="Il codice deve avere da 4 a 8 cifre.";msg.className="createUserMsg error";return;}
+  if(!/^\d{6,8}$/.test(code)){msg.textContent="Il codice deve avere da 6 a 8 cifre.";msg.className="createUserMsg error";return;}
   const {error}=await sb.rpc("admin_set_beparytech_account_operator",{p_account_user_id:selectedUserForAccountOperators.userId,p_name:name,p_code:code});
   if(error){msg.textContent=error.message;msg.className="createUserMsg error";return;}
   msg.textContent=`Codice salvato per ${name}.`;msg.className="createUserMsg ok";document.getElementById("accountOperatorCode").value="";await loadAdminAccountOperators();
@@ -1154,11 +1154,11 @@ document.getElementById("saveRecoveryPassword").onclick=async()=>{
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("./sw.js?v=53", { updateViaCache: "none" });
+      const reg = await navigator.serviceWorker.register("./sw.js?v=56", { updateViaCache: "none" });
       await reg.update();
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (!sessionStorage.getItem("bt-cache-reloaded-v51")) {
-          sessionStorage.setItem("bt-cache-reloaded-v51", "1");
+        if (!sessionStorage.getItem("bt-cache-reloaded-v57")) {
+          sessionStorage.setItem("bt-cache-reloaded-v57", "1");
           location.reload();
         }
       });

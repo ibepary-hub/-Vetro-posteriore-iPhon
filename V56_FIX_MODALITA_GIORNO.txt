@@ -1,0 +1,10 @@
+BeparyTech v56
+
+Correzioni:
+- definite le variabili CSS semantiche mancanti (--panel, --surface, --input, --border, --accent)
+- corretti contrasto e colori della Modalità Giorno
+- corretti titoli categoria bianchi su sfondo chiaro
+- corretti pulsanti menu/header in tema chiaro
+- corretto pulsante Indietro illeggibile in tema chiaro
+- corretti menu mobile, card, moduli, input, placeholder, archivi, orari, vendite e scorte zero in tema chiaro
+- aggiornati versioning CSS/JS/manifest e cache Service Worker per evitare che restino caricati stili vecchi

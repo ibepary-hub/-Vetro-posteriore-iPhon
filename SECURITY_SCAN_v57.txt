@@ -1,0 +1,23 @@
+BeparyTech – Security Hardening v57
+Data: 02/09/2026
+
+BACKEND SUPABASE APPLICATO
+- Revocati tutti i privilegi diretti del ruolo anon sulle tabelle BeparyTech e backglass_inventory.
+- Revocati TRUNCATE, REFERENCES e TRIGGER al ruolo authenticated sulle tabelle applicative.
+- Codici operatore portati a 6–8 cifre anche lato database.
+- Revocato EXECUTE a PUBLIC e anon per tutte le funzioni/RPC BeparyTech/inventory.
+- Revocata l'esecuzione diretta agli utenti autenticati per funzioni trigger/audit e helper interni di verifica password.
+- Conservato EXECUTE solo sulle RPC applicative necessarie al frontend.
+- RLS resta attiva sulle tabelle applicative.
+
+FRONTEND
+- Codici operatore 6–8 cifre anche nell'interfaccia e nella validazione JavaScript.
+- Tutti gli <style> inline sono stati spostati in style.css: la CSP può restare senza unsafe-inline.
+- CSP continua a bloccare script inline, attributi script, frame figli, object e origini non previste.
+- Cache/service worker aggiornati alla v57 per ridurre il rischio di asset vecchi dopo deploy.
+
+RISCHI RESIDUI / AZIONI ESTERNE
+- supabase-js è ancora caricato da jsDelivr, con versione bloccata 2.112.4. Per eliminare il rischio CDN va vendorizzata la libreria nel repository.
+- GitHub Pages non consente di impostare tutti gli header HTTP desiderati (HSTS, frame-ancestors/X-Frame-Options, Permissions-Policy).
+- Leaked Password Protection va abilitata nelle impostazioni Supabase Auth se non è già attiva.
+- Nessuna applicazione Internet può essere dichiarata invulnerabile; RLS e verifiche server-side restano il confine principale.
