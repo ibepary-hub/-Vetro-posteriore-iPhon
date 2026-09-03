@@ -338,7 +338,7 @@ document.getElementById("createUserForm").addEventListener("submit",async e=>{
     operator_password:document.getElementById("newOperatorPassword").value,
     role:document.getElementById("newUserRole").value
   };
-  if(payload.password.length<10){msg.textContent="La password login deve avere almeno 10 caratteri.";return;}
+  if(!isStrongLoginPassword(payload.password)){msg.textContent="Password: minimo 12 caratteri con maiuscola, minuscola, numero e simbolo.";return;}
   if(payload.operator_password.length<6){msg.textContent="La password operatore deve avere almeno 6 caratteri.";return;}
   if(payload.password.length>128||payload.operator_password.length>128){msg.textContent="Password troppo lunga.";return;}
   msg.className="createUserMsg"; msg.textContent=""; btn.disabled=true; btn.textContent="Creazione…";
@@ -1091,9 +1091,14 @@ document.getElementById("deviceSaleForm")?.addEventListener("submit",async e=>{e
   const row={workspace_owner_id:workspaceOwnerId,created_by:currentUser.id,sold_at:document.getElementById("deviceSaleDate").value,store:document.getElementById("deviceSaleStore").value,device_name:document.getElementById("deviceSaleName").value.trim(),sale_price:Number(document.getElementById("deviceSalePrice").value),vat_rate:Number(document.getElementById("deviceSaleVatRate").value)||0,purchase_url:url||null,supplier_name:document.getElementById("deviceSaleSupplier").value.trim()||supplierFromUrl(url)||null,note:document.getElementById("deviceSaleNote").value.trim()||null};
   const {error}=await sb.from("beparytech_admin_device_sales").insert(row); msg.className=`createUserMsg ${error?"error":"ok"}`; msg.textContent=error?error.message:"Vendita salvata."; if(!error){e.target.reset();document.getElementById("deviceSaleDate").value=new Date().toISOString().slice(0,10);document.getElementById("deviceSaleVatRate").value="22";updateDeviceSaleVatPreview();loadDeviceSales();}
 });
-document.getElementById("adminLoginPasswordForm")?.addEventListener("submit",async e=>{e.preventDefault(); if(!isAdmin())return; const msg=document.getElementById("adminLoginPasswordMsg"),btn=document.getElementById("adminLoginPasswordSave"), userId=document.getElementById("adminLoginPasswordUser").value,p1=document.getElementById("adminLoginPasswordValue").value,p2=document.getElementById("adminLoginPasswordValue2").value; msg.textContent=""; if(!userId){msg.textContent="Seleziona un utente.";return;} if(p1.length<10){msg.textContent="La password deve avere almeno 10 caratteri.";return;} if(p1!==p2){msg.textContent="Le password non coincidono.";return;} btn.disabled=true; const {data,error}=await sb.functions.invoke("beparytech-users",{method:"POST",body:{action:"set_login_password",user_id:userId,password:p1}}); btn.disabled=false; if(error||data?.error){msg.className="createUserMsg error";msg.textContent=data?.error||error?.message||"Impossibile aggiornare la password.";return;} msg.className="createUserMsg ok";msg.textContent="Password login aggiornata correttamente.";e.target.reset();});
+document.getElementById("adminLoginPasswordForm")?.addEventListener("submit",async e=>{e.preventDefault(); if(!isAdmin())return; const msg=document.getElementById("adminLoginPasswordMsg"),btn=document.getElementById("adminLoginPasswordSave"), userId=document.getElementById("adminLoginPasswordUser").value,p1=document.getElementById("adminLoginPasswordValue").value,p2=document.getElementById("adminLoginPasswordValue2").value; msg.textContent=""; if(!userId){msg.textContent="Seleziona un utente.";return;} if(!isStrongLoginPassword(p1)){msg.textContent="Password: minimo 12 caratteri con maiuscola, minuscola, numero e simbolo.";return;} if(p1!==p2){msg.textContent="Le password non coincidono.";return;} btn.disabled=true; const {data,error}=await sb.functions.invoke("beparytech-users",{method:"POST",body:{action:"set_login_password",user_id:userId,password:p1}}); btn.disabled=false; if(error||data?.error){msg.className="createUserMsg error";msg.textContent=data?.error||error?.message||"Impossibile aggiornare la password.";return;} msg.className="createUserMsg ok";msg.textContent="Password login aggiornata correttamente.";e.target.reset();});
+
+function isStrongLoginPassword(value){
+  return typeof value==="string" && value.length>=12 && value.length<=128 && /[a-z]/.test(value) && /[A-Z]/.test(value) && /[0-9]/.test(value) && /[^A-Za-z0-9]/.test(value);
+}
 
 function openPasswordRecovery(){
+  document.body.classList.add("password-recovery-mode");
   const modal=document.getElementById("passwordRecoveryModal");
   if(modal) modal.hidden=false;
 }
@@ -1138,15 +1143,19 @@ document.getElementById("saveRecoveryPassword").onclick=async()=>{
   const p2=document.getElementById("recoveryPassword2").value;
   const msg=document.getElementById("recoveryPasswordMsg");
   msg.textContent="";
-  if(p1.length<10){msg.textContent="La password deve avere almeno 10 caratteri.";return;}
-  if(p1.length>128){msg.textContent="La password è troppo lunga.";return;}
+  if(!isStrongLoginPassword(p1)){msg.textContent="Usa almeno 12 caratteri con maiuscola, minuscola, numero e simbolo.";return;}
   if(p1!==p2){msg.textContent="Le password non coincidono.";return;}
   const {error}=await sb.auth.updateUser({password:p1});
   if(error){msg.textContent=error.message;return;}
-  document.getElementById("passwordRecoveryModal").hidden=true;
   document.getElementById("recoveryPassword").value="";
   document.getElementById("recoveryPassword2").value="";
-  alert("Password aggiornata correttamente.");
+  await sb.auth.signOut();
+  document.getElementById("passwordRecoveryModal").hidden=true;
+  document.body.classList.remove("password-recovery-mode");
+  try { history.replaceState({}, document.title, window.location.pathname); } catch(_) {}
+  stock={};
+  await showAuth(null);
+  alert("Password aggiornata correttamente. Accedi con la nuova password.");
 };
 
 
@@ -1154,11 +1163,11 @@ document.getElementById("saveRecoveryPassword").onclick=async()=>{
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("./sw.js?v=56", { updateViaCache: "none" });
+      const reg = await navigator.serviceWorker.register("./sw.js?v=58", { updateViaCache: "none" });
       await reg.update();
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (!sessionStorage.getItem("bt-cache-reloaded-v57")) {
-          sessionStorage.setItem("bt-cache-reloaded-v57", "1");
+        if (!sessionStorage.getItem("bt-cache-reloaded-v58")) {
+          sessionStorage.setItem("bt-cache-reloaded-v58", "1");
           location.reload();
         }
       });

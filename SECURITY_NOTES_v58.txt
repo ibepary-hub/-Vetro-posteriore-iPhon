@@ -1,0 +1,7 @@
+BeparyTech v58 - Recovery & Auth hardening
+
+- Recupero password mostrato in modalita isolata: il gestionale non viene visualizzato dietro la schermata di reset.
+- Dopo cambio password: logout della sessione di recovery e ritorno al login.
+- Password login frontend allineate a Supabase: minimo 12 caratteri, almeno una minuscola, una maiuscola, un numero e un simbolo.
+- Cache/service worker aggiornati a v58.
+- Le protezioni database v58 sono applicate separatamente su Supabase.

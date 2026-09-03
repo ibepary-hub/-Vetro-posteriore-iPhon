@@ -10,10 +10,10 @@
   <meta name="apple-mobile-web-app-title" content="BeparyTech">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
   <title>BeparyTech • Magazzino Ricambi iPhone</title>
-  <link rel="manifest" href="manifest.json?v=57">
+  <link rel="manifest" href="manifest.json?v=58">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=57">
+  <link rel="stylesheet" href="style.css?v=58">
 
 
 
@@ -267,7 +267,7 @@
         <form id="createUserForm" class="createUserForm">
           <label><span>Username *</span><input id="newUsername" type="text" autocomplete="off" maxlength="40" placeholder="es. laboratorio1" required></label>
           <label><span>Email *</span><input id="newUserEmail" type="email" autocomplete="off" placeholder="utente@email.it" required></label>
-          <label><span>Password login *</span><input id="newUserPassword" type="password" autocomplete="new-password" minlength="10" maxlength="128" placeholder="Minimo 10 caratteri" required></label>
+          <label><span>Password login *</span><input id="newUserPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" placeholder="Minimo 12 caratteri · A-z · 0-9 · simbolo" required></label>
           <label><span>Password operatore *</span><input id="newOperatorPassword" type="password" autocomplete="new-password" minlength="6" maxlength="128" placeholder="Minimo 6 caratteri" required></label>
           <label><span>Ruolo</span><select id="newUserRole"><option value="standard">Standard</option><option value="admin">Admin</option></select></label>
           <button id="createUserBtn" class="primaryAction createUserBtn" type="submit">Crea utente</button>
@@ -278,8 +278,8 @@
         <div class="usersHeader"><div><span class="usersKicker">SICUREZZA LOGIN</span><h2>Cambia password</h2><p>Puoi cambiare la tua password oppure quella di un utente del gestionale.</p></div></div>
         <form id="adminLoginPasswordForm" class="createUserForm passwordAdminForm">
           <label><span>Utente *</span><select id="adminLoginPasswordUser" required><option value="">Seleziona utente…</option></select></label>
-          <label><span>Nuova password *</span><input id="adminLoginPasswordValue" type="password" autocomplete="new-password" minlength="10" maxlength="128" placeholder="Minimo 10 caratteri" required></label>
-          <label><span>Ripeti password *</span><input id="adminLoginPasswordValue2" type="password" autocomplete="new-password" minlength="10" maxlength="128" placeholder="Ripeti la password" required></label>
+          <label><span>Nuova password *</span><input id="adminLoginPasswordValue" type="password" autocomplete="new-password" minlength="12" maxlength="128" placeholder="Minimo 12 caratteri · A-z · 0-9 · simbolo" required></label>
+          <label><span>Ripeti password *</span><input id="adminLoginPasswordValue2" type="password" autocomplete="new-password" minlength="12" maxlength="128" placeholder="Ripeti la password" required></label>
           <button id="adminLoginPasswordSave" class="primaryAction createUserBtn" type="submit">Aggiorna password</button>
           <div id="adminLoginPasswordMsg" class="createUserMsg" aria-live="polite"></div>
         </form>
@@ -456,9 +456,9 @@
     <div class="saleDialog" role="dialog" aria-modal="true" aria-labelledby="passwordRecoveryTitle">
       <div class="saleDialogHead"><div><span class="saleKicker">RECUPERA PASSWORD</span><h2 id="passwordRecoveryTitle">Imposta una nuova password</h2></div></div>
       <label class="fieldLabel" for="recoveryPassword">Nuova password *</label>
-      <input id="recoveryPassword" class="modalInput" type="password" minlength="10" maxlength="128" autocomplete="new-password" placeholder="Minimo 10 caratteri">
+      <input id="recoveryPassword" class="modalInput" type="password" minlength="12" maxlength="128" autocomplete="new-password" placeholder="Minimo 12 caratteri · A-z · 0-9 · simbolo">
       <label class="fieldLabel" for="recoveryPassword2">Ripeti password *</label>
-      <input id="recoveryPassword2" class="modalInput" type="password" minlength="10" autocomplete="new-password" placeholder="Ripeti la password">
+      <input id="recoveryPassword2" class="modalInput" type="password" minlength="12" autocomplete="new-password" placeholder="Ripeti la password">
       <div id="recoveryPasswordMsg" class="saleError"></div>
       <div class="saleActions"><button id="saveRecoveryPassword" class="primaryAction" type="button">Salva nuova password</button></div>
     </div>
@@ -473,7 +473,7 @@
  <button type="button" data-smart-action="history"><b>≋</b><span>Storico</span></button>
  <button type="button" data-smart-action="menu"><b>☰</b><span>Menu</span></button>
 </nav>
-<script src="app.js?v=57"></script>
+<script src="app.js?v=58"></script>
 
 
 

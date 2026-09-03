@@ -1294,3 +1294,11 @@ body[data-theme="light"] .pullRefreshIndicator{
   #deviceSalesView #deviceSaleForm,
   #deviceSalesView .deviceSaleHistoryCard{padding:14px}
 }
+
+
+/* v58 - recupero password isolato: nessun contenuto del gestionale visibile dietro */
+body.password-recovery-mode{background:#0b0b0b;overflow:hidden}
+body.password-recovery-mode .app> *:not(#passwordRecoveryModal){display:none!important}
+body.password-recovery-mode #passwordRecoveryModal{display:flex!important;background:#0b0b0b;align-items:center;justify-content:center}
+body.password-recovery-mode #passwordRecoveryModal[hidden]{display:none!important}
+body.password-recovery-mode #passwordRecoveryModal .saleDialog{max-width:620px;width:min(100%,620px)}
