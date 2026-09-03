@@ -1,0 +1,8 @@
+BeparyTech v59 — Recovery Lock + Login Trust
+
+- Recovery password lock survives refresh in the same browser tab.
+- Dashboard remains hidden while password recovery is pending.
+- Successful recovery signs out and returns to login.
+- Login and operator-password hints aligned to 12+ strong password policy.
+- Added elegant proprietary-management footer under login without claiming a registered trademark.
+- Cache/service worker bumped to v59.

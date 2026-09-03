@@ -10,10 +10,10 @@
   <meta name="apple-mobile-web-app-title" content="BeparyTech">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
   <title>BeparyTech • Magazzino Ricambi iPhone</title>
-  <link rel="manifest" href="manifest.json?v=58">
+  <link rel="manifest" href="manifest.json?v=59">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=58">
+  <link rel="stylesheet" href="style.css?v=59">
 
 
 
@@ -91,11 +91,12 @@
         <h2>Accesso al magazzino</h2>
         <p>Accesso riservato agli account autorizzati da BeparyTech. Le quantità sono salvate online e sincronizzate sui tuoi dispositivi.</p>
         <input id="email" type="email" placeholder="Email">
-        <div class="passwordRow"><input id="password" type="password" placeholder="Password (min. 6 caratteri)"><button id="forgotPasswordBtn" class="forgotPasswordBtn" type="button">Password dimenticata?</button></div>
+        <div class="passwordRow"><input id="password" type="password" placeholder="Password (min. 12 caratteri)"><button id="forgotPasswordBtn" class="forgotPasswordBtn" type="button">Password dimenticata?</button></div>
         <div class="authButtons">
           <button id="loginBtn" class="full">Accedi</button>
         </div>
         <div id="authMsg"></div>
+        <div class="loginTrust"><span class="loginTrustMark">◆</span><div><strong>GESTIONALE PROPRIETARIO BEPARYTECH</strong><small>Accesso riservato · © 2026 BeparyTech · Tutti i diritti riservati</small></div></div>
       </div>
       <div id="signedIn" hidden>
         <div class="signedBrand"><img src="icon-192.png" alt=""><strong>BeparyTech Cloud</strong></div>
@@ -268,7 +269,7 @@
           <label><span>Username *</span><input id="newUsername" type="text" autocomplete="off" maxlength="40" placeholder="es. laboratorio1" required></label>
           <label><span>Email *</span><input id="newUserEmail" type="email" autocomplete="off" placeholder="utente@email.it" required></label>
           <label><span>Password login *</span><input id="newUserPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" placeholder="Minimo 12 caratteri · A-z · 0-9 · simbolo" required></label>
-          <label><span>Password operatore *</span><input id="newOperatorPassword" type="password" autocomplete="new-password" minlength="6" maxlength="128" placeholder="Minimo 6 caratteri" required></label>
+          <label><span>Password operatore *</span><input id="newOperatorPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" placeholder="Minimo 12 caratteri · A-z · 0-9 · simbolo" required></label>
           <label><span>Ruolo</span><select id="newUserRole"><option value="standard">Standard</option><option value="admin">Admin</option></select></label>
           <button id="createUserBtn" class="primaryAction createUserBtn" type="submit">Crea utente</button>
           <div id="createUserMsg" class="createUserMsg" aria-live="polite"></div>
@@ -410,7 +411,7 @@
       <div class="saleDialogHead"><div><span class="saleKicker">SICUREZZA OPERATORE</span><h2 id="operatorPasswordTitle">Imposta password operatore</h2></div><button id="operatorPasswordX" class="closeBtn" type="button" aria-label="Chiudi">×</button></div>
       <div id="operatorPasswordUser" class="saleItemLabel"></div>
       <label class="fieldLabel" for="operatorPasswordValue">Nuova password *</label>
-      <input id="operatorPasswordValue" class="modalInput" type="password" minlength="6" maxlength="128" autocomplete="new-password" placeholder="Minimo 6 caratteri">
+      <input id="operatorPasswordValue" class="modalInput" type="password" minlength="12" maxlength="128" autocomplete="new-password" placeholder="Minimo 12 caratteri · A-z · 0-9 · simbolo">
       <div id="operatorPasswordError" class="saleError"></div>
       <div class="saleActions"><button id="operatorPasswordCancel" class="secondaryAction" type="button">Annulla</button><button id="operatorPasswordSave" class="primaryAction" type="button">Salva password</button></div>
     </div>
@@ -473,7 +474,7 @@
  <button type="button" data-smart-action="history"><b>≋</b><span>Storico</span></button>
  <button type="button" data-smart-action="menu"><b>☰</b><span>Menu</span></button>
 </nav>
-<script src="app.js?v=58"></script>
+<script src="app.js?v=59"></script>
 
 
 

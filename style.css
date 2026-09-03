@@ -1302,3 +1302,10 @@ body.password-recovery-mode .app> *:not(#passwordRecoveryModal){display:none!imp
 body.password-recovery-mode #passwordRecoveryModal{display:flex!important;background:#0b0b0b;align-items:center;justify-content:center}
 body.password-recovery-mode #passwordRecoveryModal[hidden]{display:none!important}
 body.password-recovery-mode #passwordRecoveryModal .saleDialog{max-width:620px;width:min(100%,620px)}
+
+/* v59 — firma elegante sotto il login */
+.loginTrust{margin-top:16px;padding:12px 13px;border:1px solid rgba(213,169,76,.28);border-radius:14px;background:linear-gradient(135deg,rgba(213,169,76,.08),rgba(255,255,255,.015));display:flex;align-items:center;gap:10px}
+.loginTrustMark{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:linear-gradient(135deg,#e5bd68,#9d6f25);color:#17120a;font-size:12px;box-shadow:0 8px 22px rgba(184,135,49,.18)}
+.loginTrust strong{display:block;font-size:10px;letter-spacing:.16em;color:var(--gold2,#e5bd68);line-height:1.35}
+.loginTrust small{display:block;margin-top:3px;font-size:10px;color:var(--muted,#8f8f8f);line-height:1.35}
+body[data-theme="light"] .loginTrust{background:linear-gradient(135deg,rgba(184,135,49,.08),rgba(0,0,0,.015));border-color:rgba(120,83,24,.22)}

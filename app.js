@@ -339,7 +339,7 @@ document.getElementById("createUserForm").addEventListener("submit",async e=>{
     role:document.getElementById("newUserRole").value
   };
   if(!isStrongLoginPassword(payload.password)){msg.textContent="Password: minimo 12 caratteri con maiuscola, minuscola, numero e simbolo.";return;}
-  if(payload.operator_password.length<6){msg.textContent="La password operatore deve avere almeno 6 caratteri.";return;}
+  if(!isStrongLoginPassword(payload.operator_password)){msg.textContent="Password operatore: minimo 12 caratteri con maiuscola, minuscola, numero e simbolo.";return;}
   if(payload.password.length>128||payload.operator_password.length>128){msg.textContent="Password troppo lunga.";return;}
   msg.className="createUserMsg"; msg.textContent=""; btn.disabled=true; btn.textContent="Creazione…";
   const {data,error}=await sb.functions.invoke("beparytech-users",{body:payload,method:"POST"});
@@ -633,7 +633,7 @@ document.getElementById("operatorPasswordCancel").onclick=closeOperatorPassword;
 document.getElementById("operatorPasswordSave").onclick=async()=>{
   if(!selectedUserForOperatorPassword)return;
   const pass=document.getElementById("operatorPasswordValue").value;
-  if(pass.length<6){document.getElementById("operatorPasswordError").textContent="Inserisci almeno 6 caratteri.";return;}
+  if(!isStrongLoginPassword(pass)){document.getElementById("operatorPasswordError").textContent="Usa almeno 12 caratteri con maiuscola, minuscola, numero e simbolo.";return;}
   if(pass.length>128){document.getElementById("operatorPasswordError").textContent="Password troppo lunga.";return;}
   const btn=document.getElementById("operatorPasswordSave");btn.disabled=true;btn.textContent="Salvo…";
   const {data,error}=await sb.functions.invoke("beparytech-users",{method:"POST",body:{action:"set_operator_password",user_id:selectedUserForOperatorPassword.userId,operator_password:pass}});
@@ -1098,16 +1098,29 @@ function isStrongLoginPassword(value){
 }
 
 function openPasswordRecovery(){
+  try { sessionStorage.setItem("bt-password-recovery-pending","1"); } catch(_) {}
   document.body.classList.add("password-recovery-mode");
   const modal=document.getElementById("passwordRecoveryModal");
   if(modal) modal.hidden=false;
 }
+
+// Se un refresh avviene durante il recupero, il gestionale resta bloccato sul cambio password.
+try {
+  const bootUrl=new URL(window.location.href);
+  const bootHash=new URLSearchParams((bootUrl.hash||"").replace(/^#/,""));
+  if(bootHash.get("type")==="recovery" || bootUrl.searchParams.get("code") || sessionStorage.getItem("bt-password-recovery-pending")==="1") {
+    document.body.classList.add("password-recovery-mode");
+  }
+} catch(_) {}
 
 sb.auth.onAuthStateChange((event,session)=>{
   if(event==="PASSWORD_RECOVERY"){
     openPasswordRecovery();
     return;
   }
+  let recoveryPending=false;
+  try { recoveryPending=sessionStorage.getItem("bt-password-recovery-pending")==="1"; } catch(_) {}
+  if(recoveryPending && session?.user){ openPasswordRecovery(); return; }
   if(session?.user && session.user.id!==currentUser?.id) showAuth(session.user);
   if(!session?.user && currentUser) showAuth(null);
 });
@@ -1131,7 +1144,9 @@ sb.auth.onAuthStateChange((event,session)=>{
       }
     }
 
-    if(isRecovery){
+    let recoveryPending=false;
+    try { recoveryPending=sessionStorage.getItem("bt-password-recovery-pending")==="1"; } catch(_) {}
+    if(isRecovery || recoveryPending){
       const {data}=await sb.auth.getSession();
       if(data?.session) openPasswordRecovery();
     }
@@ -1150,6 +1165,7 @@ document.getElementById("saveRecoveryPassword").onclick=async()=>{
   document.getElementById("recoveryPassword").value="";
   document.getElementById("recoveryPassword2").value="";
   await sb.auth.signOut();
+  try { sessionStorage.removeItem("bt-password-recovery-pending"); } catch(_) {}
   document.getElementById("passwordRecoveryModal").hidden=true;
   document.body.classList.remove("password-recovery-mode");
   try { history.replaceState({}, document.title, window.location.pathname); } catch(_) {}
@@ -1163,11 +1179,11 @@ document.getElementById("saveRecoveryPassword").onclick=async()=>{
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("./sw.js?v=58", { updateViaCache: "none" });
+      const reg = await navigator.serviceWorker.register("./sw.js?v=59", { updateViaCache: "none" });
       await reg.update();
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (!sessionStorage.getItem("bt-cache-reloaded-v58")) {
-          sessionStorage.setItem("bt-cache-reloaded-v58", "1");
+        if (!sessionStorage.getItem("bt-cache-reloaded-v59")) {
+          sessionStorage.setItem("bt-cache-reloaded-v59", "1");
           location.reload();
         }
       });
