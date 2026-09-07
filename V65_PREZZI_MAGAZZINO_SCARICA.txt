@@ -1,0 +1,1 @@
+v65: prezzi BackGlass visibili sulle schede magazzino per tutti gli utenti; pulsante Venduta rinominato in −1 Scarica.
