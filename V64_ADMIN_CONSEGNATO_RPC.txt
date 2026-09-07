@@ -1,0 +1,7 @@
+BeparyTech v64 — CONSEGNATO SOLO ADMIN
+
+- Il pulsante “Consegnato” è visibile solo agli Admin.
+- La consegna usa esclusivamente la RPC protetta mark_beparytech_sale_delivered.
+- Rimossi i fallback legacy di archiviazione per la consegna.
+- La protezione effettiva resta anche lato Supabase: la RPC verifica role=admin.
+- Cache service worker aggiornata a v64.

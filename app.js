@@ -440,16 +440,17 @@ function renderSales(){
     const sold=fmt.format(new Date(s.sold_at));
     const price=salePriceHtml(s);
     if(archived){
-      const delivered=Boolean(s.delivered_at);
+      const delivered=Boolean(s.delivered_at) || s.delete_reason==="__CONSEGNATO__";
       if(delivered){
-        const deliveredAt=fmt.format(new Date(s.delivered_at));
+        const deliveredDate=s.delivered_at||s.deleted_at||s.sold_at;
+        const deliveredAt=fmt.format(new Date(deliveredDate));
         return `<article class="saleRow archiveRow deliveredRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${escapeHtml(s.category)}</span><b class="archiveBadge deliveredBadge">✓ CONSEGNATO</b></div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · Vendita ${sold}</span><span>Consegnato ${deliveredAt}</span>${price}${s.operator_note?`<span class="saleNoteText">Nota: ${escapeHtml(s.operator_note)}</span>`:""}</div><div class="saleNoteActions"><button class="rowAction printSaleNote" type="button" data-id="${s.id}">Stampa DYMO</button><button class="rowAction exportSaleNote" type="button" data-id="${s.id}">Esporta nota</button>${isAdmin()?`<button class="rowAction editSaleNote" type="button" data-id="${s.id}">Modifica nota / storico</button>`:""}</div></article>`;
       }
       const deleted=s.deleted_at?fmt.format(new Date(s.deleted_at)):"—";
       return `<article class="saleRow archiveRow deletedArchiveRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${escapeHtml(s.category)}</span><b class="archiveBadge">ARCHIVIATA</b></div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · Vendita ${sold}</span><span>Eliminata ${deleted}</span>${price}${s.operator_note?`<span class="saleNoteText">Nota: ${escapeHtml(s.operator_note)}</span>`:""}${s.restored_to_inventory?`<span class="restoredBadge">↩ Rimesso in magazzino +${s.quantity}</span>`:""}</div><div class="archiveReason"><strong>Motivo:</strong> ${escapeHtml(s.delete_reason||"Nessun motivo registrato")}</div><div class="saleNoteActions"><button class="rowAction printSaleNote" type="button" data-id="${s.id}">Stampa DYMO</button><button class="rowAction exportSaleNote" type="button" data-id="${s.id}">Esporta nota</button>${isAdmin()?`<button class="rowAction editSaleNote" type="button" data-id="${s.id}">Modifica nota / storico</button>`:""}</div></article>`;
     }
     const ownSale=String(s.actor_user_id||"")===String(currentUser?.id||"");
-    const commonActions=`<button class="rowAction deliveredSale" type="button" data-id="${s.id}">✓ Consegnato</button><button class="rowAction printSaleNote" type="button" data-id="${s.id}">Stampa DYMO</button><button class="rowAction exportSaleNote" type="button" data-id="${s.id}">Esporta nota</button>`;
+    const commonActions=`${isAdmin()?`<button class="rowAction deliveredSale" type="button" data-id="${s.id}">✓ Consegnato</button>`:""}<button class="rowAction printSaleNote" type="button" data-id="${s.id}">Stampa DYMO</button><button class="rowAction exportSaleNote" type="button" data-id="${s.id}">Esporta nota</button>`;
     const actions=isAdmin()
       ? `<div class="saleActionsRow">${commonActions}<button class="rowAction editStore" type="button" data-id="${s.id}">Modifica negozio</button><button class="rowAction editSaleNote" type="button" data-id="${s.id}">Modifica nota / storico</button><button class="rowAction restoreSale" type="button" data-id="${s.id}">Rimetti in magazzino</button><button class="rowAction delete archiveSale" type="button" data-id="${s.id}">Elimina</button></div>`
       : ownSale ? `<div class="saleActionsRow">${commonActions}<button class="rowAction restoreSale" type="button" data-id="${s.id}">Rimetti in magazzino</button></div>` : `<div class="saleActionsRow">${commonActions}</div>`;
@@ -472,18 +473,9 @@ async function markSaleDelivered(id,btn){
   const ok=window.confirm(`Segnare come consegnato?\n\n${s.model} · ${s.color}\n${s.customer}\n\nLa vendita verrà spostata nell’Archivio vendite.`);
   if(!ok)return;
   const old=btn.textContent; btn.disabled=true; btn.textContent="Salvo…";
-  // v62: prova prima la RPC. Se una vecchia funzione DB fallisce durante l’audit
-  // (es. schema audit precedente senza user_id), salva comunque la consegna
-  // tramite update RLS-safe sulla vendita corrente.
-  let {error}=await sb.rpc("mark_beparytech_sale_delivered",{p_id:id});
-  if(error){
-    const now=new Date().toISOString();
-    const fallback=await sb.from("beparytech_sales")
-      .update({is_archived:true,delivered_at:now,delivered_by:currentUser?.id||null})
-      .eq("id",id)
-      .eq("user_id",workspaceOwnerId);
-    error=fallback.error;
-  }
+  // v64: usa esclusivamente la RPC protetta lato database.
+  // La RPC verifica che l'utente autenticato abbia ruolo ADMIN.
+  const {error}=await sb.rpc("mark_beparytech_sale_delivered",{p_id:id});
   if(error){alert(error.message||"Impossibile segnare la vendita come consegnata.");btn.disabled=false;btn.textContent=old;return;}
   document.getElementById("cloudStatus").textContent="☁︎ Vendita consegnata";
   await loadSales();
@@ -532,7 +524,7 @@ function salePriceHtml(s,{showLineTotal=true}={}){
 function saleCountsAsSold(s){
   if(s?.restored_to_inventory) return false;
   if(!s?.is_archived) return true;
-  return Boolean(s?.delivered_at); // gli archivi eliminati non contano come vendite effettive
+  return Boolean(s?.delivered_at) || s?.delete_reason==="__CONSEGNATO__"; // consegne legacy/fallback contano come vendite effettive
 }
 function renderSalesSummary(){
   const list=document.getElementById("salesList");

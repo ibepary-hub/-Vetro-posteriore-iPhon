@@ -1,5 +1,5 @@
-const CACHE="beparytech-v62";
-const RUNTIME="beparytech-v62-security-runtime";
+const CACHE="beparytech-v64";
+const RUNTIME="beparytech-v64-security-runtime";
 const SHELL=["./","./index.html","./style.css?v=60","./app.js?v=60","./manifest.json?v=60","./beparytech-logo.png","./icon-192.png","./icon-512.png","./apple-touch-icon.png","./favicon-64.png"];
 self.addEventListener("install",event=>{
   self.skipWaiting();

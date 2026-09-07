@@ -1,0 +1,6 @@
+BeparyTech v63 — FIX CONSEGNATO / RLS
+
+- Rimosso il fallback con UPDATE diretto su beparytech_sales, che veniva bloccato dalle policy RLS.
+- Se la RPC dedicata Consegnato fallisce, viene usata la RPC di archiviazione già autorizzata con marcatore interno __CONSEGNATO__.
+- Le righe marcate in questo modo vengono mostrate come CONSEGNATO nell’Archivio vendite e continuano a essere conteggiate nel riepilogo venduto.
+- Aggiornata la cache service worker alla v63.
