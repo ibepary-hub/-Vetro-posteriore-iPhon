@@ -1,0 +1,5 @@
+BEPARYTECH v66 — PREZZO DEFAULT BACKGLASS
+
+- Qualsiasi BackGlass senza un prezzo specifico impostato usa 20,00 € + IVA.
+- Le regole specifiche già definite restano prioritarie.
+- La regola vale sia nel magazzino sia per vendite, archivio e riepilogo, comprese le vendite storiche.

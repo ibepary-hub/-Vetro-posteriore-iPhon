@@ -488,9 +488,10 @@ function backGlassUnitPrice(model){
   const n=String(model||"").trim().toLowerCase();
   const match=n.match(/iphone\s+(\d+)/);
   if(n==="iphone air") return 25; // linea attuale, trattata come serie 17 non-Pro
-  if(!match) return null;
+  if(!match) return 20; // prezzo predefinito per modelli senza listino specifico
   const series=Number(match[1]);
-  if(series<11 || series>17) return null;
+  if(series<11) return 15; // iPhone 8 / X / XR / XS / XS Max / SE: 15 € + IVA
+  if(series>17) return 20; // default per future serie senza listino specifico
   const isPlus=n.includes("plus");
   const isProMax=n.includes("pro max");
   const isPro=n.includes("pro") && !isProMax;
