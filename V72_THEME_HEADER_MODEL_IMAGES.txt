@@ -1,0 +1,7 @@
+BeparyTech v72
+- Header mobile: Menu + Tema + Esci riuniti nello stesso controllo; rimosso il comportamento Esci flottante.
+- Tema giorno: override finale per card, varianti, prezzi e pulsanti con contrasto corretto.
+- Tema notte: mantiene il look premium blu senza sovrascrivere i colori del tema chiaro.
+- Immagini modelli: usa gli asset specifici già presenti per ogni iPhone (8, X, XR, XS, SE, 11-17, mini/Plus/Pro/Pro Max) tramite imageForModel().
+- Immagini rese con object-fit contain per non deformarle.
+- Cache/PWA aggiornata a v72.
