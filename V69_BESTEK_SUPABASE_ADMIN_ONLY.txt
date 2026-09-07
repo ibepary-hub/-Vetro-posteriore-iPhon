@@ -1,0 +1,6 @@
+V69 - Catalogo Bestek protetto lato Supabase
+- Rimossi i codici Bestek dal JavaScript pubblico.
+- Catalogo caricato dalla tabella beparytech_bestek_catalog.
+- RLS Supabase: SELECT/INSERT/UPDATE/DELETE consentiti solo a utenti autenticati Admin.
+- Gli utenti standard non vedono la sezione e non possono leggere i dati direttamente via API.
+- Cache aggiornata a v69.

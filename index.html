@@ -10,10 +10,10 @@
   <meta name="apple-mobile-web-app-title" content="BeparyTech">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
   <title>BeparyTech • Magazzino Ricambi iPhone</title>
-  <link rel="manifest" href="manifest.json?v=60">
+  <link rel="manifest" href="manifest.json?v=68">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=65">
+  <link rel="stylesheet" href="style.css?v=69">
 
 
 
@@ -28,6 +28,7 @@
       <div class="menuDivider"></div>
       <button class="menuItem" type="button" data-category="Cronologia"><span class="menuIcon">≋</span><span><strong>Cronologia</strong><small>Tutte le attività</small></span></button>
       <button class="menuItem" type="button" data-category="Vendite"><span class="menuIcon">✓</span><span><strong>Vendute</strong><small>Vendite, note e rientri</small></span></button>
+      <button id="bestekCatalogMenuItem" class="menuItem adminOnly" type="button" data-category="CatalogoBestek" hidden><span class="menuIcon">BK</span><span><strong>Catalogo Bestek</strong><small>Codici e accessori verificati</small></span></button>
       <button id="catalogMenuItem" class="menuItem adminOnly" type="button" data-category="GestioneMagazzino" hidden><span class="menuIcon">＋</span><span><strong>Gestione magazzino</strong><small>Sezioni e prodotti</small></span></button>
       <button id="deviceSalesMenuItem" class="menuItem adminOnly" type="button" data-category="VenditeAdmin" hidden><span class="menuIcon">€</span><span><strong>Vendite ricambi</strong><small>Prezzi, IVA e riferimenti acquisto</small></span></button>
       <button id="hoursMenuItem" class="menuItem adminOnly" type="button" data-category="Orari" hidden><span class="menuIcon">◷</span><span><strong>Orari</strong><small>Ore lavorate ed extra</small></span></button>
@@ -111,6 +112,13 @@
     </section>
     <main id="inventory"></main>
     <section id="auditView" class="salesView" hidden><div class="salesHeader"><div><strong>Cronologia completa</strong><span>Movimenti, richieste e modifiche</span></div><button id="refreshAuditBtn" class="miniBtn animatedBtn" type="button">Aggiorna</button></div><div id="auditList"></div></section>
+
+    <section id="bestekCatalogView" class="catalogView bestekCatalogView" hidden>
+      <div class="adminHero"><div><span class="usersKicker">CATALOGO BESTEK</span><h2>Codici prodotti e accessori</h2><p>Catalogo Bestek protetto su Supabase. Solo l’Admin autenticato può caricare i codici. Ricerca per codice, nome o categoria.</p></div><span class="adminBadge">SOLO ADMIN</span></div>
+      <div class="bestekToolbar"><input id="bestekSearch" type="search" placeholder="Cerca codice o prodotto…" autocomplete="off"><select id="bestekCategory"><option value="all">Tutte le categorie</option></select></div>
+      <div class="bestekSummary"><span>Prodotti trovati</span><strong id="bestekCount">0</strong></div>
+      <div id="bestekCatalogList" class="bestekCatalogList"></div>
+    </section>
     <section id="zeroStockView" class="catalogView zeroStockView" hidden>
       <div class="adminHero"><div><span class="usersKicker">SCORTE A ZERO</span><h2>Articoli esauriti</h2><p>BackGlass e Housing sono separati. Puoi controllare ed esportare solo gli articoli con quantità 0.</p></div><span class="adminBadge">ADMIN</span></div>
       <div class="zeroStockSummary">
@@ -475,7 +483,7 @@
  <button type="button" data-smart-action="history"><b>≋</b><span>Storico</span></button>
  <button type="button" data-smart-action="menu"><b>☰</b><span>Menu</span></button>
 </nav>
-<script src="app.js?v=67"></script>
+<script src="app.js?v=69"></script>
 
 
 

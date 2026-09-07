@@ -1,0 +1,7 @@
+V68 - Catalogo Bestek (solo Admin)
+- Nuova sezione Catalogo Bestek nel menu, visibile solo con ruolo admin.
+- Ricerca per codice/nome e filtro categoria.
+- 33 riferimenti Bestek verificati da fonti web reperibili.
+- Pulsante Copia codice.
+- Nessuna modifica a magazzino, vendite, prezzi o Supabase.
+Nota: essendo GitHub Pages un sito statico, il controllo UI impedisce la visualizzazione agli utenti standard nell'app, ma un catalogo incorporato nel JavaScript non e' un segreto server-side.

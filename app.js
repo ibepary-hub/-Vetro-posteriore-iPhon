@@ -186,6 +186,7 @@ function applyRoleVisibility(){
   const zeroStockMenu=document.getElementById("zeroStockMenuItem");
   const hoursMenu=document.getElementById("hoursMenuItem");
   const deviceSalesMenu=document.getElementById("deviceSalesMenuItem");
+  const bestekCatalogMenu=document.getElementById("bestekCatalogMenuItem");
   usersTab.hidden=!admin;
   if(catalogMenu) catalogMenu.hidden=!admin;
   if(usersMenu) usersMenu.hidden=!admin;
@@ -193,13 +194,14 @@ function applyRoleVisibility(){
   if(zeroStockMenu) zeroStockMenu.hidden=!admin;
   if(hoursMenu) hoursMenu.hidden=!admin;
   if(deviceSalesMenu) deviceSalesMenu.hidden=!admin;
+  if(bestekCatalogMenu) bestekCatalogMenu.hidden=!admin;
   if(!admin){
     usersView.hidden=true;
     if(catalogView) catalogView.hidden=true;
     usersTab.classList.remove("active");
     document.getElementById("hoursView").hidden=true;
     const dsv=document.getElementById("deviceSalesView"); if(dsv) dsv.hidden=true;
-    if(["Utenti","GestioneMagazzino","ScorteZero","Backup","Orari","VenditeAdmin"].includes(currentCategory)) setCategory("Dashboard");
+    if(["Utenti","GestioneMagazzino","ScorteZero","Backup","Orari","VenditeAdmin","CatalogoBestek"].includes(currentCategory)) setCategory("Dashboard");
   }
   const menuUser=document.getElementById("menuUserName"), menuRole=document.getElementById("menuUserRole");
   if(menuUser) menuUser.textContent=currentProfile?.username||currentUser?.email||"Utente";
@@ -279,32 +281,88 @@ document.getElementById("logoutBtn").onclick=async()=>{await sb.auth.signOut(); 
 
 
 function setCategory(category){
-  const isDashboard=category==="Dashboard", isSales=category==="Vendite", isAudit=category==="Cronologia", isUsers=category==="Utenti", isCatalog=category==="GestioneMagazzino", isZeroStock=category==="ScorteZero", isBackup=category==="Backup", isHours=category==="Orari", isDeviceSales=category==="VenditeAdmin";
+  const isDashboard=category==="Dashboard", isSales=category==="Vendite", isAudit=category==="Cronologia", isUsers=category==="Utenti", isCatalog=category==="GestioneMagazzino", isZeroStock=category==="ScorteZero", isBackup=category==="Backup", isHours=category==="Orari", isDeviceSales=category==="VenditeAdmin", isBestekCatalog=category==="CatalogoBestek";
   const isCustom=String(category).startsWith("custom:");
-  if((isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales)&&!isAdmin()) return;
+  if((isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog)&&!isAdmin()) return;
   currentCategory=category;
   currentCustomSectionId=isCustom?Number(String(category).split(":")[1]):null;
   const sec=isCustom?customSections.find(s=>Number(s.id)===currentCustomSectionId):null;
-  const title=isDashboard?"Dashboard":isAudit?"Cronologia":isSales?"Vendute":isUsers?"Utenti":isCatalog?"Gestione magazzino":isZeroStock?"Scorte a zero":isBackup?"Backup":isHours?"I miei orari":isDeviceSales?"Vendite ricambi":sec?.name||category;
-  const desc=isDashboard?"Riepilogo generale":isAudit?"Tutte le attività del gestionale":isSales?"Vendite, note, stampa DYMO e rientri":isUsers?"Gestione accessi":isCatalog?"Crea e gestisci sezioni e prodotti":isZeroStock?"BackGlass e Housing esauriti, separati":isBackup?"Esporta una copia dei dati":isHours?"Area privata Admin · ore lavorate ed extra":isDeviceSales?"Area privata Admin · ricambi elettronici, IVA e acquisti":sec?.description||"Sezione magazzino";
+  const title=isDashboard?"Dashboard":isAudit?"Cronologia":isSales?"Vendute":isUsers?"Utenti":isCatalog?"Gestione magazzino":isZeroStock?"Scorte a zero":isBackup?"Backup":isHours?"I miei orari":isDeviceSales?"Vendite ricambi":isBestekCatalog?"Catalogo Bestek":sec?.name||category;
+  const desc=isDashboard?"Riepilogo generale":isAudit?"Tutte le attività del gestionale":isSales?"Vendite, note, stampa DYMO e rientri":isUsers?"Gestione accessi":isCatalog?"Crea e gestisci sezioni e prodotti":isZeroStock?"BackGlass e Housing esauriti, separati":isBackup?"Esporta una copia dei dati":isHours?"Area privata Admin · ore lavorate ed extra":isDeviceSales?"Area privata Admin · ricambi elettronici, IVA e acquisti":isBestekCatalog?"Area privata Admin · codici e accessori Bestek":sec?.description||"Sezione magazzino";
   document.getElementById("categoryName").textContent=title;
   document.getElementById("categoryDescription").textContent=desc;
-  document.querySelector(".tools").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales;
-  document.querySelector(".stats").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales;
-  inventory.hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales;
+  document.querySelector(".tools").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog;
+  document.querySelector(".stats").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog;
+  inventory.hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog;
   document.getElementById("dashboardView").hidden=!isDashboard;
   document.getElementById("salesView").hidden=!isSales;
   document.getElementById("auditView").hidden=!isAudit;
   document.getElementById("usersView").hidden=!isUsers;
   document.getElementById("catalogView").hidden=!isCatalog;
+  const bestekView=document.getElementById("bestekCatalogView"); if(bestekView) bestekView.hidden=!isBestekCatalog;
   document.getElementById("zeroStockView").hidden=!isZeroStock;
   document.getElementById("backupView").hidden=!isBackup;
   document.getElementById("hoursView").hidden=!isHours;
   const deviceSalesView=document.getElementById("deviceSalesView"); if(deviceSalesView) deviceSalesView.hidden=!isDeviceSales;
   document.querySelectorAll(".menuItem[data-category]").forEach(b=>b.classList.toggle("active",b.dataset.category===category));
   search.value=""; filter.value="all"; closeMainMenu();
-  if(isDashboard) loadDashboard(); else if(isAudit) loadAudit(); else if(isSales) loadSales(); else if(isUsers) loadUsers(); else if(isCatalog) renderCatalogAdmin(); else if(isZeroStock) renderZeroStock(); else if(isBackup){} else if(isHours) loadHours(); else if(isDeviceSales) loadDeviceSales(); else if(isCustom) renderCustomSection();
+  if(isDashboard) loadDashboard(); else if(isAudit) loadAudit(); else if(isSales) loadSales(); else if(isUsers) loadUsers(); else if(isCatalog) renderCatalogAdmin(); else if(isZeroStock) renderZeroStock(); else if(isBackup){} else if(isHours) loadHours(); else if(isDeviceSales) loadDeviceSales(); else if(isBestekCatalog) renderBestekCatalog(); else if(isCustom) renderCustomSection();
 }
+
+
+let BESTEK_CATALOG = [];
+let bestekCatalogLoaded = false;
+let bestekCatalogLoading = false;
+
+async function loadBestekCatalog(){
+  if(!isAdmin()) return;
+  if(bestekCatalogLoading) return;
+  bestekCatalogLoading = true;
+  const list=document.getElementById("bestekCatalogList");
+  if(list && !bestekCatalogLoaded) list.innerHTML='<div class="emptyState">Caricamento catalogo protetto…</div>';
+  try{
+    const {data,error}=await sb
+      .from("beparytech_bestek_catalog")
+      .select("code,name,category")
+      .eq("active",true)
+      .order("category",{ascending:true})
+      .order("code",{ascending:true});
+    if(error) throw error;
+    BESTEK_CATALOG=Array.isArray(data)?data:[];
+    bestekCatalogLoaded=true;
+    const sel=document.getElementById("bestekCategory");
+    if(sel){
+      const selected=sel.value||"all";
+      sel.innerHTML='<option value="all">Tutte le categorie</option>';
+      [...new Set(BESTEK_CATALOG.map(x=>x.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"it")).forEach(c=>sel.insertAdjacentHTML("beforeend",`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`));
+      if([...sel.options].some(o=>o.value===selected)) sel.value=selected;
+    }
+  }catch(e){
+    console.error("Catalogo Bestek non disponibile:",e?.message||e);
+    BESTEK_CATALOG=[];
+    bestekCatalogLoaded=false;
+    if(list) list.innerHTML='<div class="emptyState">Catalogo non disponibile. Accesso consentito solo all\'Admin.</div>';
+  }finally{
+    bestekCatalogLoading=false;
+  }
+  renderBestekCatalog();
+}
+
+function renderBestekCatalog(){
+  if(!isAdmin()) return;
+  const list=document.getElementById("bestekCatalogList"), q=(document.getElementById("bestekSearch")?.value||"").trim().toLowerCase(), cat=document.getElementById("bestekCategory")?.value||"all";
+  if(!list) return;
+  if(!bestekCatalogLoaded){
+    loadBestekCatalog();
+    return;
+  }
+  const rows=BESTEK_CATALOG.filter(x=>(cat==="all"||x.category===cat)&&(!q||`${x.code} ${x.name} ${x.category}`.toLowerCase().includes(q)));
+  const count=document.getElementById("bestekCount"); if(count) count.textContent=rows.length;
+  list.innerHTML=rows.length?rows.map(x=>`<article class="bestekCard"><div class="bestekCode">${escapeHtml(x.code)}</div><div class="bestekInfo"><strong>${escapeHtml(x.name)}</strong><span>${escapeHtml(x.category)}</span></div><button type="button" class="miniBtn bestekCopy" data-code="${escapeHtml(x.code)}">Copia codice</button></article>`).join(""):'<div class="emptyState">Nessun prodotto trovato</div>';
+  list.querySelectorAll(".bestekCopy").forEach(b=>b.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(b.dataset.code);const old=b.textContent;b.textContent="Copiato ✓";setTimeout(()=>b.textContent=old,1200)}catch(e){}}));
+}
+document.getElementById("bestekSearch")?.addEventListener("input",renderBestekCatalog);
+document.getElementById("bestekCategory")?.addEventListener("change",renderBestekCatalog);
 
 async function loadUsers(){
   if(!isAdmin()) return;
