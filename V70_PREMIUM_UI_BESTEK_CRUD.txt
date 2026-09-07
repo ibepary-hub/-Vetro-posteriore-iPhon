@@ -1,0 +1,1 @@
+v70: grafica premium blu ispirata al mockup approvato. Catalogo Bestek Admin: aggiungi, modifica, rimuovi e salva prezzo IVA esclusa persistente su Supabase. RLS mantiene CRUD riservato all Admin.

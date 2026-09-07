@@ -313,6 +313,52 @@ function setCategory(category){
 let BESTEK_CATALOG = [];
 let bestekCatalogLoaded = false;
 let bestekCatalogLoading = false;
+let bestekEditingCode = null;
+const bestekEuro = new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR"});
+
+function bestekPriceText(value){
+  const n=Number(value);
+  if(!Number.isFinite(n)) return "Prezzo non impostato";
+  return `${bestekEuro.format(n)} + IVA`;
+}
+function bestekGrossText(value){
+  const n=Number(value);
+  if(!Number.isFinite(n)) return "";
+  return `${bestekEuro.format(n*1.22)} IVA incl.`;
+}
+function resetBestekForm(){
+  bestekEditingCode=null;
+  const form=document.getElementById("bestekProductForm"); if(form) form.reset();
+  const title=document.getElementById("bestekFormTitle"); if(title) title.textContent="Aggiungi prodotto Bestek";
+  const save=document.getElementById("bestekSaveBtn"); if(save) save.textContent="+ Aggiungi prodotto";
+  const cancel=document.getElementById("bestekCancelEdit"); if(cancel) cancel.hidden=true;
+  const code=document.getElementById("bestekCodeInput"); if(code) code.disabled=false;
+  const msg=document.getElementById("bestekFormMsg"); if(msg) msg.textContent="";
+}
+function editBestekProduct(code){
+  if(!isAdmin()) return;
+  const row=BESTEK_CATALOG.find(x=>x.code===code); if(!row) return;
+  bestekEditingCode=code;
+  document.getElementById("bestekCodeInput").value=row.code||"";
+  document.getElementById("bestekCodeInput").disabled=true;
+  document.getElementById("bestekNameInput").value=row.name||"";
+  document.getElementById("bestekCategoryInput").value=row.category||"";
+  document.getElementById("bestekPriceInput").value=row.price_ex_vat==null?"":Number(row.price_ex_vat).toFixed(2);
+  document.getElementById("bestekFormTitle").textContent=`Modifica ${row.code}`;
+  document.getElementById("bestekSaveBtn").textContent="Salva modifiche";
+  document.getElementById("bestekCancelEdit").hidden=false;
+  document.getElementById("bestekProductForm")?.scrollIntoView({behavior:"smooth",block:"center"});
+}
+async function deleteBestekProduct(code){
+  if(!isAdmin()) return;
+  const row=BESTEK_CATALOG.find(x=>x.code===code);
+  if(!row || !confirm(`Rimuovere ${row.code} · ${row.name} dal catalogo Bestek?`)) return;
+  const {error}=await sb.from("beparytech_bestek_catalog").delete().eq("code",code);
+  if(error){alert(error.message||"Impossibile rimuovere il prodotto.");return;}
+  if(bestekEditingCode===code) resetBestekForm();
+  bestekCatalogLoaded=false;
+  await loadBestekCatalog();
+}
 
 async function loadBestekCatalog(){
   if(!isAdmin()) return;
@@ -323,7 +369,7 @@ async function loadBestekCatalog(){
   try{
     const {data,error}=await sb
       .from("beparytech_bestek_catalog")
-      .select("code,name,category")
+      .select("code,name,category,price_ex_vat,active,updated_at")
       .eq("active",true)
       .order("category",{ascending:true})
       .order("code",{ascending:true});
@@ -352,17 +398,48 @@ function renderBestekCatalog(){
   if(!isAdmin()) return;
   const list=document.getElementById("bestekCatalogList"), q=(document.getElementById("bestekSearch")?.value||"").trim().toLowerCase(), cat=document.getElementById("bestekCategory")?.value||"all";
   if(!list) return;
-  if(!bestekCatalogLoaded){
-    loadBestekCatalog();
-    return;
-  }
+  if(!bestekCatalogLoaded){loadBestekCatalog();return;}
   const rows=BESTEK_CATALOG.filter(x=>(cat==="all"||x.category===cat)&&(!q||`${x.code} ${x.name} ${x.category}`.toLowerCase().includes(q)));
   const count=document.getElementById("bestekCount"); if(count) count.textContent=rows.length;
-  list.innerHTML=rows.length?rows.map(x=>`<article class="bestekCard"><div class="bestekCode">${escapeHtml(x.code)}</div><div class="bestekInfo"><strong>${escapeHtml(x.name)}</strong><span>${escapeHtml(x.category)}</span></div><button type="button" class="miniBtn bestekCopy" data-code="${escapeHtml(x.code)}">Copia codice</button></article>`).join(""):'<div class="emptyState">Nessun prodotto trovato</div>';
+  list.innerHTML=rows.length?rows.map(x=>{
+    const hasPrice=x.price_ex_vat!==null&&x.price_ex_vat!==""&&Number.isFinite(Number(x.price_ex_vat));
+    return `<article class="bestekCard premiumBestekCard"><div class="bestekCodeWrap"><div class="bestekCode">${escapeHtml(x.code)}</div><span class="bestekPrivateBadge">ADMIN</span></div><div class="bestekInfo"><strong>${escapeHtml(x.name)}</strong><span>${escapeHtml(x.category)}</span></div><div class="bestekPrice ${hasPrice?"hasPrice":"noPrice"}"><strong>${hasPrice?bestekPriceText(x.price_ex_vat):"Da impostare"}</strong>${hasPrice?`<small>${bestekGrossText(x.price_ex_vat)}</small>`:`<small>Nessun prezzo salvato</small>`}</div><div class="bestekCardActions"><button type="button" class="miniBtn bestekCopy" data-code="${escapeHtml(x.code)}">Copia</button><button type="button" class="miniBtn bestekEdit" data-code="${escapeHtml(x.code)}">Modifica</button><button type="button" class="miniBtn danger bestekDelete" data-code="${escapeHtml(x.code)}">Rimuovi</button></div></article>`;
+  }).join(""):'<div class="emptyState">Nessun prodotto trovato</div>';
   list.querySelectorAll(".bestekCopy").forEach(b=>b.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(b.dataset.code);const old=b.textContent;b.textContent="Copiato ✓";setTimeout(()=>b.textContent=old,1200)}catch(e){}}));
+  list.querySelectorAll(".bestekEdit").forEach(b=>b.addEventListener("click",()=>editBestekProduct(b.dataset.code)));
+  list.querySelectorAll(".bestekDelete").forEach(b=>b.addEventListener("click",()=>deleteBestekProduct(b.dataset.code)));
 }
 document.getElementById("bestekSearch")?.addEventListener("input",renderBestekCatalog);
 document.getElementById("bestekCategory")?.addEventListener("change",renderBestekCatalog);
+document.getElementById("bestekCancelEdit")?.addEventListener("click",resetBestekForm);
+document.getElementById("bestekProductForm")?.addEventListener("submit",async e=>{
+  e.preventDefault();
+  if(!isAdmin()) return;
+  const code=(document.getElementById("bestekCodeInput")?.value||"").trim().toUpperCase();
+  const name=(document.getElementById("bestekNameInput")?.value||"").trim();
+  const category=(document.getElementById("bestekCategoryInput")?.value||"").trim();
+  const rawPrice=(document.getElementById("bestekPriceInput")?.value||"").trim();
+  const price=rawPrice===""?null:Number(rawPrice);
+  const msg=document.getElementById("bestekFormMsg"), save=document.getElementById("bestekSaveBtn");
+  if(!code||!name||!category){if(msg) msg.textContent="Compila codice, nome e categoria.";return;}
+  if(price!==null&&(!Number.isFinite(price)||price<0)){if(msg) msg.textContent="Inserisci un prezzo valido.";return;}
+  if(msg) msg.textContent="Salvataggio…"; if(save) save.disabled=true;
+  try{
+    let error;
+    if(bestekEditingCode){
+      ({error}=await sb.from("beparytech_bestek_catalog").update({name,category,price_ex_vat:price}).eq("code",bestekEditingCode));
+    }else{
+      ({error}=await sb.from("beparytech_bestek_catalog").insert({code,name,category,price_ex_vat:price,active:true}));
+    }
+    if(error) throw error;
+    if(msg) msg.textContent=bestekEditingCode?"Modifiche salvate ✓":"Prodotto aggiunto ✓";
+    resetBestekForm();
+    bestekCatalogLoaded=false;
+    await loadBestekCatalog();
+  }catch(err){
+    if(msg) msg.textContent=err?.code==="23505"?"Questo codice Bestek esiste già.":(err?.message||"Impossibile salvare il prodotto.");
+  }finally{if(save) save.disabled=false;}
+});
 
 async function loadUsers(){
   if(!isAdmin()) return;

@@ -10,10 +10,10 @@
   <meta name="apple-mobile-web-app-title" content="BeparyTech">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
   <title>BeparyTech • Magazzino Ricambi iPhone</title>
-  <link rel="manifest" href="manifest.json?v=68">
+  <link rel="manifest" href="manifest.json?v=70">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=69">
+  <link rel="stylesheet" href="style.css?v=70">
 
 
 
@@ -114,8 +114,18 @@
     <section id="auditView" class="salesView" hidden><div class="salesHeader"><div><strong>Cronologia completa</strong><span>Movimenti, richieste e modifiche</span></div><button id="refreshAuditBtn" class="miniBtn animatedBtn" type="button">Aggiorna</button></div><div id="auditList"></div></section>
 
     <section id="bestekCatalogView" class="catalogView bestekCatalogView" hidden>
-      <div class="adminHero"><div><span class="usersKicker">CATALOGO BESTEK</span><h2>Codici prodotti e accessori</h2><p>Catalogo Bestek protetto su Supabase. Solo l’Admin autenticato può caricare i codici. Ricerca per codice, nome o categoria.</p></div><span class="adminBadge">SOLO ADMIN</span></div>
-      <div class="bestekToolbar"><input id="bestekSearch" type="search" placeholder="Cerca codice o prodotto…" autocomplete="off"><select id="bestekCategory"><option value="all">Tutte le categorie</option></select></div>
+      <div class="adminHero bestekHero"><div><span class="usersKicker">CATALOGO BESTEK</span><h2>Codici, prezzi e accessori</h2><p>Catalogo privato sincronizzato con Supabase. Solo l’Admin può aggiungere, modificare prezzi o rimuovere prodotti.</p></div><span class="adminBadge">SOLO ADMIN</span></div>
+      <form id="bestekProductForm" class="bestekEditorCard" autocomplete="off">
+        <div class="bestekEditorHead"><div><strong id="bestekFormTitle">Aggiungi prodotto Bestek</strong><small>Il prezzo salvato rimane associato al codice BK finché l’Admin non lo modifica.</small></div><button id="bestekCancelEdit" class="miniBtn" type="button" hidden>Annulla modifica</button></div>
+        <div class="bestekEditorGrid">
+          <label><span>Codice BK *</span><input id="bestekCodeInput" type="text" maxlength="60" placeholder="es. BK76585" required></label>
+          <label><span>Nome prodotto *</span><input id="bestekNameInput" type="text" maxlength="180" placeholder="es. Adattatore USB-A → Type-C" required></label>
+          <label><span>Categoria *</span><input id="bestekCategoryInput" type="text" maxlength="80" placeholder="es. Adattatori" required></label>
+          <label><span>Prezzo vendita + IVA</span><div class="bestekPriceInput"><span>€</span><input id="bestekPriceInput" type="number" min="0" step="0.01" inputmode="decimal" placeholder="20,00"></div><small>Importo IVA esclusa. IVA 22% calcolata automaticamente.</small></label>
+        </div>
+        <div class="bestekEditorActions"><button id="bestekSaveBtn" class="primaryAction animatedBtn" type="submit">+ Aggiungi prodotto</button><div id="bestekFormMsg" class="createUserMsg" aria-live="polite"></div></div>
+      </form>
+      <div class="bestekToolbar"><input id="bestekSearch" type="search" placeholder="Cerca codice, prodotto o categoria…" autocomplete="off"><select id="bestekCategory"><option value="all">Tutte le categorie</option></select></div>
       <div class="bestekSummary"><span>Prodotti trovati</span><strong id="bestekCount">0</strong></div>
       <div id="bestekCatalogList" class="bestekCatalogList"></div>
     </section>
@@ -483,7 +493,7 @@
  <button type="button" data-smart-action="history"><b>≋</b><span>Storico</span></button>
  <button type="button" data-smart-action="menu"><b>☰</b><span>Menu</span></button>
 </nav>
-<script src="app.js?v=69"></script>
+<script src="app.js?v=70"></script>
 
 
 
