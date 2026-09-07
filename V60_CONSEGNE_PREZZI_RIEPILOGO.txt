@@ -1,0 +1,18 @@
+BEPARYTECH v60 — CONSEGNE, PREZZI BACKGLASS E RIEPILOGO VENDUTO
+
+- In Vendute ogni vendita attiva può essere segnata “Consegnato”.
+- Una vendita consegnata viene spostata automaticamente in “Archivio vendite” e resta distinta dalle righe eliminate.
+- Backend Supabase aggiornato con delivered_at/delivered_by e RPC sicura per utenti autenticati attivi del workspace.
+- Listino BackGlass applicato dinamicamente anche a tutte le vendite già presenti:
+  • iPhone 11–15 base/mini/Pro: 20 € + IVA
+  • serie Plus: 25 € + IVA
+  • Pro Max fino a iPhone 14 Pro Max: 20 € + IVA
+  • iPhone 15 Pro Max e 16 Pro Max: 25 € + IVA
+  • iPhone 16 / 16e / 16 Plus: 25 € + IVA
+  • iPhone 16 Pro: 20 € + IVA
+  • iPhone 17 / 17e / Air: 25 € + IVA
+  • iPhone 17 Pro / Pro Max: 20 € + IVA
+- Tutti gli utenti vedono il prezzo unitario + IVA.
+- Solo Admin vede i totali monetari per riga/modello e il sommario imponibile, IVA e totale IVA inclusa.
+- Nuova tab “Riepilogo venduto” con quantità modello per modello e totale pezzi.
+- Le righe eliminate e quelle rimesse in magazzino non vengono conteggiate nel riepilogo; le consegnate sì.

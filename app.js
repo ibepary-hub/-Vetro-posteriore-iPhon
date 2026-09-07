@@ -19,7 +19,7 @@ let currentCategory = "BackGlass";
 let pendingSale = null;
 let selectedCustomer = null;
 let sales = [];
-let salesMode = "active";
+let salesMode = "active"; // active | archive | summary
 let selectedSale = null;
 let selectedUserForOperatorPassword = null;
 let accountOperators = [];
@@ -420,34 +420,46 @@ async function loadSales(){
   if(!currentUser) return;
   const list=document.getElementById("salesList");
   list.innerHTML='<div class="emptyState">Caricamento vendite…</div>';
-  const {data,error}=await sb.from("beparytech_sales").select("id,customer,category,item_key,model,color,quantity,sold_at,is_archived,deleted_at,delete_reason,restored_to_inventory,actor_user_id,operator_name,operator_note,restore_reason").order("sold_at",{ascending:false}).limit(1000);
+  const {data,error}=await sb.from("beparytech_sales").select("id,customer,category,item_key,model,color,quantity,sold_at,is_archived,deleted_at,delete_reason,restored_to_inventory,actor_user_id,operator_name,operator_note,restore_reason,delivered_at,delivered_by").order("sold_at",{ascending:false}).limit(1000);
   if(error){list.innerHTML='<div class="emptyState">Errore nel caricamento delle vendite.</div>'; return;}
   sales=data||[]; renderSales();
 }
 function renderSales(){
   const list=document.getElementById("salesList");
+  const summary=salesMode==="summary";
   const archived=salesMode==="archive";
-  const visible=sales.filter(s=>Boolean(s.is_archived)===archived);
-  document.getElementById("activeSalesTab").classList.toggle("active",!archived);
+  document.getElementById("activeSalesTab").classList.toggle("active",salesMode==="active");
   document.getElementById("archiveSalesTab").classList.toggle("active",archived);
-  if(!visible.length){list.innerHTML=`<div class="emptyState">${archived?"Nessuna riga archiviata.":"Nessuna vendita registrata."}</div>`; return;}
+  document.getElementById("soldSummaryTab")?.classList.toggle("active",summary);
+  if(summary){renderSalesSummary();return;}
+
+  const visible=sales.filter(s=>Boolean(s.is_archived)===archived);
+  if(!visible.length){list.innerHTML=`<div class="emptyState">${archived?"Nessuna vendita nell’archivio.":"Nessuna vendita registrata."}</div>`; return;}
   const fmt=new Intl.DateTimeFormat("it-IT",{day:"2-digit",month:"2-digit",year:"2-digit",hour:"2-digit",minute:"2-digit"});
   list.innerHTML=visible.map(s=>{
     const sold=fmt.format(new Date(s.sold_at));
+    const price=salePriceHtml(s);
     if(archived){
+      const delivered=Boolean(s.delivered_at);
+      if(delivered){
+        const deliveredAt=fmt.format(new Date(s.delivered_at));
+        return `<article class="saleRow archiveRow deliveredRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${escapeHtml(s.category)}</span><b class="archiveBadge deliveredBadge">✓ CONSEGNATO</b></div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · Vendita ${sold}</span><span>Consegnato ${deliveredAt}</span>${price}${s.operator_note?`<span class="saleNoteText">Nota: ${escapeHtml(s.operator_note)}</span>`:""}</div><div class="saleNoteActions"><button class="rowAction printSaleNote" type="button" data-id="${s.id}">Stampa DYMO</button><button class="rowAction exportSaleNote" type="button" data-id="${s.id}">Esporta nota</button>${isAdmin()?`<button class="rowAction editSaleNote" type="button" data-id="${s.id}">Modifica nota / storico</button>`:""}</div></article>`;
+      }
       const deleted=s.deleted_at?fmt.format(new Date(s.deleted_at)):"—";
-      return `<article class="saleRow archiveRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${escapeHtml(s.category)}</span><b class="archiveBadge">ARCHIVIATA</b></div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · Vendita ${sold}</span><span>Eliminata ${deleted}</span>${s.operator_note?`<span class="saleNoteText">Nota: ${escapeHtml(s.operator_note)}</span>`:""}${s.restored_to_inventory?`<span class="restoredBadge">↩ Rimesso in magazzino +${s.quantity}</span>`:""}</div><div class="archiveReason"><strong>Motivo:</strong> ${escapeHtml(s.delete_reason||"Nessun motivo registrato")}</div><div class="saleNoteActions"><button class="rowAction printSaleNote" type="button" data-id="${s.id}">Stampa DYMO</button><button class="rowAction exportSaleNote" type="button" data-id="${s.id}">Esporta nota</button>${isAdmin()?`<button class="rowAction editSaleNote" type="button" data-id="${s.id}">Modifica nota / storico</button>`:""}</div></article>`;
+      return `<article class="saleRow archiveRow deletedArchiveRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${escapeHtml(s.category)}</span><b class="archiveBadge">ARCHIVIATA</b></div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · Vendita ${sold}</span><span>Eliminata ${deleted}</span>${price}${s.operator_note?`<span class="saleNoteText">Nota: ${escapeHtml(s.operator_note)}</span>`:""}${s.restored_to_inventory?`<span class="restoredBadge">↩ Rimesso in magazzino +${s.quantity}</span>`:""}</div><div class="archiveReason"><strong>Motivo:</strong> ${escapeHtml(s.delete_reason||"Nessun motivo registrato")}</div><div class="saleNoteActions"><button class="rowAction printSaleNote" type="button" data-id="${s.id}">Stampa DYMO</button><button class="rowAction exportSaleNote" type="button" data-id="${s.id}">Esporta nota</button>${isAdmin()?`<button class="rowAction editSaleNote" type="button" data-id="${s.id}">Modifica nota / storico</button>`:""}</div></article>`;
     }
     const ownSale=String(s.actor_user_id||"")===String(currentUser?.id||"");
+    const commonActions=`<button class="rowAction deliveredSale" type="button" data-id="${s.id}">✓ Consegnato</button><button class="rowAction printSaleNote" type="button" data-id="${s.id}">Stampa DYMO</button><button class="rowAction exportSaleNote" type="button" data-id="${s.id}">Esporta nota</button>`;
     const actions=isAdmin()
-      ? `<div class="saleActionsRow"><button class="rowAction editStore" type="button" data-id="${s.id}">Modifica negozio</button><button class="rowAction editSaleNote" type="button" data-id="${s.id}">Modifica nota / storico</button><button class="rowAction printSaleNote" type="button" data-id="${s.id}">Stampa DYMO</button><button class="rowAction exportSaleNote" type="button" data-id="${s.id}">Esporta nota</button><button class="rowAction restoreSale" type="button" data-id="${s.id}">Rimetti in magazzino</button><button class="rowAction delete archiveSale" type="button" data-id="${s.id}">Elimina</button></div>`
-      : ownSale ? `<div class="saleActionsRow"><button class="rowAction printSaleNote" type="button" data-id="${s.id}">Stampa DYMO</button><button class="rowAction exportSaleNote" type="button" data-id="${s.id}">Esporta nota</button><button class="rowAction restoreSale" type="button" data-id="${s.id}">Rimetti in magazzino</button></div>` : `<div class="saleActionsRow"><button class="rowAction printSaleNote" type="button" data-id="${s.id}">Stampa DYMO</button><button class="rowAction exportSaleNote" type="button" data-id="${s.id}">Esporta nota</button></div>`;
-    return `<article class="saleRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${escapeHtml(s.category)}</span>${s.operator_name?`<span class="operatorTag">Operatore: ${escapeHtml(s.operator_name)}</span>`:""}</div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · ${sold}</span>${s.operator_note?`<span class="saleNoteText">Nota: ${escapeHtml(s.operator_note)}</span>`:""}</div>${actions}</article>`;
+      ? `<div class="saleActionsRow">${commonActions}<button class="rowAction editStore" type="button" data-id="${s.id}">Modifica negozio</button><button class="rowAction editSaleNote" type="button" data-id="${s.id}">Modifica nota / storico</button><button class="rowAction restoreSale" type="button" data-id="${s.id}">Rimetti in magazzino</button><button class="rowAction delete archiveSale" type="button" data-id="${s.id}">Elimina</button></div>`
+      : ownSale ? `<div class="saleActionsRow">${commonActions}<button class="rowAction restoreSale" type="button" data-id="${s.id}">Rimetti in magazzino</button></div>` : `<div class="saleActionsRow">${commonActions}</div>`;
+    return `<article class="saleRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${escapeHtml(s.category)}</span>${s.operator_name?`<span class="operatorTag">Operatore: ${escapeHtml(s.operator_name)}</span>`:""}</div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · ${sold}</span>${price}${s.operator_note?`<span class="saleNoteText">Nota: ${escapeHtml(s.operator_note)}</span>`:""}</div>${actions}</article>`;
   }).join("");
   list.querySelectorAll(".printSaleNote").forEach(btn=>btn.addEventListener("click",()=>printSaleNote(Number(btn.dataset.id))));
   list.querySelectorAll(".exportSaleNote").forEach(btn=>btn.addEventListener("click",()=>exportSaleNote(Number(btn.dataset.id))));
   if(isAdmin()) list.querySelectorAll(".editSaleNote").forEach(btn=>btn.addEventListener("click",()=>openSaleNoteEditor(Number(btn.dataset.id))));
   if(!archived){
+    list.querySelectorAll(".deliveredSale").forEach(btn=>btn.addEventListener("click",()=>markSaleDelivered(Number(btn.dataset.id),btn)));
     list.querySelectorAll(".restoreSale").forEach(btn=>btn.addEventListener("click",()=>openRestoreSale(Number(btn.dataset.id))));
     if(isAdmin()){
       list.querySelectorAll(".editStore").forEach(btn=>btn.addEventListener("click",()=>openEditStore(Number(btn.dataset.id))));
@@ -455,7 +467,85 @@ function renderSales(){
     }
   }
 }
+async function markSaleDelivered(id,btn){
+  const s=saleById(id); if(!s)return;
+  const ok=window.confirm(`Segnare come consegnato?\n\n${s.model} · ${s.color}\n${s.customer}\n\nLa vendita verrà spostata nell’Archivio vendite.`);
+  if(!ok)return;
+  const old=btn.textContent; btn.disabled=true; btn.textContent="Salvo…";
+  const {error}=await sb.rpc("mark_beparytech_sale_delivered",{p_id:id});
+  if(error){alert(error.message||"Impossibile segnare la vendita come consegnata.");btn.disabled=false;btn.textContent=old;return;}
+  document.getElementById("cloudStatus").textContent="☁︎ Vendita consegnata";
+  await loadSales();
+}
 function saleById(id){ return sales.find(s=>Number(s.id)===Number(id)); }
+
+// v60 — Listino BackGlass. I prezzi sono imponibili (IVA 22% esclusa).
+// Le regole sono applicate anche alle vendite storiche perché il prezzo viene calcolato dal modello.
+function backGlassUnitPrice(model){
+  const n=String(model||"").trim().toLowerCase();
+  const match=n.match(/iphone\s+(\d+)/);
+  if(n==="iphone air") return 25; // linea attuale, trattata come serie 17 non-Pro
+  if(!match) return null;
+  const series=Number(match[1]);
+  if(series<11 || series>17) return null;
+  const isPlus=n.includes("plus");
+  const isProMax=n.includes("pro max");
+  const isPro=n.includes("pro") && !isProMax;
+
+  if(series===17){
+    if(isPro || isProMax) return 20;
+    return 25; // 17 / 17e
+  }
+  if(series===16){
+    if(isPro || isProMax) return 30; // 16 Pro / 16 Pro Max
+    return 25; // 16 / 16e / 16 Plus
+  }
+  if(series===15){
+    if(isPlus || isProMax) return 25;
+    return 20; // 15 / 15 Pro
+  }
+  if(isPlus) return 25;
+  return 20; // 11–14 normali, mini, Pro e Pro Max fino al 14
+}
+function saleUnitPrice(s){
+  return s?.category==="BackGlass" ? backGlassUnitPrice(s.model) : null;
+}
+function eur(v){return new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR"}).format(Number(v||0));}
+function salePriceHtml(s,{showLineTotal=true}={}){
+  const unit=saleUnitPrice(s); if(unit==null) return "";
+  const gross=unit*1.22;
+  const qty=Math.max(1,Number(s.quantity||1));
+  const adminLine=isAdmin()&&showLineTotal?`<span class="saleLineTotal">Totale riga: <b>${eur(unit*qty)}</b> + IVA = <b>${eur(gross*qty)}</b></span>`:"";
+  return `<span class="salePriceTag">Prezzo: <b>${eur(unit)}</b> + IVA <small>(${eur(gross)} IVA incl.)</small></span>${adminLine}`;
+}
+function saleCountsAsSold(s){
+  if(s?.restored_to_inventory) return false;
+  if(!s?.is_archived) return true;
+  return Boolean(s?.delivered_at); // gli archivi eliminati non contano come vendite effettive
+}
+function renderSalesSummary(){
+  const list=document.getElementById("salesList");
+  const valid=sales.filter(saleCountsAsSold);
+  const groups=new Map();
+  valid.forEach(s=>{
+    const k=`${s.category}||${s.model}`;
+    const row=groups.get(k)||{category:s.category,model:s.model,quantity:0,unit:saleUnitPrice(s)};
+    row.quantity+=Number(s.quantity||0); groups.set(k,row);
+  });
+  const rows=[...groups.values()].sort((a,b)=>String(a.category).localeCompare(String(b.category),"it")||compareModels(a.model,b.model));
+  const totalQty=rows.reduce((n,r)=>n+r.quantity,0);
+  const priced=rows.filter(r=>r.unit!=null);
+  const net=priced.reduce((n,r)=>n+r.unit*r.quantity,0), vat=net*.22, gross=net+vat;
+  const adminTotals=isAdmin()?`<div class="salesMoneySummary"><div><span>Imponibile BackGlass</span><strong>${eur(net)}</strong></div><div><span>IVA 22%</span><strong>${eur(vat)}</strong></div><div class="grand"><span>Totale IVA inclusa</span><strong>${eur(gross)}</strong></div></div>`:"";
+  const top=`<section class="salesSummaryHero"><div><span class="summaryKicker">RIEPILOGO VENDUTO</span><h3>${totalQty} pezzi venduti</h3><p>Quantità raggruppate modello per modello. Gli articoli rimessi in magazzino e le righe eliminate non vengono conteggiati.</p></div>${adminTotals}</section>`;
+  if(!rows.length){list.innerHTML=top+'<div class="emptyState">Nessuna vendita da riepilogare.</div>';return;}
+  list.innerHTML=top+`<div class="modelSalesSummary">${rows.map(r=>{
+    const grossUnit=r.unit==null?null:r.unit*1.22;
+    const unit=r.unit==null?'<span class="summaryNoPrice">Prezzo non impostato</span>':`<span class="summaryUnitPrice">${eur(r.unit)} + IVA <small>(${eur(grossUnit)})</small></span>`;
+    const total=isAdmin()&&r.unit!=null?`<span class="summaryModelTotal">Totale: <b>${eur(r.unit*r.quantity*1.22)}</b></span>`:"";
+    return `<article class="modelSaleSummaryRow"><div class="summaryModelInfo"><strong>${escapeHtml(r.model)}</strong><span>${escapeHtml(r.category)}</span></div><div class="summaryPriceInfo">${unit}${total}</div><div class="summaryQty"><span>Venduti</span><strong>${r.quantity}</strong></div></article>`;
+  }).join("")}</div>`;
+}
 function saleLabelHtml(s){ return `<strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${escapeHtml(s.category)} · ${escapeHtml(s.customer)}</span>`; }
 
 
@@ -644,6 +734,7 @@ document.getElementById("operatorPasswordSave").onclick=async()=>{
 
 document.getElementById("activeSalesTab").onclick=()=>{salesMode="active";renderSales();};
 document.getElementById("archiveSalesTab").onclick=()=>{salesMode="archive";renderSales();};
+document.getElementById("soldSummaryTab")?.addEventListener("click",()=>{salesMode="summary";renderSales();});
 
 function escapeHtml(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));}
 function safeExternalUrl(v){try{const u=new URL(String(v||""),window.location.origin);return ["http:","https:"].includes(u.protocol)?u.href:"#";}catch(_){return "#";}}
@@ -1179,7 +1270,7 @@ document.getElementById("saveRecoveryPassword").onclick=async()=>{
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("./sw.js?v=59", { updateViaCache: "none" });
+      const reg = await navigator.serviceWorker.register("./sw.js?v=60", { updateViaCache: "none" });
       await reg.update();
       navigator.serviceWorker.addEventListener("controllerchange", () => {
         if (!sessionStorage.getItem("bt-cache-reloaded-v59")) {

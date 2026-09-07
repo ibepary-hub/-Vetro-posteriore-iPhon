@@ -10,10 +10,10 @@
   <meta name="apple-mobile-web-app-title" content="BeparyTech">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
   <title>BeparyTech • Magazzino Ricambi iPhone</title>
-  <link rel="manifest" href="manifest.json?v=59">
+  <link rel="manifest" href="manifest.json?v=60">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=59">
+  <link rel="stylesheet" href="style.css?v=60">
 
 
 
@@ -124,10 +124,11 @@
     </section>
     <section id="backupView" class="catalogView" hidden><div class="adminHero"><div><span class="usersKicker">BACKUP</span><h2>Esporta i dati</h2><p>Scarica una copia del magazzino e della cronologia.</p></div><span class="adminBadge">ADMIN</span></div><div class="backupGrid"><button id="exportInventoryCsv" class="catalogCard backupAction" type="button"><strong>CSV Magazzino</strong><span>Prodotti, sezioni e quantità</span></button><button id="exportRequestsCsv" class="catalogCard backupAction" type="button"><strong>CSV Da ordinare</strong><span>Tutte le richieste</span></button><button id="exportFullBackup" class="catalogCard backupAction" type="button"><strong>Backup JSON completo</strong><span>Magazzino, richieste, vendite e cronologia</span></button></div></section>
     <section id="salesView" class="salesView" hidden>
-      <div class="salesHeader"><div><strong>Vendute</strong><span>Storico vendite, note, stampa DYMO e rientri</span></div><button id="refreshSalesBtn" class="miniBtn" type="button">Aggiorna</button></div>
+      <div class="salesHeader"><div><strong>Vendute</strong><span>Vendite aperte, consegne, archivio, prezzi e riepilogo per modello</span></div><button id="refreshSalesBtn" class="miniBtn" type="button">Aggiorna</button></div>
       <div class="salesSubTabs" role="tablist" aria-label="Vendite e archivio">
         <button id="activeSalesTab" class="salesSubTab active" type="button">Vendute</button>
-        <button id="archiveSalesTab" class="salesSubTab" type="button">Archivio</button>
+        <button id="archiveSalesTab" class="salesSubTab" type="button">Archivio vendite</button>
+        <button id="soldSummaryTab" class="salesSubTab" type="button">Riepilogo venduto</button>
       </div>
       <div id="salesList"></div>
     </section>
@@ -474,7 +475,7 @@
  <button type="button" data-smart-action="history"><b>≋</b><span>Storico</span></button>
  <button type="button" data-smart-action="menu"><b>☰</b><span>Menu</span></button>
 </nav>
-<script src="app.js?v=59"></script>
+<script src="app.js?v=60"></script>
 
 
 
