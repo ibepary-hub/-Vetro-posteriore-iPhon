@@ -248,6 +248,9 @@ async function loadMyProfile(){
 async function showAuth(user){
   currentUser=user||null; currentProfile=null; workspaceOwnerId=user?.id||null; document.body.classList.toggle("logged-in",!!user);
   document.getElementById("signedOut").hidden=!!user; document.getElementById("signedIn").hidden=!user;
+  document.getElementById("authPanel")?.classList.toggle("loggedIn",!!user);
+  const headerLogout=document.getElementById("headerLogoutBtn"); if(headerLogout) headerLogout.hidden=!user;
+  const headerCloud=document.getElementById("headerCloudPill"); if(headerCloud) headerCloud.hidden=!user;
   if(user){
     document.getElementById("userEmail").textContent=user.email;
     await loadMyProfile();
@@ -277,7 +280,9 @@ document.getElementById("forgotPasswordBtn").onclick=async()=>{
   const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:PASSWORD_RESET_REDIRECT});
   authMsg.textContent=error?error.message:"Email di recupero inviata. Controlla la posta.";
 };
-document.getElementById("logoutBtn").onclick=async()=>{await sb.auth.signOut(); stock={}; showAuth(null);};
+async function performLogout(){await sb.auth.signOut(); stock={}; showAuth(null);}
+document.getElementById("logoutBtn").onclick=performLogout;
+document.getElementById("headerLogoutBtn")?.addEventListener("click",performLogout);
 
 
 function setCategory(category){
@@ -1106,10 +1111,40 @@ function openGlobalProduct(sectionId,productId){
 function runGlobalSearch(code){const q=String(code??gSearch.value).trim().toLowerCase();if(code!==undefined)gSearch.value=code;if(!q){gResults.hidden=true;gResults.innerHTML="";return;}const activeIds=new Set(customSections.filter(s=>s.active!==false).map(s=>Number(s.id)));const hits=customProducts.filter(p=>activeIds.has(Number(p.section_id))&&`${p.name} ${p.variant||""} ${p.sku||""} ${p.barcode||""}`.toLowerCase().includes(q)).sort((a,b)=>compareModels(a,b)||String(a.variant||"").localeCompare(String(b.variant||""),"it",{numeric:true,sensitivity:"base"})).slice(0,18);const req=(window.btRequests||[]).filter(r=>`${r.item} ${r.requester_name||""}`.toLowerCase().includes(q)).slice(0,8);gResults.innerHTML=`${hits.map(p=>{const sec=customSections.find(s=>Number(s.id)===Number(p.section_id));return `<button class="globalResult" data-section="${p.section_id}" data-product="${p.id}"><span><strong>${escapeHtml(p.name)}</strong><small>${escapeHtml(sec?.name||"")} · ${escapeHtml(p.variant||"")}${p.sku?` · ${escapeHtml(p.sku)}`:""}</small></span><b>${p.quantity}</b></button>`}).join("")}${req.map(r=>`<button class="globalResult requestGlobal" data-request="1"><span><strong>${escapeHtml(r.item)}</strong><small>Da ordinare · ${escapeHtml(r.requester_name||"")}</small></span></button>`).join("")}`||'<div class="emptyState">Nessun risultato.</div>';gResults.hidden=false;gResults.querySelectorAll("[data-section][data-product]").forEach(b=>b.onclick=()=>openGlobalProduct(b.dataset.section,b.dataset.product));gResults.querySelectorAll("[data-request]").forEach(b=>b.onclick=()=>{const sec=customSections.find(s=>s.section_type==="requests");gResults.hidden=true;if(sec)setCategory(`custom:${sec.id}`)});}
 gSearch.addEventListener("input",()=>runGlobalSearch());document.addEventListener("click",e=>{if(!e.target.closest("#globalSearchBar"))gResults.hidden=true;});
 
-let scannerStream=null,scannerTimer=null;
-async function openScanner(){const modal=document.getElementById("scannerModal"),msg=document.getElementById("scannerMsg"),video=document.getElementById("scannerVideo");modal.hidden=false;msg.textContent="Inquadra QR o barcode.";if(!navigator.mediaDevices?.getUserMedia||!("BarcodeDetector" in window)){msg.textContent="Scanner automatico non disponibile su questo browser. Inserisci il codice qui sotto.";return;}try{scannerStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});video.srcObject=scannerStream;await video.play();const detector=new BarcodeDetector({formats:["qr_code","code_128","code_39","ean_13","ean_8","upc_a","upc_e"]});const tick=async()=>{if(document.getElementById("scannerModal").hidden)return;try{const codes=await detector.detect(video);if(codes?.[0]?.rawValue){const code=codes[0].rawValue;closeScanner();runGlobalSearch(code);return;}}catch(_){}scannerTimer=setTimeout(tick,350)};tick();}catch(e){msg.textContent="Fotocamera non disponibile. Puoi inserire il codice manualmente.";}}
-function closeScanner(){document.getElementById("scannerModal").hidden=true;if(scannerTimer)clearTimeout(scannerTimer);if(scannerStream){scannerStream.getTracks().forEach(t=>t.stop());scannerStream=null;}}
-document.getElementById("scanBarcodeBtn").onclick=openScanner;document.getElementById("scannerClose").onclick=closeScanner;document.getElementById("scannerManualSearch").onclick=()=>{const v=document.getElementById("scannerManualCode").value.trim();if(v){closeScanner();runGlobalSearch(v)}};
+let scannerStream=null,scannerTimer=null,zxingReader=null,scannerStarting=false;
+async function finishScannerResult(code){
+  const value=String(code||"").trim(); if(!value)return; closeScanner(); runGlobalSearch(value);
+}
+async function openScanner(){
+  if(scannerStarting)return; scannerStarting=true;
+  const modal=document.getElementById("scannerModal"),msg=document.getElementById("scannerMsg"),video=document.getElementById("scannerVideo");
+  modal.hidden=false; msg.textContent="Richiesta accesso alla fotocamera…";
+  try{
+    if(!navigator.mediaDevices?.getUserMedia) throw new Error("Fotocamera non supportata");
+    scannerStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1920},height:{ideal:1080}},audio:false});
+    video.srcObject=scannerStream; await video.play(); msg.textContent="Inquadra un QR o un codice a barre.";
+    if("BarcodeDetector" in window){
+      const detector=new BarcodeDetector({formats:["qr_code","code_128","code_39","code_93","codabar","ean_13","ean_8","itf","upc_a","upc_e"]});
+      const tick=async()=>{if(modal.hidden)return;try{const codes=await detector.detect(video);if(codes?.[0]?.rawValue){finishScannerResult(codes[0].rawValue);return;}}catch(_){ }scannerTimer=setTimeout(tick,180)}; tick();
+    }else if(window.ZXing?.BrowserMultiFormatReader){
+      scannerStream.getTracks().forEach(t=>t.stop()); scannerStream=null; video.srcObject=null;
+      zxingReader=new ZXing.BrowserMultiFormatReader();
+      await zxingReader.decodeFromConstraints({video:{facingMode:{ideal:"environment"}}},video,(result,err)=>{if(result?.getText){finishScannerResult(result.getText());}});
+    }else{
+      msg.textContent="Fotocamera aperta. La lettura automatica non è disponibile: usa il campo manuale.";
+    }
+  }catch(e){
+    console.warn("Scanner camera:",e); msg.textContent="Non riesco ad aprire la fotocamera. Controlla il permesso Fotocamera per Safari e riprova.";
+  }finally{scannerStarting=false;}
+}
+function closeScanner(){
+  const modal=document.getElementById("scannerModal"); if(modal)modal.hidden=true;
+  if(scannerTimer){clearTimeout(scannerTimer);scannerTimer=null;}
+  if(zxingReader){try{zxingReader.reset();}catch(_){ }zxingReader=null;}
+  if(scannerStream){scannerStream.getTracks().forEach(t=>t.stop());scannerStream=null;}
+  const video=document.getElementById("scannerVideo"); if(video)video.srcObject=null; scannerStarting=false;
+}
+document.getElementById("scanBarcodeBtn").onclick=openScanner;document.getElementById("scannerClose").onclick=closeScanner;document.getElementById("scannerManualSearch").onclick=()=>{const v=document.getElementById("scannerManualCode").value.trim();if(v)finishScannerResult(v)};
 
 function downloadText(filename,text,type="text/plain;charset=utf-8"){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([text],{type}));a.download=filename;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function csvEscape(v){const x=String(v??"");return /[",\n]/.test(x)?`"${x.replaceAll('"','""')}"`:x}
@@ -1672,7 +1707,7 @@ function updateSmartNavigation(){
 document.addEventListener('DOMContentLoaded',()=>{
  bindHourAccordions(); const nav=document.getElementById('mobileBottomNav'), back=document.getElementById('smartBackBtn');
  back?.addEventListener('click',smartBack);
- nav?.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.smartAction;if(a==='home')setCategory('Dashboard');else if(a==='menu')openMainMenu();else if(currentCategory==='Orari'&&a==='primary')document.querySelector('#hoursForm .hourCardToggle')?.click();else if(currentCategory==='Orari'&&a==='history')document.querySelector('#extraForm .hourCardToggle')?.click();else if(currentCategory==='VenditeAdmin'&&a==='primary')document.querySelector('[data-work-tab="sales"]')?.click();else if(currentCategory==='VenditeAdmin'&&a==='history')document.querySelector('[data-work-tab="repairs"]')?.click();else if(a==='history')setCategory('Cronologia');else document.getElementById('globalSearch')?.focus();});
+ nav?.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.smartAction;if(a==='home')setCategory('Dashboard');else if(a==='scanner')openScanner();else if(a==='menu')openMainMenu();else if(currentCategory==='Orari'&&a==='primary')document.querySelector('#hoursForm .hourCardToggle')?.click();else if(currentCategory==='Orari'&&a==='history')document.querySelector('#extraForm .hourCardToggle')?.click();else if(currentCategory==='VenditeAdmin'&&a==='primary')document.querySelector('[data-work-tab="sales"]')?.click();else if(currentCategory==='VenditeAdmin'&&a==='history')document.querySelector('[data-work-tab="repairs"]')?.click();else if(a==='history')setCategory('Cronologia');else document.getElementById('globalSearch')?.focus();});
  let sx=0,sy=0,st=0;document.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;sx=e.touches[0].clientX;sy=e.touches[0].clientY;st=Date.now()},{passive:true});document.addEventListener('touchend',e=>{if(!e.changedTouches?.length||sx>35)return;const dx=e.changedTouches[0].clientX-sx,dy=Math.abs(e.changedTouches[0].clientY-sy);if(dx>85&&dy<70&&Date.now()-st<700)smartBack()},{passive:true});
  updateSmartNavigation();
 });
@@ -1704,3 +1739,14 @@ setInterval(()=>{bindHourAccordions();updateSmartNavigation()},1800);
    nav?.addEventListener('click',()=>setHidden(false));
  });
 })();
+
+// ===== v71 premium quick access =====
+document.addEventListener("DOMContentLoaded",()=>{
+  document.querySelectorAll("[data-quick-category]").forEach(btn=>btn.addEventListener("click",()=>setCategory(btn.dataset.quickCategory)));
+});
+function syncPremiumUserBits(){
+  const g=document.getElementById("dashboardGreetingName"); if(g)g.textContent=currentProfile?.username||"Admin";
+  document.querySelectorAll(".adminQuick").forEach(x=>x.hidden=!isAdmin());
+}
+const _v71ApplyRoleVisibility=applyRoleVisibility;
+applyRoleVisibility=function(){_v71ApplyRoleVisibility();syncPremiumUserBits();};

@@ -1,0 +1,1 @@
+v71: UI premium mobile, tema allineato, Esci in alto a destra, scanner QR/barcode con BarcodeDetector + ZXing fallback, Catalogo Bestek e funzioni precedenti preservate.

@@ -10,10 +10,10 @@
   <meta name="apple-mobile-web-app-title" content="BeparyTech">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
   <title>BeparyTech • Magazzino Ricambi iPhone</title>
-  <link rel="manifest" href="manifest.json?v=70">
+  <link rel="manifest" href="manifest.json?v=71">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=70">
+  <link rel="stylesheet" href="style.css?v=71">
 
 
 
@@ -50,9 +50,11 @@
       <div class="headerActions">
         <button id="menuToggle" class="menuToggle animatedBtn" type="button" aria-label="Apri menu"><span class="menuGlyph">☰</span><span>Menu</span></button>
         <button id="themeToggle" class="themeToggle animatedBtn" type="button" aria-label="Passa alla modalità giorno" title="Modalità giorno/notte">
-        <span id="themeIcon" aria-hidden="true">☀︎</span>
-        <span id="themeLabel">Giorno</span>
+          <span class="themeSun" aria-hidden="true">☀︎</span><span class="themeTrack"><span class="themeKnob"></span></span><span class="themeMoon" aria-hidden="true">☾</span>
+          <span id="themeIcon" class="srOnly" aria-hidden="true">☀︎</span><span id="themeLabel" class="srOnly">Giorno</span>
         </button>
+        <span id="headerCloudPill" class="headerCloudPill" hidden>● Online</span>
+        <button id="headerLogoutBtn" class="headerLogoutBtn animatedBtn" type="button" hidden><span>⇥</span><strong>Esci</strong></button>
       </div>
     </header>
 
@@ -106,7 +108,13 @@
       </div>
     </section>
     <section id="dashboardView" class="dashboardView" hidden>
-      <div class="dashboardHero"><div><span class="usersKicker">BEPARYTECH CONTROL</span><h2>Dashboard</h2><p>Situazione del magazzino e attività recenti.</p></div><button id="refreshDashboardBtn" class="miniBtn animatedBtn" type="button">Aggiorna</button></div>
+      <div class="dashboardHero premiumDashboardHero"><div class="dashboardHeroCopy"><span class="usersKicker">BEPARYTECH CONTROL</span><h2>Ciao, <span id="dashboardGreetingName">Admin</span> 👋</h2><p>Tutto sotto controllo. Magazzino, vendite e attività in un unico posto.</p></div><img src="iphone-15-pro.png" alt="" class="dashboardHeroPhone"><button id="refreshDashboardBtn" class="miniBtn animatedBtn" type="button">↻ Aggiorna</button></div>
+      <div class="quickAccessGrid" aria-label="Accesso rapido">
+        <button type="button" data-quick-category="BackGlass"><b>▣</b><span><strong>BackGlass</strong><small>Vetri posteriori</small></span></button>
+        <button type="button" data-quick-category="Housing"><b>▢</b><span><strong>Housing</strong><small>Scocche complete</small></span></button>
+        <button type="button" data-quick-category="Vendite"><b>✓</b><span><strong>Vendite</strong><small>Scarichi e consegne</small></span></button>
+        <button type="button" class="adminQuick" data-quick-category="CatalogoBestek"><b>BK</b><span><strong>Catalogo Bestek</strong><small>Codici e accessori</small></span></button>
+      </div>
       <div id="dashboardCards" class="dashboardCards"></div>
       <div class="dashboardColumns"><div class="dashboardPanel"><button class="panelHead dashboardToggle" type="button" aria-expanded="false"><span><strong>Scorte basse</strong><small>Scorte basse ed esaurite</small></span><b class="panelChevron">⌄</b></button><div id="dashboardLowStock" class="dashboardPanelBody"></div></div><div class="dashboardPanel"><button class="panelHead dashboardToggle" type="button" aria-expanded="false"><span><strong>Ultimi movimenti</strong><small>Movimenti più recenti</small></span><b class="panelChevron">⌄</b></button><div id="dashboardActivity" class="dashboardPanelBody"></div></div></div>
     </section>
@@ -456,7 +464,7 @@
     </div>
   </template>
 
-  <div id="scannerModal" class="saleModal" hidden><div class="saleDialog"><div class="saleDialogHead"><div><span class="saleKicker">SCANNER</span><h2>QR / Barcode</h2></div><button id="scannerClose" class="closeBtn" type="button">×</button></div><video id="scannerVideo" class="scannerVideo" playsinline muted></video><p id="scannerMsg" class="scannerMsg">Inquadra il codice con la fotocamera.</p><label class="fieldLabel">Oppure inserisci il codice</label><div class="scannerManual"><input id="scannerManualCode" class="modalInput" type="text" placeholder="Codice"><button id="scannerManualSearch" class="primaryAction" type="button">Cerca</button></div></div></div>
+  <div id="scannerModal" class="saleModal scannerModal" hidden><div class="saleDialog scannerDialog"><div class="saleDialogHead"><div><span class="saleKicker">SCANNER</span><h2>QR / Codice a barre</h2></div><button id="scannerClose" class="closeBtn" type="button">×</button></div><div class="scannerStage"><video id="scannerVideo" class="scannerVideo" playsinline muted></video><div class="scannerFrame"><i></i><i></i><i></i><i></i><span class="scannerLaser"></span></div><div class="scannerHint">Inquadra il codice</div></div><p id="scannerMsg" class="scannerMsg">Apertura fotocamera…</p><div class="scannerManualDivider"><span>oppure</span></div><label class="fieldLabel">Inserisci il codice manualmente</label><div class="scannerManual"><input id="scannerManualCode" class="modalInput" type="text" placeholder="Es. BK76587"><button id="scannerManualSearch" class="primaryAction" type="button">Cerca</button></div></div></div>
   <div id="accountOperatorsModal" class="saleModal" hidden>
     <div class="saleDialog accountOperatorsDialog" role="dialog" aria-modal="true" aria-labelledby="accountOperatorsTitle">
       <div class="saleDialogHead"><div><span class="saleKicker">OPERATORI ACCOUNT</span><h2 id="accountOperatorsTitle">Operatori</h2></div><button id="accountOperatorsX" class="closeBtn" type="button" aria-label="Chiudi">×</button></div>
@@ -487,13 +495,15 @@
   
 <button id="smartBackBtn" class="smartBackBtn animatedBtn" type="button" hidden>← <span>Indietro</span></button>
 <div id="pullRefreshIndicator" class="pullRefreshIndicator" aria-hidden="true"><span>↻</span><b>Aggiorna</b></div>
-<nav id="mobileBottomNav" class="mobileBottomNav" aria-label="Azioni rapide" hidden>
+<nav id="mobileBottomNav" class="mobileBottomNav premiumBottomNav" aria-label="Azioni rapide" hidden>
  <button type="button" data-smart-action="home"><b>⌂</b><span>Home</span></button>
- <button type="button" data-smart-action="primary"><b>＋</b><span>Azione</span></button>
- <button type="button" data-smart-action="history"><b>≋</b><span>Storico</span></button>
+ <button type="button" data-smart-action="primary"><b>⌕</b><span>Cerca</span></button>
+ <button type="button" class="scannerNavButton" data-smart-action="scanner"><b>▣</b><span>Scanner</span></button>
+ <button type="button" data-smart-action="history"><b>◷</b><span>Cronologia</span></button>
  <button type="button" data-smart-action="menu"><b>☰</b><span>Menu</span></button>
 </nav>
-<script src="app.js?v=70"></script>
+<script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
+<script src="app.js?v=71"></script>
 
 
 
