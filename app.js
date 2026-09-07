@@ -472,7 +472,18 @@ async function markSaleDelivered(id,btn){
   const ok=window.confirm(`Segnare come consegnato?\n\n${s.model} · ${s.color}\n${s.customer}\n\nLa vendita verrà spostata nell’Archivio vendite.`);
   if(!ok)return;
   const old=btn.textContent; btn.disabled=true; btn.textContent="Salvo…";
-  const {error}=await sb.rpc("mark_beparytech_sale_delivered",{p_id:id});
+  // v62: prova prima la RPC. Se una vecchia funzione DB fallisce durante l’audit
+  // (es. schema audit precedente senza user_id), salva comunque la consegna
+  // tramite update RLS-safe sulla vendita corrente.
+  let {error}=await sb.rpc("mark_beparytech_sale_delivered",{p_id:id});
+  if(error){
+    const now=new Date().toISOString();
+    const fallback=await sb.from("beparytech_sales")
+      .update({is_archived:true,delivered_at:now,delivered_by:currentUser?.id||null})
+      .eq("id",id)
+      .eq("user_id",workspaceOwnerId);
+    error=fallback.error;
+  }
   if(error){alert(error.message||"Impossibile segnare la vendita come consegnata.");btn.disabled=false;btn.textContent=old;return;}
   document.getElementById("cloudStatus").textContent="☁︎ Vendita consegnata";
   await loadSales();
@@ -1270,11 +1281,11 @@ document.getElementById("saveRecoveryPassword").onclick=async()=>{
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("./sw.js?v=60", { updateViaCache: "none" });
+      const reg = await navigator.serviceWorker.register("./sw.js?v=62", { updateViaCache: "none" });
       await reg.update();
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (!sessionStorage.getItem("bt-cache-reloaded-v59")) {
-          sessionStorage.setItem("bt-cache-reloaded-v59", "1");
+        if (!sessionStorage.getItem("bt-cache-reloaded-v62")) {
+          sessionStorage.setItem("bt-cache-reloaded-v62", "1");
           location.reload();
         }
       });

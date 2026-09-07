@@ -1,0 +1,1 @@
+v62 — Corretto errore Consegnato: fallback diretto sulla vendita se la RPC legacy fallisce durante la scrittura audit. Aggiornata cache service worker a v62.
