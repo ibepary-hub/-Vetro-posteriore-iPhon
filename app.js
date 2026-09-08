@@ -29,7 +29,6 @@ let customProducts = [];
 let currentCustomSectionId = null;
 let storeList = [];
 let adminCosts = {};
-let supplierQuotes = {};
 let salesStoreFilter = "ALL";
 
 const inventory = document.getElementById("inventory");
@@ -77,102 +76,52 @@ async function saveSalePrice(key,value){if(!isAdmin())return;const {error}=await
 async function editSalePrice(key,label,category,model){if(!isAdmin())return;const old=effectiveSalePrice(key,category,model);const raw=prompt(`Prezzo di vendita · ${label}\nInserisci il prezzo in euro IVA esclusa`,old==null?"":String(old).replace(".",","));if(raw===null)return;const value=Number(String(raw).replace(",","."));if(!Number.isFinite(value)||value<0){alert("Inserisci un prezzo di vendita valido.");return;}try{await saveSalePrice(key,value);refreshCostUi();}catch(e){alert(e?.message||"Errore salvataggio prezzo di vendita");}}
 function salePriceBadgeHtml(key,label,category,model){const v=effectiveSalePrice(key,category,model);if(v==null)return isAdmin()?`<div class="inventoryPriceTag salePriceAdmin"><span>Prezzo vendita</span><strong>Da impostare</strong><button type="button" class="editSalePriceBtn" title="Modifica prezzo vendita">✎</button></div>`:"";return `<div class="inventoryPriceTag salePriceAdmin"><span>Prezzo vendita</span><strong>${eur(v)} + IVA</strong><small>${eur(v*1.22)} IVA incl.</small>${isAdmin()?`<button type="button" class="editSalePriceBtn" title="Modifica prezzo vendita">✎</button>`:""}</div>`;}
 function wireSalePriceBadge(node,key,label,category,model){const b=node?.querySelector(".editSalePriceBtn");if(b)b.onclick=()=>editSalePrice(key,label,category,model);}
-function costValue(key){const v=adminCosts[key];return v==null?null:Number(v);}
-function supplierQuote(key){return supplierQuotes[key]||null;}
-function costBadgeHtml(key){if(!isAdmin())return "";const v=costValue(key),q=supplierQuote(key);return `<div class="adminCostBadge"><div class="adminCostMain"><span>Costo</span><strong>${v==null?"Da impostare":eur(v)}</strong>${q?`<small>IT-Ricambi ${eur(q.displayed_price)}</small>`:""}</div><button type="button" class="itCostBtn" title="IT-Ricambi" data-cost-key="${escapeHtml(key)}">IT</button><button type="button" class="editCostBtn" title="Modifica costo" data-cost-key="${escapeHtml(key)}">✎</button></div>`;}
-async function loadAdminCosts(){adminCosts={};supplierQuotes={};if(!isAdmin())return;const [{data:c,error:ce},{data:q,error:qe}]=await Promise.all([sb.from("beparytech_product_costs").select("item_key,cost_ex_vat"),sb.from("beparytech_supplier_quotes").select("item_key,source_url,source_title,displayed_price,currency,checked_at,supplier")]);if(ce)console.error(ce);else (c||[]).forEach(r=>adminCosts[r.item_key]=Number(r.cost_ex_vat));if(qe)console.error(qe);else (q||[]).forEach(r=>supplierQuotes[r.item_key]=r);}
-async function saveManualCost(key,value){const {error}=await sb.from("beparytech_product_costs").upsert({workspace_owner_id:workspaceOwnerId,item_key:key,cost_ex_vat:value,updated_by:currentUser.id},{onConflict:"workspace_owner_id,item_key"});if(error)throw error;adminCosts[key]=value;}
-async function editCost(key,label){if(!isAdmin())return;const old=costValue(key);const raw=prompt(`Costo prodotto · ${label}\nInserisci il tuo costo effettivo in euro IVA esclusa`,old==null?"":String(old).replace(".",","));if(raw===null)return;const value=Number(String(raw).replace(",","."));if(!Number.isFinite(value)||value<0){alert("Inserisci un costo valido.");return;}try{await saveManualCost(key,value);refreshCostUi();}catch(e){alert(e?.message||"Errore salvataggio costo");}}
+function normalizedCostKey(key){
+  const raw=String(key||"");
+  if(!raw.startsWith("FIXED||"))return raw;
+  const p=raw.split("||");
+  const category=p[1]||"";
+  const model=category==="Housing"?(p[3]||""):(p[2]||"");
+  return model?`MODEL||${category}||${model}`:raw;
+}
+function costValue(key){
+  const normalized=normalizedCostKey(key);
+  const v=adminCosts[normalized] ?? adminCosts[key];
+  return v==null?null:Number(v);
+}
+function costBadgeHtml(key){
+  if(!isAdmin())return "";
+  const v=costValue(key);
+  return `<div class="adminCostBadge"><div class="adminCostMain"><span>Costo modello</span><strong>${v==null?"Da impostare":eur(v)}</strong></div><button type="button" class="editCostBtn" title="Modifica costo modello" data-cost-key="${escapeHtml(normalizedCostKey(key))}">✎</button></div>`;
+}
+async function loadAdminCosts(){
+  adminCosts={};
+  if(!isAdmin())return;
+  const {data,error}=await sb.from("beparytech_product_costs").select("item_key,cost_ex_vat");
+  if(error){console.error(error);return;}
+  (data||[]).forEach(r=>adminCosts[r.item_key]=Number(r.cost_ex_vat));
+}
+async function saveManualCost(key,value){
+  const saveKey=normalizedCostKey(key);
+  const {error}=await sb.from("beparytech_product_costs").upsert({workspace_owner_id:workspaceOwnerId,item_key:saveKey,cost_ex_vat:value,updated_by:currentUser.id},{onConflict:"workspace_owner_id,item_key"});
+  if(error)throw error;
+  adminCosts[saveKey]=value;
+}
+async function editCost(key,label){
+  if(!isAdmin())return;
+  const saveKey=normalizedCostKey(key),old=costValue(saveKey);
+  const isModel=saveKey.startsWith("MODEL||");
+  const parts=saveKey.split("||");
+  const modelLabel=isModel?`${parts[2]} · ${parts[1]}`:label;
+  const note=isModel?"Questo costo verrà usato automaticamente per tutti i colori di questo modello nella stessa sezione.":"";
+  const raw=prompt(`Costo ${isModel?"modello":"prodotto"} · ${modelLabel}\nInserisci il costo effettivo in euro IVA esclusa${note?`\n\n${note}`:""}`,old==null?"":String(old).replace(".",","));
+  if(raw===null)return;
+  const value=Number(String(raw).replace(",","."));
+  if(!Number.isFinite(value)||value<0){alert("Inserisci un costo valido.");return;}
+  try{await saveManualCost(saveKey,value);refreshCostUi();}catch(e){alert(e?.message||"Errore salvataggio costo");}
+}
 function refreshCostUi(){if(String(currentCategory).startsWith("custom:"))renderCustomSection();else render();}
-function wireCostBadge(costNode,key,label){const edit=costNode?.querySelector(".editCostBtn"),it=costNode?.querySelector(".itCostBtn");if(edit)edit.onclick=()=>editCost(key,label);if(it)it.onclick=()=>openItRicambiCost(key,label);}
-function ensureItRicambiModal(){
-  let m=document.getElementById("itRicambiCostModal");
-  if(m)return m;
-  document.body.insertAdjacentHTML("beforeend",`<div id="itRicambiCostModal" class="saleModal" hidden>
-    <div class="saleDialog itRicambiDialog" role="dialog" aria-modal="true">
-      <div class="saleDialogHead"><div><span class="saleKicker">SOLO ADMIN</span><h2>IT-Ricambi · costo automatico</h2></div><button id="itRicambiClose" class="closeBtn" type="button">×</button></div>
-      <div id="itRicambiItem" class="saleItemLabel"></div>
-      <section class="itRicambiAccountCard">
-        <div class="itRicambiAccountTop"><div><span class="fieldLabel">Account IT-Ricambi</span><strong id="itRicambiSessionState">Controllo sessione…</strong><small id="itRicambiSessionMeta">Il login viene conservato solo lato server.</small></div><div class="itRicambiSessionActions"><button id="itRicambiConnectBtn" class="miniBtn" type="button">Connetti</button><button id="itRicambiDisconnectBtn" class="miniBtn dangerSoft" type="button" hidden>Disconnetti</button></div></div>
-        <div id="itRicambiLoginBox" class="itRicambiLoginBox" hidden>
-          <label><span>Email / username</span><input id="itRicambiLoginUser" class="modalInput" autocomplete="username"></label>
-          <label><span>Password</span><input id="itRicambiLoginPass" class="modalInput" type="password" autocomplete="current-password"></label>
-          <div class="itRicambiActions"><button id="itRicambiLoginSubmit" class="primaryAction" type="button">Accedi a IT-Ricambi</button><button id="itRicambiLoginCancel" class="miniBtn" type="button">Annulla</button></div>
-        </div>
-      </section>
-      <div class="itRicambiActions"><button id="itRicambiFetch" class="primaryAction" type="button">Trova e aggiorna costo</button><a id="itRicambiOpen" class="miniBtn" target="_blank" rel="noopener noreferrer" hidden>Apri scheda trovata</a></div>
-      <div id="itRicambiResult" class="itRicambiResult">Ricerca automatica: non serve incollare nessun link.</div>
-      <div class="itRicambiApplyRow"><label><span>Costo trovato</span><input id="itRicambiPrice" class="modalInput" inputmode="decimal" readonly></label><button id="itRicambiApply" class="primaryAction" type="button" disabled>Usa come costo</button></div>
-      <section class="itRicambiBulkCard">
-        <div class="itRicambiBulkHead"><div><span class="fieldLabel">TUTTO IL MAGAZZINO</span><strong>Housing + BackGlass</strong><small>Ricerca e salva automaticamente i costi IT-Ricambi di tutti i modelli.</small></div><button id="itRicambiBulkBtn" class="primaryAction" type="button">Aggiorna tutti i costi</button></div>
-        <div id="itRicambiBulkProgress" class="itRicambiBulkProgress" hidden><div><span id="itRicambiBulkText">Preparazione…</span><strong id="itRicambiBulkCount">0/0</strong></div><progress id="itRicambiBulkBar" value="0" max="100"></progress><small id="itRicambiBulkMeta"></small></div>
-      </section>
-      <div class="itRicambiNotice">Il gestionale confronta modello, tipo ricambio, colore e sinonimi IT-Ricambi. Quando trova una corrispondenza la salva, così gli aggiornamenti successivi usano direttamente quella scheda.</div>
-    </div></div>`);
-  m=document.getElementById("itRicambiCostModal");
-  document.getElementById("itRicambiClose").onclick=()=>m.hidden=true;
-  bindItRicambiActions();
-  return m;
-}
-let itRicambiPending=null;
-let itRicambiSession={connected:false,expires_at:null};
-function setItRicambiLoginBox(show){const box=document.getElementById("itRicambiLoginBox");if(box)box.hidden=!show;if(show)setTimeout(()=>document.getElementById("itRicambiLoginUser")?.focus(),30);}
-function renderItRicambiSession(){
-  const state=document.getElementById("itRicambiSessionState"),meta=document.getElementById("itRicambiSessionMeta"),connect=document.getElementById("itRicambiConnectBtn"),disconnect=document.getElementById("itRicambiDisconnectBtn");
-  if(!state)return;state.classList.remove("okText");
-  if(itRicambiSession.connected){state.textContent="● Collegato";state.classList.add("okText");const exp=itRicambiSession.expires_at?new Date(itRicambiSession.expires_at):null;meta.textContent=exp&&!Number.isNaN(exp.getTime())?`Sessione riutilizzabile fino al ${exp.toLocaleString("it-IT")}, salvo scadenza anticipata del sito.`:"Sessione IT-Ricambi attiva.";connect.textContent="Ricollega";disconnect.hidden=false;}
-  else{state.textContent="Non collegato";meta.textContent="Collega l'account una volta: la sessione viene riutilizzata fino alla scadenza.";connect.textContent="Connetti";disconnect.hidden=true;}
-}
-async function callItRicambi(body){const {data,error}=await sb.functions.invoke("beparytech-itricambi-price",{body});if(error)throw new Error(error.message||"Servizio IT-Ricambi non disponibile");if(!data?.ok)throw Object.assign(new Error(data?.error||"Operazione IT-Ricambi non riuscita"),{code:data?.code||"IT_ERROR",payload:data});return data;}
-async function refreshItRicambiSession(){if(!isAdmin())return;try{const d=await callItRicambi({action:"status"});itRicambiSession={connected:!!d.connected,expires_at:d.expires_at||null};}catch(e){itRicambiSession={connected:false,expires_at:null};}renderItRicambiSession();}
-async function connectItRicambi(){const user=document.getElementById("itRicambiLoginUser")?.value.trim(),pass=document.getElementById("itRicambiLoginPass")?.value||"",btn=document.getElementById("itRicambiLoginSubmit"),res=document.getElementById("itRicambiResult");if(!user||!pass){res.textContent="Inserisci email e password IT-Ricambi.";return;}btn.disabled=true;btn.textContent="Accesso…";res.innerHTML=`<strong>Connessione a IT-Ricambi…</strong><span>Sto creando una sessione sicura.</span>`;try{const d=await callItRicambi({action:"login",username:user,password:pass});itRicambiSession={connected:true,expires_at:d.expires_at||null};document.getElementById("itRicambiLoginPass").value="";setItRicambiLoginBox(false);renderItRicambiSession();res.innerHTML=`<strong>Account IT-Ricambi collegato.</strong><span>Ora puoi usare “Trova e aggiorna costo”.</span>`;}catch(e){const code=e?.code||"";let title="Login IT-Ricambi non riuscito",detail=e?.message||"Operazione non riuscita.";if(code==="BAD_CREDENTIALS"){title="Credenziali rifiutate";}else if(code==="FORM_CHANGED"){title="Login IT-Ricambi cambiato";}else if(code==="LOGIN_FLOW_REJECTED"){title="IT-Ricambi non ha creato la sessione";}else if(code==="NO_SESSION_COOKIE"){title="Sessione non riutilizzabile";}else if(code==="SITE_HTTP"){title="IT-Ricambi non raggiungibile";}res.innerHTML=`<strong>${escapeHtml(title)}</strong><span>${escapeHtml(detail)}</span>`;}finally{btn.disabled=false;btn.textContent="Accedi a IT-Ricambi";}}
-async function disconnectItRicambi(){const btn=document.getElementById("itRicambiDisconnectBtn");btn.disabled=true;try{await callItRicambi({action:"logout"});}catch(e){}itRicambiSession={connected:false,expires_at:null};renderItRicambiSession();setItRicambiLoginBox(false);document.getElementById("itRicambiResult").textContent="Sessione IT-Ricambi rimossa.";btn.disabled=false;}
-function openItRicambiCost(key,label){if(!isAdmin())return;const m=ensureItRicambiModal(),q=supplierQuote(key);itRicambiPending={key,label,quote:q};document.getElementById("itRicambiItem").innerHTML=`<strong>${escapeHtml(label)}</strong><span>Ricerca automatica su IT-Ricambi</span>`;document.getElementById("itRicambiPrice").value=q?.displayed_price!=null?String(q.displayed_price).replace(".",","):"";const res=document.getElementById("itRicambiResult");res.innerHTML=q?`<strong>${escapeHtml(q.source_title||"IT-Ricambi")}</strong><span>Associazione salvata · ultimo controllo ${new Date(q.checked_at).toLocaleString("it-IT")}</span>`:"Ricerca automatica: non serve incollare nessun link.";const open=document.getElementById("itRicambiOpen");if(q?.source_url){open.href=q.source_url;open.hidden=false;}else open.hidden=true;document.getElementById("itRicambiApply").disabled=!(q?.displayed_price>=0);m.hidden=false;refreshItRicambiSession();}
-function bindItRicambiActions(){
-  const bind=(id,fn)=>{const el=document.getElementById(id);if(el&&el.dataset.bound!=="1"){el.dataset.bound="1";el.onclick=fn;}};
-  bind("itRicambiFetch",fetchItRicambiPrice);bind("itRicambiApply",applyItRicambiPrice);bind("itRicambiConnectBtn",()=>setItRicambiLoginBox(true));bind("itRicambiLoginCancel",()=>setItRicambiLoginBox(false));bind("itRicambiLoginSubmit",connectItRicambi);bind("itRicambiDisconnectBtn",disconnectItRicambi);bind("itRicambiBulkBtn",()=>bulkUpdateItRicambiCosts({manual:true,refreshAll:true}));
-}
-async function fetchItRicambiPrice(){if(!isAdmin()||!itRicambiPending)return;const btn=document.getElementById("itRicambiFetch"),res=document.getElementById("itRicambiResult");btn.disabled=true;btn.textContent="Ricerca…";res.innerHTML=`<strong>Ricerca automatica IT-Ricambi…</strong><span>Confronto modello, ricambio, colore e sinonimi.</span>`;try{const old=itRicambiPending.quote;const data=await callItRicambi({action:"auto_price",item_key:itRicambiPending.key,label:itRicambiPending.label,preferred_url:old?.source_url||null});itRicambiSession={connected:true,expires_at:data.expires_at||itRicambiSession.expires_at};renderItRicambiSession();const quote={source_url:data.url,source_title:data.title||"IT-Ricambi",displayed_price:Number(data.price),currency:data.currency||"EUR",checked_at:data.checked_at||new Date().toISOString(),supplier:"IT-Ricambi"};if(!Number.isFinite(quote.displayed_price)||!quote.source_url)throw new Error("Costo IT-Ricambi non valido.");const {error:saveErr}=await sb.from("beparytech_supplier_quotes").upsert({workspace_owner_id:workspaceOwnerId,item_key:itRicambiPending.key,supplier:"IT-Ricambi",source_url:quote.source_url,source_title:quote.source_title,displayed_price:quote.displayed_price,currency:quote.currency,checked_at:quote.checked_at,updated_by:currentUser.id,updated_at:new Date().toISOString()},{onConflict:"workspace_owner_id,item_key,supplier"});if(saveErr)throw saveErr;supplierQuotes[itRicambiPending.key]=quote;itRicambiPending.quote=quote;await saveManualCost(itRicambiPending.key,quote.displayed_price);document.getElementById("itRicambiPrice").value=String(quote.displayed_price).replace(".",",");const conf=data.match_score!=null?` · compatibilità ${Math.round(Number(data.match_score))}%`:"";const via=data.reused_match?"associazione salvata":"ricerca automatica";res.innerHTML=`<strong>${escapeHtml(quote.source_title)}</strong><span>Costo aggiornato: ${eur(quote.displayed_price)} · ${via}${conf}</span>`;const open=document.getElementById("itRicambiOpen");open.href=quote.source_url;open.hidden=false;document.getElementById("itRicambiApply").disabled=false;refreshCostUi();}catch(e){if(e?.code==="SESSION_REQUIRED"||e?.code==="SESSION_EXPIRED"){itRicambiSession={connected:false,expires_at:null};renderItRicambiSession();setItRicambiLoginBox(true);res.innerHTML=`<strong>Login IT-Ricambi necessario.</strong><span>${escapeHtml(e.message||"La sessione è scaduta.")}</span>`;}else if(e?.code==="NO_MATCH"){res.innerHTML=`<strong>Nessun ricambio abbastanza compatibile.</strong><span>${escapeHtml(e.message||"Non aggiorno il costo per evitare un prodotto sbagliato.")}</span>`;}else res.innerHTML=`<strong>Non riesco ad aggiornare il costo.</strong><span>${escapeHtml(e?.message||"Errore IT-Ricambi")}</span>`;}finally{btn.disabled=false;btn.textContent="Trova e aggiorna costo";}}
-async function applyItRicambiPrice(){const q=itRicambiPending?.quote;if(!q||!Number.isFinite(Number(q.displayed_price)))return;const value=Number(q.displayed_price);if(!confirm(`Impostare ${eur(value)} come costo effettivo di questo prodotto?`))return;try{await saveManualCost(itRicambiPending.key,value);document.getElementById("itRicambiResult").innerHTML+=`<span class="okText">Costo aggiornato a ${eur(value)}</span>`;refreshCostUi();}catch(e){alert(e?.message||"Errore salvataggio costo");}}
-let itRicambiBulkRunning=false;
-function allFixedCostItems(){
-  const items=[];
-  for(const [model,colors] of Object.entries(MODEL_COLORS).sort((a,b)=>compareModels(a[0],b[0]))){
-    for(const color of colors){
-      items.push({category:"Housing",key:fixedCostKey("Housing",`Housing||${model}||${color}`),label:`${model} · ${color}`});
-      if(model!=="iPhone 7"&&model!=="iPhone 7 Plus")items.push({category:"BackGlass",key:fixedCostKey("BackGlass",`${model}||${color}`),label:`${model} · ${color}`});
-    }
-  }
-  return items;
-}
-function bulkUi(state={}){
-  const box=document.getElementById("itRicambiBulkProgress"),bar=document.getElementById("itRicambiBulkBar"),txt=document.getElementById("itRicambiBulkText"),count=document.getElementById("itRicambiBulkCount"),meta=document.getElementById("itRicambiBulkMeta"),btn=document.getElementById("itRicambiBulkBtn");
-  if(!box)return;box.hidden=false;const total=Number(state.total||0),done=Number(state.done||0);
-  if(bar){bar.max=Math.max(1,total);bar.value=Math.min(done,total||1);}if(txt)txt.textContent=state.text||"Aggiornamento costi…";if(count)count.textContent=`${done}/${total}`;if(meta)meta.textContent=state.meta||"";if(btn){btn.disabled=!!state.running;btn.textContent=state.running?"Aggiornamento in corso…":"Aggiorna tutti i costi";}
-}
-async function saveAutoItRicambiResult(item,data){
-  const quote={source_url:data.url,source_title:data.title||"IT-Ricambi",displayed_price:Number(data.price),currency:data.currency||"EUR",checked_at:data.checked_at||new Date().toISOString(),supplier:"IT-Ricambi"};
-  if(!Number.isFinite(quote.displayed_price)||quote.displayed_price<=0||!quote.source_url)throw new Error("Costo IT-Ricambi non valido");
-  const {error:saveErr}=await sb.from("beparytech_supplier_quotes").upsert({workspace_owner_id:workspaceOwnerId,item_key:item.key,supplier:"IT-Ricambi",source_url:quote.source_url,source_title:quote.source_title,displayed_price:quote.displayed_price,currency:quote.currency,checked_at:quote.checked_at,updated_by:currentUser.id,updated_at:new Date().toISOString()},{onConflict:"workspace_owner_id,item_key,supplier"});
-  if(saveErr)throw saveErr;supplierQuotes[item.key]=quote;await saveManualCost(item.key,quote.displayed_price);return quote;
-}
-async function bulkUpdateItRicambiCosts({manual=false,refreshAll=false}={}){
-  if(!isAdmin()||itRicambiBulkRunning)return;itRicambiBulkRunning=true;
-  let session;try{session=await callItRicambi({action:"status"});}catch(e){itRicambiBulkRunning=false;return;}
-  if(!session?.connected){itRicambiBulkRunning=false;if(manual){ensureItRicambiModal();setItRicambiLoginBox(true);bulkUi({text:"Collega prima IT-Ricambi",meta:"Serve una sessione attiva per aggiornare tutti i costi."});}return;}
-  let items=allFixedCostItems();if(!refreshAll)items=items.filter(x=>!supplierQuotes[x.key]||!Number.isFinite(Number(adminCosts[x.key])));
-  const total=items.length;if(!total){itRicambiBulkRunning=false;if(manual)bulkUi({done:0,total:0,text:"Tutti i costi sono già presenti",meta:"Non ci sono costi mancanti da aggiornare."});return;}
-  let ok=0,fail=0,done=0;bulkUi({running:true,done,total,text:"Aggiornamento automatico…",meta:"Puoi continuare a usare il gestionale mentre lavoro."});
-  for(const item of items){
-    try{const old=supplierQuotes[item.key];const data=await callItRicambi({action:"auto_price",item_key:item.key,label:item.label,preferred_url:old?.source_url||null});await saveAutoItRicambiResult(item,data);ok++;}
-    catch(e){fail++;if(e?.code==="SESSION_REQUIRED"||e?.code==="SESSION_EXPIRED"){itRicambiSession={connected:false,expires_at:null};bulkUi({running:false,done,total,text:"Sessione IT-Ricambi scaduta",meta:`Aggiornati ${ok}; da riprendere ${total-done}. Ricollega l'account e riprova.`});itRicambiBulkRunning=false;refreshCostUi();return;}}
-    done++;bulkUi({running:true,done,total,text:`${item.category} · ${item.label}`,meta:`Aggiornati ${ok} · non trovati ${fail}`});await new Promise(r=>setTimeout(r,180));
-  }
-  itRicambiBulkRunning=false;try{localStorage.setItem("bt-itricambi-bulk-v79",new Date().toISOString());}catch(_){}bulkUi({running:false,done,total,text:"Aggiornamento completato",meta:`Costi aggiornati ${ok} · non trovati ${fail}. I prodotti non sicuri sono rimasti invariati.`});refreshCostUi();
-}
-async function autoFillItRicambiCosts(){
-  if(!isAdmin()||itRicambiBulkRunning)return;let last="";try{last=localStorage.getItem("bt-itricambi-bulk-v79")||"";}catch(_){}if(last)return;setTimeout(()=>bulkUpdateItRicambiCosts({manual:false,refreshAll:true}),1800);
-}
+function wireCostBadge(costNode,key,label){const edit=costNode?.querySelector(".editCostBtn");if(edit)edit.onclick=()=>editCost(normalizedCostKey(key),label);}
 
 async function loadStores(){if(!currentUser){storeList=[];return;}const {data,error}=await sb.rpc("list_beparytech_stores");if(error){console.error(error);storeList=[];return;}storeList=Array.isArray(data)?data:[];populateStoreControls();renderSalesStoreTabs();if(isAdmin())renderStoreAdmin();}
 function populateStoreControls(){const ids=["saleCustomerSelect","editStoreSelect","deviceSaleStore","adminRepairStore"];ids.forEach(id=>{const el=document.getElementById(id);if(!el)return;const prev=el.value;el.innerHTML=`<option value="">Seleziona negozio…</option>`+storeList.filter(x=>x.active!==false).map(x=>`<option value="${escapeHtml(x.name)}">${escapeHtml(x.name)}${x.admin_only?" · ADMIN":""}</option>`).join("");if([...el.options].some(o=>o.value===prev))el.value=prev;});}
@@ -361,7 +310,6 @@ async function showAuth(user){
     document.getElementById("userEmail").textContent=user.email;
     await loadMyProfile();
     await Promise.all([loadCloud(),loadCustomCatalog(),loadAdminCosts(),loadSalePrices(),loadStores()]);
-    autoFillItRicambiCosts();
     document.getElementById("globalSearchBar").hidden=false;
     setCategory("Dashboard");
   }else{

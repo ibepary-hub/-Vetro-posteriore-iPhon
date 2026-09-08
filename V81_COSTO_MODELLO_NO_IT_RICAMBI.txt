@@ -1,0 +1,8 @@
+V81 — COSTO UNICO PER MODELLO
+- Rimossa completamente l'integrazione/interfaccia IT-Ricambi dal gestionale.
+- Il costo dei ricambi fissi è ora unico per MODELLO e SEZIONE.
+- BackGlass e Housing restano separati: modificare uno non cambia l'altro.
+- Impostando il costo di un modello, tutti i colori di quel modello usano automaticamente lo stesso costo.
+- I prezzi di vendita restano separati per variante/colore e visibili agli utenti standard.
+- Solo Admin vede e modifica i costi; Admin continua a vedere e modificare i prezzi di vendita.
+- Compatibilità mantenuta con i vecchi costi per-colore finché non viene impostato il nuovo costo modello.
