@@ -1,0 +1,6 @@
+V78 - IT-Ricambi costi automatici senza link
+- Nessun link da incollare.
+- Ricerca automatica tramite modello, tipo ricambio, colore e sinonimi.
+- Riutilizza automaticamente la scheda IT-Ricambi già associata.
+- Quando trova un match affidabile salva sia la fonte sia il costo effettivo.
+- Solo Admin.
