@@ -1,0 +1,8 @@
+V73 — PC sidebar + header + mobile scroll
+
+- Sidebar PC allargata e resa leggibile: nessun testo tagliato/sovrapposto.
+- Scroll indipendente dentro la sidebar per liste lunghe.
+- Menu / Giorno-Notte / Esci separati in alto, con pulsanti distinti e responsive.
+- Menu resta disponibile anche su PC.
+- Header adattato ai portatili più stretti senza sovrapposizioni.
+- Barra inferiore mobile: segue progressivamente lo scroll verso il basso fino a uscire dallo schermo; tornando verso l'alto rientra progressivamente.

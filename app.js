@@ -1713,30 +1713,46 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 setInterval(()=>{bindHourAccordions();updateSmartNavigation()},1800);
 
-// ===== v54: barra mobile elegante, si nasconde scendendo e ricompare salendo =====
+// ===== v73: barra mobile segue lo scroll verso il basso e torna salendo =====
 (function(){
- let lastY=Math.max(0,window.scrollY||0), ticking=false, hidden=false;
- function setHidden(v){
-   hidden=!!v;
-   document.getElementById('mobileBottomNav')?.classList.toggle('nav-hidden',hidden);
-   document.getElementById('smartBackBtn')?.classList.toggle('nav-hidden',hidden);
+ let lastY=Math.max(0,window.scrollY||0), ticking=false, slide=0;
+ function paint(returning=false){
+   const nav=document.getElementById('mobileBottomNav');
+   const back=document.getElementById('smartBackBtn');
+   if(!nav)return;
+   const maxSlide=Math.max(88,(nav.offsetHeight||78)+34);
+   slide=Math.max(0,Math.min(maxSlide,slide));
+   const ratio=Math.min(1,slide/maxSlide);
+   nav.style.setProperty('--bt-nav-slide',slide.toFixed(1)+'px');
+   nav.style.setProperty('--bt-nav-opacity',String(Math.max(.12,1-ratio*.88)));
+   nav.classList.toggle('nav-hidden',ratio>.96);
+   nav.classList.toggle('nav-returning',!!returning);
+   if(back){
+     const backSlide=Math.min(92,slide*.82);
+     back.style.setProperty('--bt-back-slide',backSlide.toFixed(1)+'px');
+     back.style.setProperty('--bt-back-opacity',String(Math.max(0,1-ratio)));
+     back.classList.toggle('nav-hidden',ratio>.92);
+     back.classList.toggle('nav-returning',!!returning);
+   }
  }
+ function showNow(){slide=0;paint(true);setTimeout(()=>{document.getElementById('mobileBottomNav')?.classList.remove('nav-returning');document.getElementById('smartBackBtn')?.classList.remove('nav-returning')},180)}
  function onScroll(){
-   if(ticking)return;ticking=true;
+   if(ticking)return; ticking=true;
    requestAnimationFrame(()=>{
-     const y=Math.max(0,window.scrollY||0), delta=y-lastY;
-     if(y<70) setHidden(false);
-     else if(delta>8) setHidden(true);
-     else if(delta<-8) setHidden(false);
-     lastY=y;ticking=false;
+     const y=Math.max(0,window.scrollY||0);
+     const delta=y-lastY;
+     if(y<35){slide=0;paint(true)}
+     else if(delta>0){slide+=Math.min(delta,34);paint(false)}
+     else if(delta<0){slide-=Math.min(-delta*1.45,48);paint(false)}
+     lastY=y; ticking=false;
    });
  }
  window.addEventListener('scroll',onScroll,{passive:true});
- document.addEventListener('touchstart',()=>{ if((window.scrollY||0)<70)setHidden(false); },{passive:true});
  document.addEventListener('DOMContentLoaded',()=>{
+   paint(false);
    const nav=document.getElementById('mobileBottomNav');
-   nav?.addEventListener('focusin',()=>setHidden(false));
-   nav?.addEventListener('click',()=>setHidden(false));
+   nav?.addEventListener('focusin',showNow);
+   nav?.addEventListener('click',showNow);
  });
 })();
 
