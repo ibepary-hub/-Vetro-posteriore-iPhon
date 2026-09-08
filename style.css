@@ -1744,3 +1744,18 @@ body[data-theme="light"] .itCostBtn{background:#eef8ff;border-color:#c4e3f6;colo
 .itRicambiAccountCard{margin:12px 0 16px;padding:13px;border:1px solid var(--line);border-radius:16px;background:color-mix(in srgb,var(--card) 94%,var(--accent) 6%)}
 .itRicambiAccountTop{display:flex;align-items:center;justify-content:space-between;gap:12px}.itRicambiAccountTop>div:first-child{display:flex;flex-direction:column;gap:3px}.itRicambiAccountTop strong{font-size:15px}.itRicambiAccountTop small,.itRicambiLoginBox small{color:var(--muted);line-height:1.35}.itRicambiSessionActions{display:flex;gap:7px;flex-wrap:wrap}.itRicambiLoginBox{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;padding-top:12px;border-top:1px solid var(--line)}.itRicambiLoginBox label{display:flex;flex-direction:column;gap:6px}.itRicambiLoginBox>.itRicambiActions,.itRicambiLoginBox>small{grid-column:1/-1}.dangerSoft{border-color:rgba(239,68,68,.35)!important}
 @media(max-width:640px){.itRicambiAccountTop{align-items:flex-start;flex-direction:column}.itRicambiLoginBox{grid-template-columns:1fr}.itRicambiSessionActions{width:100%}.itRicambiSessionActions .miniBtn{flex:1}}
+
+/* v79 · aggiornamento massivo costi IT-Ricambi */
+.itRicambiBulkCard{margin:16px 0;padding:16px;border:1px solid rgba(148,163,184,.35);border-radius:18px;background:rgba(248,250,252,.78)}
+.itRicambiBulkHead{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap}.itRicambiBulkHead>div{display:flex;flex-direction:column;gap:3px;min-width:220px;flex:1}.itRicambiBulkHead strong{font-size:17px}.itRicambiBulkHead small{opacity:.7;line-height:1.35}.itRicambiBulkHead .primaryAction{width:auto;min-width:210px}
+.itRicambiBulkProgress{margin-top:14px;padding-top:12px;border-top:1px solid rgba(148,163,184,.25)}.itRicambiBulkProgress>div{display:flex;justify-content:space-between;gap:12px;margin-bottom:8px}.itRicambiBulkProgress progress{width:100%;height:12px}.itRicambiBulkProgress small{display:block;margin-top:7px;opacity:.72}
+body.dark .itRicambiBulkCard{background:rgba(15,23,42,.55)}
+@media(max-width:640px){.itRicambiBulkHead{display:block}.itRicambiBulkHead .primaryAction{width:100%;margin-top:12px;min-width:0}}
+/* v80 — prezzi vendita visibili a tutti; costi solo Admin */
+.inventoryPriceTag.salePriceAdmin{position:relative;padding-right:42px}
+.editSalePriceBtn{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:1px solid rgba(212,168,87,.28);background:rgba(212,168,87,.10);color:inherit;border-radius:9px;width:28px;height:28px;display:grid;place-items:center;cursor:pointer;font-size:14px;font-weight:900}
+.editSalePriceBtn:hover{background:rgba(212,168,87,.20)}
+.salesMoneySummary{grid-template-columns:repeat(4,minmax(0,1fr))}
+.salesMoneySummary small{font-size:9px;opacity:.55;margin-top:2px}
+@media(max-width:900px){.salesMoneySummary{grid-template-columns:1fr 1fr}.salesMoneySummary .grand{grid-column:auto}}
+@media(max-width:520px){.salesMoneySummary{grid-template-columns:1fr 1fr}}

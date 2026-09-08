@@ -1,0 +1,7 @@
+BEPARYTECH v80
+- Prezzo vendita visibile ad Admin e utenti Standard.
+- Costo prodotto visibile e modificabile solo Admin.
+- Admin può modificare anche il prezzo di vendita.
+- Prezzi vendita salvati su Supabase con RLS: SELECT workspace, INSERT/UPDATE/DELETE solo Admin.
+- Riepilogo Vendite: solo Admin vede Costo totale, Vendita totale, Margine e totale IVA inclusa.
+- Gli Standard vedono i prezzi unitari ma non i costi né i totali economici.

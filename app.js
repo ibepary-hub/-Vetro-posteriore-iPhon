@@ -69,6 +69,14 @@ function passesFilter(q){
 
 function fixedCostKey(category,itemKey){return `FIXED||${category}||${itemKey}`;}
 function customCostKey(id){return `PRODUCT||${Number(id)}`;}
+function salePriceValue(key){const v=salePrices[key];return v==null?null:Number(v);}
+function defaultSalePriceFor(category,model){return category==="BackGlass" ? backGlassUnitPrice(model) : null;}
+function effectiveSalePrice(key,category,model){const saved=salePriceValue(key);return saved==null?defaultSalePriceFor(category,model):saved;}
+async function loadSalePrices(){salePrices={};if(!currentUser)return;const {data,error}=await sb.from("beparytech_sale_prices").select("item_key,sale_price_ex_vat");if(error){console.error(error);return;}(data||[]).forEach(r=>salePrices[r.item_key]=Number(r.sale_price_ex_vat));}
+async function saveSalePrice(key,value){if(!isAdmin())return;const {error}=await sb.from("beparytech_sale_prices").upsert({workspace_owner_id:workspaceOwnerId,item_key:key,sale_price_ex_vat:value,updated_by:currentUser.id,updated_at:new Date().toISOString()},{onConflict:"workspace_owner_id,item_key"});if(error)throw error;salePrices[key]=value;}
+async function editSalePrice(key,label,category,model){if(!isAdmin())return;const old=effectiveSalePrice(key,category,model);const raw=prompt(`Prezzo di vendita · ${label}\nInserisci il prezzo in euro IVA esclusa`,old==null?"":String(old).replace(".",","));if(raw===null)return;const value=Number(String(raw).replace(",","."));if(!Number.isFinite(value)||value<0){alert("Inserisci un prezzo di vendita valido.");return;}try{await saveSalePrice(key,value);refreshCostUi();}catch(e){alert(e?.message||"Errore salvataggio prezzo di vendita");}}
+function salePriceBadgeHtml(key,label,category,model){const v=effectiveSalePrice(key,category,model);if(v==null)return isAdmin()?`<div class="inventoryPriceTag salePriceAdmin"><span>Prezzo vendita</span><strong>Da impostare</strong><button type="button" class="editSalePriceBtn" title="Modifica prezzo vendita">✎</button></div>`:"";return `<div class="inventoryPriceTag salePriceAdmin"><span>Prezzo vendita</span><strong>${eur(v)} + IVA</strong><small>${eur(v*1.22)} IVA incl.</small>${isAdmin()?`<button type="button" class="editSalePriceBtn" title="Modifica prezzo vendita">✎</button>`:""}</div>`;}
+function wireSalePriceBadge(node,key,label,category,model){const b=node?.querySelector(".editSalePriceBtn");if(b)b.onclick=()=>editSalePrice(key,label,category,model);}
 function costValue(key){const v=adminCosts[key];return v==null?null:Number(v);}
 function supplierQuote(key){return supplierQuotes[key]||null;}
 function costBadgeHtml(key){if(!isAdmin())return "";const v=costValue(key),q=supplierQuote(key);return `<div class="adminCostBadge"><div class="adminCostMain"><span>Costo</span><strong>${v==null?"Da impostare":eur(v)}</strong>${q?`<small>IT-Ricambi ${eur(q.displayed_price)}</small>`:""}</div><button type="button" class="itCostBtn" title="IT-Ricambi" data-cost-key="${escapeHtml(key)}">IT</button><button type="button" class="editCostBtn" title="Modifica costo" data-cost-key="${escapeHtml(key)}">✎</button></div>`;}
@@ -95,6 +103,10 @@ function ensureItRicambiModal(){
       <div class="itRicambiActions"><button id="itRicambiFetch" class="primaryAction" type="button">Trova e aggiorna costo</button><a id="itRicambiOpen" class="miniBtn" target="_blank" rel="noopener noreferrer" hidden>Apri scheda trovata</a></div>
       <div id="itRicambiResult" class="itRicambiResult">Ricerca automatica: non serve incollare nessun link.</div>
       <div class="itRicambiApplyRow"><label><span>Costo trovato</span><input id="itRicambiPrice" class="modalInput" inputmode="decimal" readonly></label><button id="itRicambiApply" class="primaryAction" type="button" disabled>Usa come costo</button></div>
+      <section class="itRicambiBulkCard">
+        <div class="itRicambiBulkHead"><div><span class="fieldLabel">TUTTO IL MAGAZZINO</span><strong>Housing + BackGlass</strong><small>Ricerca e salva automaticamente i costi IT-Ricambi di tutti i modelli.</small></div><button id="itRicambiBulkBtn" class="primaryAction" type="button">Aggiorna tutti i costi</button></div>
+        <div id="itRicambiBulkProgress" class="itRicambiBulkProgress" hidden><div><span id="itRicambiBulkText">Preparazione…</span><strong id="itRicambiBulkCount">0/0</strong></div><progress id="itRicambiBulkBar" value="0" max="100"></progress><small id="itRicambiBulkMeta"></small></div>
+      </section>
       <div class="itRicambiNotice">Il gestionale confronta modello, tipo ricambio, colore e sinonimi IT-Ricambi. Quando trova una corrispondenza la salva, così gli aggiornamenti successivi usano direttamente quella scheda.</div>
     </div></div>`);
   m=document.getElementById("itRicambiCostModal");
@@ -118,10 +130,50 @@ async function disconnectItRicambi(){const btn=document.getElementById("itRicamb
 function openItRicambiCost(key,label){if(!isAdmin())return;const m=ensureItRicambiModal(),q=supplierQuote(key);itRicambiPending={key,label,quote:q};document.getElementById("itRicambiItem").innerHTML=`<strong>${escapeHtml(label)}</strong><span>Ricerca automatica su IT-Ricambi</span>`;document.getElementById("itRicambiPrice").value=q?.displayed_price!=null?String(q.displayed_price).replace(".",","):"";const res=document.getElementById("itRicambiResult");res.innerHTML=q?`<strong>${escapeHtml(q.source_title||"IT-Ricambi")}</strong><span>Associazione salvata · ultimo controllo ${new Date(q.checked_at).toLocaleString("it-IT")}</span>`:"Ricerca automatica: non serve incollare nessun link.";const open=document.getElementById("itRicambiOpen");if(q?.source_url){open.href=q.source_url;open.hidden=false;}else open.hidden=true;document.getElementById("itRicambiApply").disabled=!(q?.displayed_price>=0);m.hidden=false;refreshItRicambiSession();}
 function bindItRicambiActions(){
   const bind=(id,fn)=>{const el=document.getElementById(id);if(el&&el.dataset.bound!=="1"){el.dataset.bound="1";el.onclick=fn;}};
-  bind("itRicambiFetch",fetchItRicambiPrice);bind("itRicambiApply",applyItRicambiPrice);bind("itRicambiConnectBtn",()=>setItRicambiLoginBox(true));bind("itRicambiLoginCancel",()=>setItRicambiLoginBox(false));bind("itRicambiLoginSubmit",connectItRicambi);bind("itRicambiDisconnectBtn",disconnectItRicambi);
+  bind("itRicambiFetch",fetchItRicambiPrice);bind("itRicambiApply",applyItRicambiPrice);bind("itRicambiConnectBtn",()=>setItRicambiLoginBox(true));bind("itRicambiLoginCancel",()=>setItRicambiLoginBox(false));bind("itRicambiLoginSubmit",connectItRicambi);bind("itRicambiDisconnectBtn",disconnectItRicambi);bind("itRicambiBulkBtn",()=>bulkUpdateItRicambiCosts({manual:true,refreshAll:true}));
 }
 async function fetchItRicambiPrice(){if(!isAdmin()||!itRicambiPending)return;const btn=document.getElementById("itRicambiFetch"),res=document.getElementById("itRicambiResult");btn.disabled=true;btn.textContent="Ricerca…";res.innerHTML=`<strong>Ricerca automatica IT-Ricambi…</strong><span>Confronto modello, ricambio, colore e sinonimi.</span>`;try{const old=itRicambiPending.quote;const data=await callItRicambi({action:"auto_price",item_key:itRicambiPending.key,label:itRicambiPending.label,preferred_url:old?.source_url||null});itRicambiSession={connected:true,expires_at:data.expires_at||itRicambiSession.expires_at};renderItRicambiSession();const quote={source_url:data.url,source_title:data.title||"IT-Ricambi",displayed_price:Number(data.price),currency:data.currency||"EUR",checked_at:data.checked_at||new Date().toISOString(),supplier:"IT-Ricambi"};if(!Number.isFinite(quote.displayed_price)||!quote.source_url)throw new Error("Costo IT-Ricambi non valido.");const {error:saveErr}=await sb.from("beparytech_supplier_quotes").upsert({workspace_owner_id:workspaceOwnerId,item_key:itRicambiPending.key,supplier:"IT-Ricambi",source_url:quote.source_url,source_title:quote.source_title,displayed_price:quote.displayed_price,currency:quote.currency,checked_at:quote.checked_at,updated_by:currentUser.id,updated_at:new Date().toISOString()},{onConflict:"workspace_owner_id,item_key,supplier"});if(saveErr)throw saveErr;supplierQuotes[itRicambiPending.key]=quote;itRicambiPending.quote=quote;await saveManualCost(itRicambiPending.key,quote.displayed_price);document.getElementById("itRicambiPrice").value=String(quote.displayed_price).replace(".",",");const conf=data.match_score!=null?` · compatibilità ${Math.round(Number(data.match_score))}%`:"";const via=data.reused_match?"associazione salvata":"ricerca automatica";res.innerHTML=`<strong>${escapeHtml(quote.source_title)}</strong><span>Costo aggiornato: ${eur(quote.displayed_price)} · ${via}${conf}</span>`;const open=document.getElementById("itRicambiOpen");open.href=quote.source_url;open.hidden=false;document.getElementById("itRicambiApply").disabled=false;refreshCostUi();}catch(e){if(e?.code==="SESSION_REQUIRED"||e?.code==="SESSION_EXPIRED"){itRicambiSession={connected:false,expires_at:null};renderItRicambiSession();setItRicambiLoginBox(true);res.innerHTML=`<strong>Login IT-Ricambi necessario.</strong><span>${escapeHtml(e.message||"La sessione è scaduta.")}</span>`;}else if(e?.code==="NO_MATCH"){res.innerHTML=`<strong>Nessun ricambio abbastanza compatibile.</strong><span>${escapeHtml(e.message||"Non aggiorno il costo per evitare un prodotto sbagliato.")}</span>`;}else res.innerHTML=`<strong>Non riesco ad aggiornare il costo.</strong><span>${escapeHtml(e?.message||"Errore IT-Ricambi")}</span>`;}finally{btn.disabled=false;btn.textContent="Trova e aggiorna costo";}}
 async function applyItRicambiPrice(){const q=itRicambiPending?.quote;if(!q||!Number.isFinite(Number(q.displayed_price)))return;const value=Number(q.displayed_price);if(!confirm(`Impostare ${eur(value)} come costo effettivo di questo prodotto?`))return;try{await saveManualCost(itRicambiPending.key,value);document.getElementById("itRicambiResult").innerHTML+=`<span class="okText">Costo aggiornato a ${eur(value)}</span>`;refreshCostUi();}catch(e){alert(e?.message||"Errore salvataggio costo");}}
+let itRicambiBulkRunning=false;
+function allFixedCostItems(){
+  const items=[];
+  for(const [model,colors] of Object.entries(MODEL_COLORS).sort((a,b)=>compareModels(a[0],b[0]))){
+    for(const color of colors){
+      items.push({category:"Housing",key:fixedCostKey("Housing",`Housing||${model}||${color}`),label:`${model} · ${color}`});
+      if(model!=="iPhone 7"&&model!=="iPhone 7 Plus")items.push({category:"BackGlass",key:fixedCostKey("BackGlass",`${model}||${color}`),label:`${model} · ${color}`});
+    }
+  }
+  return items;
+}
+function bulkUi(state={}){
+  const box=document.getElementById("itRicambiBulkProgress"),bar=document.getElementById("itRicambiBulkBar"),txt=document.getElementById("itRicambiBulkText"),count=document.getElementById("itRicambiBulkCount"),meta=document.getElementById("itRicambiBulkMeta"),btn=document.getElementById("itRicambiBulkBtn");
+  if(!box)return;box.hidden=false;const total=Number(state.total||0),done=Number(state.done||0);
+  if(bar){bar.max=Math.max(1,total);bar.value=Math.min(done,total||1);}if(txt)txt.textContent=state.text||"Aggiornamento costi…";if(count)count.textContent=`${done}/${total}`;if(meta)meta.textContent=state.meta||"";if(btn){btn.disabled=!!state.running;btn.textContent=state.running?"Aggiornamento in corso…":"Aggiorna tutti i costi";}
+}
+async function saveAutoItRicambiResult(item,data){
+  const quote={source_url:data.url,source_title:data.title||"IT-Ricambi",displayed_price:Number(data.price),currency:data.currency||"EUR",checked_at:data.checked_at||new Date().toISOString(),supplier:"IT-Ricambi"};
+  if(!Number.isFinite(quote.displayed_price)||quote.displayed_price<=0||!quote.source_url)throw new Error("Costo IT-Ricambi non valido");
+  const {error:saveErr}=await sb.from("beparytech_supplier_quotes").upsert({workspace_owner_id:workspaceOwnerId,item_key:item.key,supplier:"IT-Ricambi",source_url:quote.source_url,source_title:quote.source_title,displayed_price:quote.displayed_price,currency:quote.currency,checked_at:quote.checked_at,updated_by:currentUser.id,updated_at:new Date().toISOString()},{onConflict:"workspace_owner_id,item_key,supplier"});
+  if(saveErr)throw saveErr;supplierQuotes[item.key]=quote;await saveManualCost(item.key,quote.displayed_price);return quote;
+}
+async function bulkUpdateItRicambiCosts({manual=false,refreshAll=false}={}){
+  if(!isAdmin()||itRicambiBulkRunning)return;itRicambiBulkRunning=true;
+  let session;try{session=await callItRicambi({action:"status"});}catch(e){itRicambiBulkRunning=false;return;}
+  if(!session?.connected){itRicambiBulkRunning=false;if(manual){ensureItRicambiModal();setItRicambiLoginBox(true);bulkUi({text:"Collega prima IT-Ricambi",meta:"Serve una sessione attiva per aggiornare tutti i costi."});}return;}
+  let items=allFixedCostItems();if(!refreshAll)items=items.filter(x=>!supplierQuotes[x.key]||!Number.isFinite(Number(adminCosts[x.key])));
+  const total=items.length;if(!total){itRicambiBulkRunning=false;if(manual)bulkUi({done:0,total:0,text:"Tutti i costi sono già presenti",meta:"Non ci sono costi mancanti da aggiornare."});return;}
+  let ok=0,fail=0,done=0;bulkUi({running:true,done,total,text:"Aggiornamento automatico…",meta:"Puoi continuare a usare il gestionale mentre lavoro."});
+  for(const item of items){
+    try{const old=supplierQuotes[item.key];const data=await callItRicambi({action:"auto_price",item_key:item.key,label:item.label,preferred_url:old?.source_url||null});await saveAutoItRicambiResult(item,data);ok++;}
+    catch(e){fail++;if(e?.code==="SESSION_REQUIRED"||e?.code==="SESSION_EXPIRED"){itRicambiSession={connected:false,expires_at:null};bulkUi({running:false,done,total,text:"Sessione IT-Ricambi scaduta",meta:`Aggiornati ${ok}; da riprendere ${total-done}. Ricollega l'account e riprova.`});itRicambiBulkRunning=false;refreshCostUi();return;}}
+    done++;bulkUi({running:true,done,total,text:`${item.category} · ${item.label}`,meta:`Aggiornati ${ok} · non trovati ${fail}`});await new Promise(r=>setTimeout(r,180));
+  }
+  itRicambiBulkRunning=false;try{localStorage.setItem("bt-itricambi-bulk-v79",new Date().toISOString());}catch(_){}bulkUi({running:false,done,total,text:"Aggiornamento completato",meta:`Costi aggiornati ${ok} · non trovati ${fail}. I prodotti non sicuri sono rimasti invariati.`});refreshCostUi();
+}
+async function autoFillItRicambiCosts(){
+  if(!isAdmin()||itRicambiBulkRunning)return;let last="";try{last=localStorage.getItem("bt-itricambi-bulk-v79")||"";}catch(_){}if(last)return;setTimeout(()=>bulkUpdateItRicambiCosts({manual:false,refreshAll:true}),1800);
+}
+
 async function loadStores(){if(!currentUser){storeList=[];return;}const {data,error}=await sb.rpc("list_beparytech_stores");if(error){console.error(error);storeList=[];return;}storeList=Array.isArray(data)?data:[];populateStoreControls();renderSalesStoreTabs();if(isAdmin())renderStoreAdmin();}
 function populateStoreControls(){const ids=["saleCustomerSelect","editStoreSelect","deviceSaleStore","adminRepairStore"];ids.forEach(id=>{const el=document.getElementById(id);if(!el)return;const prev=el.value;el.innerHTML=`<option value="">Seleziona negozio…</option>`+storeList.filter(x=>x.active!==false).map(x=>`<option value="${escapeHtml(x.name)}">${escapeHtml(x.name)}${x.admin_only?" · ADMIN":""}</option>`).join("");if([...el.options].some(o=>o.value===prev))el.value=prev;});}
 function renderSalesStoreTabs(){const box=document.getElementById("salesStoreTabs");if(!box)return;const names=["ALL",...storeList.filter(x=>x.active!==false).map(x=>x.name)];if(salesStoreFilter!=="ALL"&&!names.includes(salesStoreFilter))salesStoreFilter="ALL";box.innerHTML=names.map(n=>`<button type="button" class="salesStoreTab ${salesStoreFilter===n?"active":""}" data-store="${escapeHtml(n)}">${n==="ALL"?"Tutti i negozi":escapeHtml(n)}</button>`).join("");box.querySelectorAll(".salesStoreTab").forEach(b=>b.onclick=()=>{salesStoreFilter=b.dataset.store;renderSales();renderSalesStoreTabs();});}
@@ -209,7 +261,7 @@ function render(){
       const qty=getQty(model,color), [label,cls]=statusFor(qty);
       row.querySelector(".colorName").textContent=color; row.querySelector(".dot").style.background=colorDot(color);
       qtyInput.value=qty; status.textContent=label; status.className="status "+cls;
-      if(isAdmin()){const colorRow=row.querySelector(".colorRow")||row.firstElementChild;const k=fixedCostKey(currentCategory,keyFor(model,color));if(colorRow){const wrap=document.createElement("div");wrap.innerHTML=costBadgeHtml(k);const costNode=wrap.firstElementChild;if(costNode){wireCostBadge(costNode,k,`${model} · ${color}`);colorRow.appendChild(costNode);}}}
+      {const colorRow=row.querySelector(".colorRow")||row.firstElementChild;const k=fixedCostKey(currentCategory,keyFor(model,color));if(colorRow){const pwrap=document.createElement("div");pwrap.innerHTML=salePriceBadgeHtml(k,`${model} · ${color}`,currentCategory,model);const priceNode=pwrap.firstElementChild;if(priceNode){wireSalePriceBadge(priceNode,k,`${model} · ${color}`,currentCategory,model);colorRow.appendChild(priceNode);}if(isAdmin()){const wrap=document.createElement("div");wrap.innerHTML=costBadgeHtml(k);const costNode=wrap.firstElementChild;if(costNode){wireCostBadge(costNode,k,`${model} · ${color}`);colorRow.appendChild(costNode);}}}}
       row.querySelector(".minus").onclick=()=>openSaleModal(model,color,qty);
       const plusBtn=row.querySelector(".plus");
       if(isAdmin()){
@@ -308,7 +360,8 @@ async function showAuth(user){
   if(user){
     document.getElementById("userEmail").textContent=user.email;
     await loadMyProfile();
-    await Promise.all([loadCloud(),loadCustomCatalog(),loadAdminCosts(),loadStores()]);
+    await Promise.all([loadCloud(),loadCustomCatalog(),loadAdminCosts(),loadSalePrices(),loadStores()]);
+    autoFillItRicambiCosts();
     document.getElementById("globalSearchBar").hidden=false;
     setCategory("Dashboard");
   }else{
@@ -700,9 +753,11 @@ function backGlassUnitPrice(model){
   if(isPlus) return 25;
   return 20; // 11–14 normali, mini, Pro e Pro Max fino al 14
 }
+function saleKeyFromSale(s){if(!s)return "";const raw=String(s.item_key||"");if(raw.startsWith("PRODUCT||"))return raw;return fixedCostKey(s.category,raw||(s.category==="Housing"?`Housing||${s.model}||${s.color}`:`${s.model}||${s.color}`));}
 function saleUnitPrice(s){
-  return s?.category==="BackGlass" ? backGlassUnitPrice(s.model) : null;
+  return effectiveSalePrice(saleKeyFromSale(s),s?.category,s?.model);
 }
+function saleUnitCost(s){if(!isAdmin())return null;const v=costValue(saleKeyFromSale(s));return v==null?null:v;}
 function eur(v){return new Intl.NumberFormat("it-IT",{style:"currency",currency:"EUR"}).format(Number(v||0));}
 function salePriceHtml(s,{showLineTotal=true}={}){
   const unit=saleUnitPrice(s); if(unit==null) return "";
@@ -722,21 +777,23 @@ function renderSalesSummary(){
   const groups=new Map();
   valid.forEach(s=>{
     const k=`${s.category}||${s.model}`;
-    const row=groups.get(k)||{category:s.category,model:s.model,quantity:0,unit:saleUnitPrice(s)};
-    row.quantity+=Number(s.quantity||0); groups.set(k,row);
+    const row=groups.get(k)||{category:s.category,model:s.model,quantity:0,salesValue:0,costValue:0,pricedQty:0,costedQty:0};
+    const qty=Number(s.quantity||0),unit=saleUnitPrice(s),cost=saleUnitCost(s);
+    row.quantity+=qty;if(unit!=null){row.salesValue+=unit*qty;row.pricedQty+=qty;}if(cost!=null){row.costValue+=cost*qty;row.costedQty+=qty;}groups.set(k,row);
   });
   const rows=[...groups.values()].sort((a,b)=>String(a.category).localeCompare(String(b.category),"it")||compareModels(a.model,b.model));
   const totalQty=rows.reduce((n,r)=>n+r.quantity,0);
-  const priced=rows.filter(r=>r.unit!=null);
-  const net=priced.reduce((n,r)=>n+r.unit*r.quantity,0), vat=net*.22, gross=net+vat;
-  const adminTotals=isAdmin()?`<div class="salesMoneySummary"><div><span>Imponibile BackGlass</span><strong>${eur(net)}</strong></div><div><span>IVA 22%</span><strong>${eur(vat)}</strong></div><div class="grand"><span>Totale IVA inclusa</span><strong>${eur(gross)}</strong></div></div>`:"";
-  const top=`<section class="salesSummaryHero"><div><span class="summaryKicker">RIEPILOGO VENDUTO</span><h3>${totalQty} pezzi venduti</h3><p>Quantità raggruppate modello per modello. Gli articoli rimessi in magazzino e le righe eliminate non vengono conteggiati.</p></div>${adminTotals}</section>`;
+  const salesNet=valid.reduce((n,s)=>{const p=saleUnitPrice(s);return n+(p==null?0:p*Number(s.quantity||0));},0);
+  const costNet=isAdmin()?valid.reduce((n,s)=>{const c=saleUnitCost(s);return n+(c==null?0:c*Number(s.quantity||0));},0):0;
+  const vat=salesNet*.22,gross=salesNet+vat,margin=salesNet-costNet;
+  const adminTotals=isAdmin()?`<div class="salesMoneySummary"><div><span>Costo totale</span><strong>${eur(costNet)}</strong><small>IVA esclusa</small></div><div><span>Vendita totale</span><strong>${eur(salesNet)}</strong><small>IVA esclusa</small></div><div><span>Margine lordo</span><strong>${eur(margin)}</strong><small>prima di altri costi</small></div><div class="grand"><span>Vendita IVA inclusa</span><strong>${eur(gross)}</strong></div></div>`:"";
+  const top=`<section class="salesSummaryHero"><div><span class="summaryKicker">RIEPILOGO VENDUTO</span><h3>${totalQty} pezzi venduti</h3><p>Gli utenti standard vedono i prezzi di vendita. Costo totale e totali economici sono riservati all’Admin.</p></div>${adminTotals}</section>`;
   if(!rows.length){list.innerHTML=top+'<div class="emptyState">Nessuna vendita da riepilogare.</div>';return;}
   list.innerHTML=top+`<div class="modelSalesSummary">${rows.map(r=>{
-    const grossUnit=r.unit==null?null:r.unit*1.22;
-    const unit=r.unit==null?'<span class="summaryNoPrice">Prezzo non impostato</span>':`<span class="summaryUnitPrice">${eur(r.unit)} + IVA <small>(${eur(grossUnit)})</small></span>`;
-    const total=isAdmin()&&r.unit!=null?`<span class="summaryModelTotal">Totale: <b>${eur(r.unit*r.quantity*1.22)}</b></span>`:"";
-    return `<article class="modelSaleSummaryRow"><div class="summaryModelInfo"><strong>${escapeHtml(r.model)}</strong><span>${escapeHtml(r.category)}</span></div><div class="summaryPriceInfo">${unit}${total}</div><div class="summaryQty"><span>Venduti</span><strong>${r.quantity}</strong></div></article>`;
+    const unitAvg=r.pricedQty? r.salesValue/r.pricedQty:null;
+    const unit=unitAvg==null?'<span class="summaryNoPrice">Prezzo non impostato</span>':`<span class="summaryUnitPrice">${eur(unitAvg)} + IVA <small>(${eur(unitAvg*1.22)})</small></span>`;
+    const adminDetail=isAdmin()?`<span class="summaryModelTotal">Vendita: <b>${eur(r.salesValue)}</b>${r.costedQty?` · Costo: <b>${eur(r.costValue)}</b>`:" · Costo non completo"}</span>`:"";
+    return `<article class="modelSaleSummaryRow"><div class="summaryModelInfo"><strong>${escapeHtml(r.model)}</strong><span>${escapeHtml(r.category)}</span></div><div class="summaryPriceInfo">${unit}${adminDetail}</div><div class="summaryQty"><span>Venduti</span><strong>${r.quantity}</strong></div></article>`;
   }).join("")}</div>`;
 }
 function saleLabelHtml(s){ return `<strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${escapeHtml(s.category)} · ${escapeHtml(s.customer)}</span>`; }
@@ -992,13 +1049,14 @@ function renderCustomSection(){
     products.sort((a,b)=>String(a.variant||"").localeCompare(String(b.variant||""),"it",{numeric:true,sensitivity:"base"})).forEach(p=>{
       const q=Number(p.quantity||0),[status,cls]=customStatus(q,Number(p.low_stock_threshold||2));
       const card=document.createElement("article");card.className="customProductCard";card.dataset.productId=String(p.id);
-      const customUnitPrice=String(section?.name||"").trim().toLowerCase()==="backglass" ? backGlassUnitPrice(p.name) : null;
-      const customPriceHtml=(customUnitPrice==null?"":`<div class="inventoryPriceTag"><span>Prezzo vendita</span><strong>${eur(customUnitPrice)} + IVA</strong><small>${eur(customUnitPrice*1.22)} IVA incl.</small></div>`)+costBadgeHtml(customCostKey(p.id));
+      const customKey=customCostKey(p.id);
+      const customCategory=String(section?.name||"");
+      const customPriceHtml=salePriceBadgeHtml(customKey,`${p.name} · ${p.variant||""}`,customCategory,p.name)+costBadgeHtml(customKey);
       card.innerHTML=`<div class="customProductTop"><div class="productVisual"><img class="productModelImage" src="${escapeHtml(imageForModel(p.name))}" alt="${escapeHtml(p.name)}"><span>${escapeHtml(p.name).charAt(0).toUpperCase()}</span></div><div class="customProductInfo"><strong>${escapeHtml(p.variant||p.name)}</strong><span>${escapeHtml(p.variant? p.name : (section?.name||""))}</span>${p.sku||p.barcode?`<small>${escapeHtml(p.sku||p.barcode)}</small>`:""}<b class="status ${cls}">${status}</b></div></div>${customPriceHtml}<div class="customProductBottom"><div class="customQty"><small>Giacenza</small><strong>${q}</strong></div><div class="customActions"><button class="minus customMinus animatedBtn" type="button" title="Scarica 1 dalla giacenza" ${q<=0?"disabled":""}>−1 Scarica</button>${isAdmin()?'<button class="plus customPlus animatedBtn" type="button">+1</button><button class="edit customEdit animatedBtn" type="button" title="Modifica prodotto">✎</button>':""}</div></div>`;
       const modelImg=card.querySelector(".productModelImage");modelImg.onerror=()=>{modelImg.hidden=true;modelImg.nextElementSibling.hidden=false};modelImg.onload=()=>{modelImg.nextElementSibling.hidden=true};
       card.querySelector(".customMinus").onclick=()=>openCustomSaleModal(p,section);
       const plus=card.querySelector(".customPlus"); if(plus)plus.onclick=()=>updateCustomProductQty(p,q+1);
-      const edit=card.querySelector(".customEdit");if(edit)edit.onclick=()=>editCustomProduct(p);const costNode=card.querySelector(".adminCostBadge");if(costNode)wireCostBadge(costNode,customCostKey(p.id),`${p.name} · ${p.variant||""}`);
+      const edit=card.querySelector(".customEdit");if(edit)edit.onclick=()=>editCustomProduct(p);const priceNode=card.querySelector(".salePriceAdmin");if(priceNode)wireSalePriceBadge(priceNode,customKey,`${p.name} · ${p.variant||""}`,customCategory,p.name);const costNode=card.querySelector(".adminCostBadge");if(costNode)wireCostBadge(costNode,customKey,`${p.name} · ${p.variant||""}`);
       bodyGrid.appendChild(card);
     });
     const header=group.querySelector(".customModelHeader");
