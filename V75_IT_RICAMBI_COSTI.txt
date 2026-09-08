@@ -1,0 +1,13 @@
+BeparyTech v75 — IT-Ricambi Costi Admin
+
+- Fonte IT-Ricambi disponibile sui badge costo dei prodotti (solo Admin)
+- Inserimento link esatto del ricambio IT-Ricambi
+- Lettura server-side del titolo e del prezzo pubblico disponibile
+- Memorizzazione separata di prezzo IT-Ricambi, URL e data ultimo controllo
+- Il prezzo IT-Ricambi NON sovrascrive automaticamente il costo effettivo
+- Pulsante "Usa come costo" per applicarlo manualmente
+- Dati fonte/costi protetti lato database e non leggibili dagli utenti standard
+- Edge Function protetta con autenticazione e verifica ruolo Admin
+- Whitelist host IT-Ricambi per evitare fetch arbitrari/SSRF
+
+Nota: eventuali prezzi personalizzati visibili solo dopo login IT-Ricambi richiedono un metodo di autenticazione supportato dal fornitore. Nessuna password IT-Ricambi viene salvata nel frontend.
