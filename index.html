@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.json?v=74">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=80">
+  <link rel="stylesheet" href="style.css?v=82">
 
 
 
@@ -183,6 +183,10 @@
       <span class="adminWorkIcon">🛠️</span>
       <span class="adminWorkText"><strong>Riparazioni</strong><small>Scheda madre e altre lavorazioni</small></span>
     </button>
+    <button type="button" class="adminWorkTab" data-work-tab="invoices" role="tab" aria-selected="false">
+      <span class="adminWorkIcon">🧾</span>
+      <span class="adminWorkText"><strong>Fatturazione</strong><small>Riparalo / MELA · Aruba XML</small></span>
+    </button>
   </div>
 
   <div id="adminSalesPanel" class="adminWorkPanel" data-work-panel="sales" hidden>
@@ -263,6 +267,63 @@
       <div id="adminRepairsSummary" class="deviceSalesSummary"></div>
       <div id="adminRepairsList"><div class="emptyState">Nessuna riparazione caricata</div></div>
     </div>
+  </div>
+
+  <div id="adminInvoicesPanel" class="adminWorkPanel invoicePanel" data-work-panel="invoices" hidden>
+    <div class="adminPanelHeader">
+      <div><strong>Fatturazione Riparalo S.r.l.</strong><small>Raggruppa automaticamente RPL e MELA e prepara il file XML da caricare su Aruba.</small></div>
+    </div>
+
+    <div class="invoiceClientCard">
+      <div><span class="invoiceEyebrow">CLIENTE PREIMPOSTATO</span><h3>RIPARALO S.R.L.</h3><p>Via Antonio Emmanueli, 7 · 29121 Piacenza (PC) · IT</p></div>
+      <div class="invoiceClientMeta"><span>P.IVA <b>IT01787740339</b></span><span>C.F. <b>01787740339</b></span><span>Codice destinatario <b>KRRH6B9</b></span></div>
+    </div>
+
+    <div class="invoiceGrid">
+      <section class="deviceSaleCard adminUniformCard">
+        <div class="deviceSaleCardHead"><div><strong>1. Periodo e documento</strong><small>Scegli cosa includere nella fattura.</small></div></div>
+        <div class="deviceSaleGrid">
+          <label><span>Dal *</span><input id="invoiceFrom" type="date" required></label>
+          <label><span>Al *</span><input id="invoiceTo" type="date" required></label>
+          <label><span>Data fattura *</span><input id="invoiceDate" type="date" required></label>
+          <label><span>Numero fattura *</span><input id="invoiceNumber" type="text" maxlength="30" placeholder="es. 24/2026" required></label>
+        </div>
+        <div class="invoiceChecks">
+          <label><input id="invoiceIncludeStock" type="checkbox" checked><span>Vendite magazzino a RPL / MELA</span></label>
+          <label><input id="invoiceIncludeParts" type="checkbox" checked><span>Vendite ricambi admin</span></label>
+          <label><input id="invoiceIncludeRepairs" type="checkbox" checked><span>Riparazioni dispositivi</span></label>
+        </div>
+        <button id="invoiceRefreshBtn" class="primaryAction animatedBtn" type="button">Aggiorna anteprima</button>
+        <div id="invoiceLoadMsg" class="createUserMsg" aria-live="polite"></div>
+      </section>
+
+      <section class="deviceSaleCard adminUniformCard">
+        <div class="deviceSaleCardHead"><div><strong>2. Dati emittente</strong><small>Li inserisci una volta: vengono salvati solo su questo dispositivo.</small></div></div>
+        <div class="deviceSaleGrid">
+          <label class="wide"><span>Ragione sociale / Nome *</span><input id="issuerName" maxlength="120" placeholder="La tua ditta / ragione sociale"></label>
+          <label><span>Partita IVA *</span><input id="issuerVat" maxlength="13" placeholder="IT01234567890"></label>
+          <label><span>Codice fiscale</span><input id="issuerTaxCode" maxlength="16"></label>
+          <label class="wide"><span>Indirizzo *</span><input id="issuerAddress" maxlength="120"></label>
+          <label><span>CAP *</span><input id="issuerZip" maxlength="5"></label>
+          <label><span>Comune *</span><input id="issuerCity" maxlength="80"></label>
+          <label><span>Provincia *</span><input id="issuerProvince" maxlength="2" placeholder="PC"></label>
+          <label><span>Regime fiscale *</span><select id="issuerRegime"><option value="RF01">RF01 · Ordinario</option><option value="RF19">RF19 · Forfettario</option><option value="RF18">RF18 · Altro</option></select></label>
+        </div>
+        <button id="saveIssuerBtn" class="secondaryAction animatedBtn" type="button">Salva dati emittente</button>
+        <div id="issuerMsg" class="createUserMsg" aria-live="polite"></div>
+      </section>
+    </div>
+
+    <section class="deviceSaleCard adminUniformCard invoicePreviewCard">
+      <div class="deviceSaleCardHead"><div><strong>3. Anteprima fattura</strong><small>RPL e tutti i punti MELA vengono fatturati allo stesso cliente: Riparalo S.r.l.</small></div></div>
+      <div id="invoiceSummary" class="deviceSalesSummary"><div><span>Righe</span><strong>0</strong></div><div><span>Imponibile</span><strong>€ 0,00</strong></div><div><span>IVA</span><strong>€ 0,00</strong></div><div><span>Totale</span><strong>€ 0,00</strong></div></div>
+      <div id="invoiceLines" class="invoiceLines"><div class="emptyState">Scegli il periodo e premi “Aggiorna anteprima”.</div></div>
+      <div class="invoiceActions">
+        <button id="invoiceCsvBtn" class="secondaryAction animatedBtn" type="button" disabled>Esporta CSV riepilogo</button>
+        <button id="invoiceXmlBtn" class="primaryAction animatedBtn" type="button" disabled>Genera XML per Aruba</button>
+      </div>
+      <p class="invoiceHint">Il file XML viene generato nel browser e non contiene password Aruba. Prima dell’invio controlla sempre numero, data, imponibile e IVA nell’anteprima di Aruba.</p>
+    </section>
   </div>
 </section>
 
@@ -504,7 +565,7 @@
  <button type="button" data-smart-action="menu"><b>☰</b><span>Menu</span></button>
 </nav>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
-<script src="app.js?v=80"></script>
+<script src="app.js?v=82"></script>
 
 
 

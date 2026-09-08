@@ -1,0 +1,9 @@
+BeparyTech v82
+
+Aggiunta area Admin > Vendite e riparazioni > Fatturazione.
+Cliente preimpostato: RIPARALO S.R.L. P.IVA IT01787740339, CF 01787740339, Via Antonio Emmanueli 7, 29121 Piacenza (PC), codice destinatario KRRH6B9.
+Raggruppa automaticamente i punti RPL e MELA nel periodo selezionato.
+Può includere vendite magazzino, vendite ricambi admin e riparazioni.
+Genera anteprima, CSV riepilogo e XML FatturaPA FPR12 da caricare su Aruba.
+I dati emittente vengono salvati localmente sul dispositivo; nessuna password Aruba viene memorizzata.
+Nota: controllare sempre l'anteprima e la validazione Aruba prima dell'invio allo SdI.

@@ -1707,6 +1707,7 @@ function bindAdminWorkTabs(){
   const buttons=[...tabs.querySelectorAll(".adminWorkTab")];
   const sales=document.getElementById("adminSalesPanel");
   const repairs=document.getElementById("adminRepairsPanel");
+  const invoices=document.getElementById("adminInvoicesPanel");
   let current=null;
 
   function show(panel){
@@ -1714,6 +1715,7 @@ function bindAdminWorkTabs(){
     current=current===panel?null:panel;
     if(sales) sales.hidden=current!=="sales";
     if(repairs) repairs.hidden=current!=="repairs";
+    if(invoices) invoices.hidden=current!=="invoices";
     buttons.forEach(btn=>{
       const on=btn.dataset.workTab===current;
       btn.classList.toggle("active",on);
@@ -1724,17 +1726,111 @@ function bindAdminWorkTabs(){
       try{ loadDeviceSales(); }catch(_){}
     }else if(current==="repairs"){
       try{ bindAdminRepairs(); loadAdminRepairs(); }catch(_){}
+    }else if(current==="invoices"){
+      try{ bindInvoiceAutomation(); }catch(_){}
     }
   }
   buttons.forEach(btn=>btn.addEventListener("click",()=>show(btn.dataset.workTab)));
   // All'apertura della pagina nessuna finestra è già aperta.
   if(sales) sales.hidden=true;
   if(repairs) repairs.hidden=true;
+  if(invoices) invoices.hidden=true;
   buttons.forEach(btn=>{btn.classList.remove("active");btn.setAttribute("aria-selected","false");btn.setAttribute("aria-expanded","false");});
 }
 document.addEventListener("DOMContentLoaded",bindAdminWorkTabs);
 setInterval(bindAdminWorkTabs,1500);
 
+
+
+// ===== v82: Fatturazione automatica Riparalo / MELA -> XML Aruba =====
+const RIPARALO_INVOICE_CLIENT={
+  name:"RIPARALO S.R.L.", vat:"01787740339", taxCode:"01787740339",
+  address:"VIA ANTONIO EMMANUELI, 7", zip:"29121", city:"PIACENZA", province:"PC", country:"IT", recipientCode:"KRRH6B9"
+};
+const RIPARALO_STORES=["RPL Piacenza","RPL Manerbio","MELA Piacenza","MELA Lime Store","MELA Repubblica","MELA Emilia Est"];
+let invoiceAutomationLines=[];
+function invoiceIsTargetStore(v){return RIPARALO_STORES.includes(String(v||"").trim());}
+function xmlEsc(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;");}
+function csvEsc(v){const x=String(v??"");return /[;"\n\r]/.test(x)?`"${x.replace(/"/g,'""')}"`:x;}
+function localDateISO(d=new Date()){const x=new Date(d.getTime()-d.getTimezoneOffset()*60000);return x.toISOString().slice(0,10);}
+function defaultInvoicePeriod(){
+  const now=new Date(), first=new Date(now.getFullYear(),now.getMonth(),1), last=new Date(now.getFullYear(),now.getMonth()+1,0);
+  const from=document.getElementById("invoiceFrom"),to=document.getElementById("invoiceTo"),date=document.getElementById("invoiceDate");
+  if(from&&!from.value)from.value=localDateISO(first); if(to&&!to.value)to.value=localDateISO(last); if(date&&!date.value)date.value=localDateISO(now);
+}
+function loadIssuerSettings(){
+  try{const x=JSON.parse(localStorage.getItem("beparytech-invoice-issuer")||"{}");
+    const map={issuerName:x.name,issuerVat:x.vat,issuerTaxCode:x.taxCode,issuerAddress:x.address,issuerZip:x.zip,issuerCity:x.city,issuerProvince:x.province,issuerRegime:x.regime};
+    Object.entries(map).forEach(([id,v])=>{const el=document.getElementById(id);if(el&&v)el.value=v;});
+  }catch(_){}
+}
+function readIssuer(){
+  const get=id=>String(document.getElementById(id)?.value||"").trim();
+  return {name:get("issuerName"),vat:get("issuerVat").replace(/^IT/i,"").replace(/\D/g,""),taxCode:get("issuerTaxCode").toUpperCase(),address:get("issuerAddress"),zip:get("issuerZip"),city:get("issuerCity"),province:get("issuerProvince").toUpperCase(),regime:get("issuerRegime")||"RF01"};
+}
+function validateIssuer(x){
+  if(!x.name||!x.vat||!x.address||!x.zip||!x.city||!x.province)return "Completa tutti i dati emittente obbligatori.";
+  if(!/^\d{11}$/.test(x.vat))return "La Partita IVA dell’emittente deve avere 11 cifre.";
+  if(!/^\d{5}$/.test(x.zip))return "Il CAP dell’emittente deve avere 5 cifre.";
+  if(!/^[A-Z]{2}$/.test(x.province))return "Inserisci la provincia con 2 lettere, ad esempio PC.";
+  return "";
+}
+function saveIssuerSettings(){
+  const msg=document.getElementById("issuerMsg"),x=readIssuer(),err=validateIssuer(x);if(msg){msg.className=`createUserMsg ${err?"error":"ok"}`;msg.textContent=err||"Dati emittente salvati su questo dispositivo.";}if(err)return false;
+  try{localStorage.setItem("beparytech-invoice-issuer",JSON.stringify(x));}catch(_){} return true;
+}
+function invoiceLineDate(v){return String(v||"").slice(0,10);}
+async function buildRiparaloInvoicePreview(){
+  if(!isAdmin())return;
+  const msg=document.getElementById("invoiceLoadMsg"),from=document.getElementById("invoiceFrom")?.value,to=document.getElementById("invoiceTo")?.value;
+  if(!from||!to||from>to){if(msg){msg.className="createUserMsg error";msg.textContent="Controlla il periodo: la data iniziale deve essere precedente a quella finale.";}return;}
+  if(msg){msg.className="createUserMsg";msg.textContent="Caricamento vendite e riparazioni…";}
+  try{
+    const jobs=[];
+    const includeStock=document.getElementById("invoiceIncludeStock")?.checked;
+    const includeParts=document.getElementById("invoiceIncludeParts")?.checked;
+    const includeRepairs=document.getElementById("invoiceIncludeRepairs")?.checked;
+    jobs.push(includeStock?sb.from("beparytech_sales").select("id,customer,category,item_key,model,color,quantity,sold_at,is_archived,restored_to_inventory,delivered_at,delete_reason").gte("sold_at",from).lte("sold_at",to).limit(2000):Promise.resolve({data:[],error:null}));
+    jobs.push(includeParts?sb.from("beparytech_admin_device_sales").select("id,sold_at,store,device_name,sale_price,net_amount,vat_rate,vat_amount,note").gte("sold_at",from).lte("sold_at",to).limit(1000):Promise.resolve({data:[],error:null}));
+    jobs.push(includeRepairs?sb.from("beparytech_admin_repairs").select("id,repaired_at,store,device,repair_type,price_ex_vat,vat_rate,vat_amount,note").gte("repaired_at",from).lte("repaired_at",to).limit(1000):Promise.resolve({data:[],error:null}));
+    const [stockRes,partsRes,repairsRes]=await Promise.all(jobs); const firstErr=stockRes.error||partsRes.error||repairsRes.error;if(firstErr)throw firstErr;
+    const lines=[];
+    (stockRes.data||[]).filter(r=>invoiceIsTargetStore(r.customer)&&saleCountsAsSold(r)).forEach(r=>{const unit=saleUnitPrice(r);if(unit==null)return;const qty=Math.max(1,Number(r.quantity||1));lines.push({date:invoiceLineDate(r.sold_at),store:r.customer,source:"Magazzino",description:`${r.category||"Ricambio"} ${r.model||""}${r.color?` · ${r.color}`:""}`.trim(),qty,unitNet:Number(unit),vatRate:22,ref:`MAG-${r.id}`});});
+    (partsRes.data||[]).filter(r=>invoiceIsTargetStore(r.store)).forEach(r=>{const net=Number(r.net_amount??r.sale_price??0);lines.push({date:invoiceLineDate(r.sold_at),store:r.store,source:"Vendita ricambio",description:r.device_name||"Ricambio elettronico",qty:1,unitNet:net,vatRate:Number(r.vat_rate??22),ref:`RIC-${r.id}`});});
+    (repairsRes.data||[]).filter(r=>invoiceIsTargetStore(r.store)).forEach(r=>{const note=String(r.note||"");const m=note.match(/Rif\. e-Share:\s*([^·]+)/i);lines.push({date:invoiceLineDate(r.repaired_at),store:r.store,source:"Riparazione",description:`Riparazione ${r.device||"dispositivo"} · ${r.repair_type||"lavorazione"}${m?` · Rif. e-Share ${m[1].trim()}`:""}`,qty:1,unitNet:Number(r.price_ex_vat||0),vatRate:Number(r.vat_rate??22),ref:`RIP-${r.id}`});});
+    lines.sort((a,b)=>a.date.localeCompare(b.date)||a.store.localeCompare(b.store,"it")); invoiceAutomationLines=lines; renderInvoicePreview();
+    if(msg){msg.className="createUserMsg ok";msg.textContent=lines.length?`${lines.length} righe trovate per Riparalo / MELA.`:"Nessuna voce trovata nel periodo selezionato.";}
+  }catch(e){invoiceAutomationLines=[];renderInvoicePreview();if(msg){msg.className="createUserMsg error";msg.textContent=e.message||"Impossibile creare l’anteprima.";}}
+}
+function renderInvoicePreview(){
+  const lines=invoiceAutomationLines,box=document.getElementById("invoiceLines"),sum=document.getElementById("invoiceSummary");
+  const net=lines.reduce((a,r)=>a+r.unitNet*r.qty,0),vat=lines.reduce((a,r)=>a+(r.unitNet*r.qty*r.vatRate/100),0),gross=net+vat;
+  if(sum)sum.innerHTML=`<div><span>Righe</span><strong>${lines.length}</strong></div><div><span>Imponibile</span><strong>${euroFmt.format(net)}</strong></div><div><span>IVA</span><strong>${euroFmt.format(vat)}</strong></div><div><span>Totale</span><strong>${euroFmt.format(gross)}</strong></div>`;
+  if(box)box.innerHTML=lines.length?lines.map((r,i)=>`<article class="invoiceLine"><div class="invoiceLineNo">${i+1}</div><div class="invoiceLineMain"><strong>${escapeHtml(r.description)}</strong><span>${escapeHtml(r.store)} · ${new Date(r.date+"T12:00:00").toLocaleDateString("it-IT")} · ${escapeHtml(r.source)}</span></div><div class="invoiceLineMoney"><strong>${euroFmt.format(r.unitNet*r.qty)}</strong><span>${r.qty>1?`${r.qty} × ${euroFmt.format(r.unitNet)} · `:""}IVA ${r.vatRate}%</span></div></article>`).join(""):'<div class="emptyState">Nessuna voce da fatturare.</div>';
+  const csv=document.getElementById("invoiceCsvBtn"),xml=document.getElementById("invoiceXmlBtn");if(csv)csv.disabled=!lines.length;if(xml)xml.disabled=!lines.length;
+}
+function invoiceDocumentBasics(){return {number:String(document.getElementById("invoiceNumber")?.value||"").trim(),date:document.getElementById("invoiceDate")?.value||""};}
+function downloadBlobText(name,text,type){const blob=new Blob([text],{type});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+function exportInvoiceCsv(){
+  if(!invoiceAutomationLines.length)return; const doc=invoiceDocumentBasics(); const head=["Data","Negozio interno","Tipo","Descrizione","Quantita","Prezzo unitario netto","IVA %","Imponibile riga","Riferimento"];
+  const rows=invoiceAutomationLines.map(r=>[r.date,r.store,r.source,r.description,r.qty,r.unitNet.toFixed(2),r.vatRate,(r.unitNet*r.qty).toFixed(2),r.ref]);
+  const text='\ufeff'+[head,...rows].map(row=>row.map(csvEsc).join(";")).join("\r\n");downloadBlobText(`Riparalo_${doc.number||"bozza"}_${doc.date||localDateISO()}.csv`,text,"text/csv;charset=utf-8");
+}
+function buildFatturaPaXml(){
+  const issuer=readIssuer(),err=validateIssuer(issuer);if(err)throw new Error(err);const doc=invoiceDocumentBasics();if(!doc.number||!doc.date)throw new Error("Inserisci numero e data della fattura.");if(!invoiceAutomationLines.length)throw new Error("Non ci sono righe da fatturare.");
+  const totals=new Map();invoiceAutomationLines.forEach(r=>{const key=Number(r.vatRate||0).toFixed(2),net=r.unitNet*r.qty,vat=net*Number(r.vatRate||0)/100;const x=totals.get(key)||{net:0,vat:0,rate:Number(r.vatRate||0)};x.net+=net;x.vat+=vat;totals.set(key,x);});
+  const netTotal=[...totals.values()].reduce((a,x)=>a+x.net,0),vatTotal=[...totals.values()].reduce((a,x)=>a+x.vat,0),gross=netTotal+vatTotal;
+  const progressive=(Date.now().toString(36).slice(-5)+Math.random().toString(36).slice(2,4)).toUpperCase().slice(0,10);
+  const details=invoiceAutomationLines.map((r,i)=>`<DettaglioLinee><NumeroLinea>${i+1}</NumeroLinea><Descrizione>${xmlEsc(`${r.description} [${r.store}]`)}</Descrizione><Quantita>${Number(r.qty).toFixed(2)}</Quantita><PrezzoUnitario>${Number(r.unitNet).toFixed(2)}</PrezzoUnitario><PrezzoTotale>${(r.unitNet*r.qty).toFixed(2)}</PrezzoTotale><AliquotaIVA>${Number(r.vatRate).toFixed(2)}</AliquotaIVA></DettaglioLinee>`).join("");
+  const recap=[...totals.values()].map(x=>`<DatiRiepilogo><AliquotaIVA>${x.rate.toFixed(2)}</AliquotaIVA><ImponibileImporto>${x.net.toFixed(2)}</ImponibileImporto><Imposta>${x.vat.toFixed(2)}</Imposta><EsigibilitaIVA>I</EsigibilitaIVA></DatiRiepilogo>`).join("");
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<p:FatturaElettronica versione="FPR12" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:p="http://ivaservizi.agenziaentrate.gov.it/docs/xsd/fatture/v1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><FatturaElettronicaHeader><DatiTrasmissione><IdTrasmittente><IdPaese>IT</IdPaese><IdCodice>${xmlEsc(issuer.vat)}</IdCodice></IdTrasmittente><ProgressivoInvio>${progressive}</ProgressivoInvio><FormatoTrasmissione>FPR12</FormatoTrasmissione><CodiceDestinatario>${RIPARALO_INVOICE_CLIENT.recipientCode}</CodiceDestinatario></DatiTrasmissione><CedentePrestatore><DatiAnagrafici><IdFiscaleIVA><IdPaese>IT</IdPaese><IdCodice>${xmlEsc(issuer.vat)}</IdCodice></IdFiscaleIVA>${issuer.taxCode?`<CodiceFiscale>${xmlEsc(issuer.taxCode)}</CodiceFiscale>`:""}<Anagrafica><Denominazione>${xmlEsc(issuer.name)}</Denominazione></Anagrafica><RegimeFiscale>${xmlEsc(issuer.regime)}</RegimeFiscale></DatiAnagrafici><Sede><Indirizzo>${xmlEsc(issuer.address)}</Indirizzo><CAP>${xmlEsc(issuer.zip)}</CAP><Comune>${xmlEsc(issuer.city)}</Comune><Provincia>${xmlEsc(issuer.province)}</Provincia><Nazione>IT</Nazione></Sede></CedentePrestatore><CessionarioCommittente><DatiAnagrafici><IdFiscaleIVA><IdPaese>IT</IdPaese><IdCodice>${RIPARALO_INVOICE_CLIENT.vat}</IdCodice></IdFiscaleIVA><CodiceFiscale>${RIPARALO_INVOICE_CLIENT.taxCode}</CodiceFiscale><Anagrafica><Denominazione>${RIPARALO_INVOICE_CLIENT.name}</Denominazione></Anagrafica></DatiAnagrafici><Sede><Indirizzo>${RIPARALO_INVOICE_CLIENT.address}</Indirizzo><CAP>${RIPARALO_INVOICE_CLIENT.zip}</CAP><Comune>${RIPARALO_INVOICE_CLIENT.city}</Comune><Provincia>${RIPARALO_INVOICE_CLIENT.province}</Provincia><Nazione>IT</Nazione></Sede></CessionarioCommittente></FatturaElettronicaHeader><FatturaElettronicaBody><DatiGenerali><DatiGeneraliDocumento><TipoDocumento>TD01</TipoDocumento><Divisa>EUR</Divisa><Data>${xmlEsc(doc.date)}</Data><Numero>${xmlEsc(doc.number)}</Numero><ImportoTotaleDocumento>${gross.toFixed(2)}</ImportoTotaleDocumento></DatiGeneraliDocumento></DatiGenerali><DatiBeniServizi>${details}${recap}</DatiBeniServizi></FatturaElettronicaBody></p:FatturaElettronica>`;
+}
+function exportInvoiceXml(){try{if(!saveIssuerSettings())return;const doc=invoiceDocumentBasics(),xml=buildFatturaPaXml();const safeNum=(doc.number||"fattura").replace(/[^A-Za-z0-9_-]+/g,"_");downloadBlobText(`IT${readIssuer().vat}_${safeNum}.xml`,xml,"application/xml;charset=utf-8");const msg=document.getElementById("invoiceLoadMsg");if(msg){msg.className="createUserMsg ok";msg.textContent="XML generato. Aprilo o caricalo su Aruba e controlla l’anteprima prima dell’invio.";}}catch(e){const msg=document.getElementById("invoiceLoadMsg");if(msg){msg.className="createUserMsg error";msg.textContent=e.message||"Errore generazione XML.";}}}
+function bindInvoiceAutomation(){
+  const panel=document.getElementById("adminInvoicesPanel");if(!panel||panel.dataset.bound==="1")return;panel.dataset.bound="1";defaultInvoicePeriod();loadIssuerSettings();
+  document.getElementById("saveIssuerBtn")?.addEventListener("click",saveIssuerSettings);document.getElementById("invoiceRefreshBtn")?.addEventListener("click",buildRiparaloInvoicePreview);document.getElementById("invoiceCsvBtn")?.addEventListener("click",exportInvoiceCsv);document.getElementById("invoiceXmlBtn")?.addEventListener("click",exportInvoiceXml);
+}
+document.addEventListener("DOMContentLoaded",bindInvoiceAutomation);
 
 // ===== v53: pannelli Orari chiusi + navigazione contestuale responsive =====
 function bindHourAccordions(){
