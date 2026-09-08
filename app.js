@@ -27,6 +27,9 @@ let selectedUserForAccountOperators = null;
 let customSections = [];
 let customProducts = [];
 let currentCustomSectionId = null;
+let storeList = [];
+let adminCosts = {};
+let salesStoreFilter = "ALL";
 
 const inventory = document.getElementById("inventory");
 const modelTemplate = document.getElementById("modelTemplate");
@@ -61,6 +64,18 @@ function passesFilter(q){
   if(filter.value==="empty") return q===0;
   return true;
 }
+
+
+function fixedCostKey(category,itemKey){return `FIXED||${category}||${itemKey}`;}
+function customCostKey(id){return `PRODUCT||${Number(id)}`;}
+function costValue(key){const v=adminCosts[key];return v==null?null:Number(v);}
+function costBadgeHtml(key){if(!isAdmin())return "";const v=costValue(key);return `<div class="adminCostBadge"><span>Costo</span><strong>${v==null?"Da impostare":eur(v)}</strong><button type="button" class="editCostBtn" data-cost-key="${escapeHtml(key)}">✎</button></div>`;}
+async function loadAdminCosts(){adminCosts={};if(!isAdmin())return;const {data,error}=await sb.from("beparytech_product_costs").select("item_key,cost_ex_vat");if(error){console.error(error);return;}(data||[]).forEach(r=>adminCosts[r.item_key]=Number(r.cost_ex_vat));}
+async function editCost(key,label){if(!isAdmin())return;const old=costValue(key);const raw=prompt(`Costo prodotto · ${label}\nInserisci il costo in euro IVA esclusa`,old==null?"":String(old).replace(".",","));if(raw===null)return;const value=Number(String(raw).replace(",","."));if(!Number.isFinite(value)||value<0){alert("Inserisci un costo valido.");return;}const {error}=await sb.from("beparytech_product_costs").upsert({workspace_owner_id:workspaceOwnerId,item_key:key,cost_ex_vat:value,updated_by:currentUser.id},{onConflict:"workspace_owner_id,item_key"});if(error){alert(error.message);return;}adminCosts[key]=value;if(String(currentCategory).startsWith("custom:"))renderCustomSection();else render();}
+async function loadStores(){if(!currentUser){storeList=[];return;}const {data,error}=await sb.rpc("list_beparytech_stores");if(error){console.error(error);storeList=[];return;}storeList=Array.isArray(data)?data:[];populateStoreControls();renderSalesStoreTabs();if(isAdmin())renderStoreAdmin();}
+function populateStoreControls(){const ids=["saleCustomerSelect","editStoreSelect","deviceSaleStore","adminRepairStore"];ids.forEach(id=>{const el=document.getElementById(id);if(!el)return;const prev=el.value;el.innerHTML=`<option value="">Seleziona negozio…</option>`+storeList.filter(x=>x.active!==false).map(x=>`<option value="${escapeHtml(x.name)}">${escapeHtml(x.name)}${x.admin_only?" · ADMIN":""}</option>`).join("");if([...el.options].some(o=>o.value===prev))el.value=prev;});}
+function renderSalesStoreTabs(){const box=document.getElementById("salesStoreTabs");if(!box)return;const names=["ALL",...storeList.filter(x=>x.active!==false).map(x=>x.name)];if(salesStoreFilter!=="ALL"&&!names.includes(salesStoreFilter))salesStoreFilter="ALL";box.innerHTML=names.map(n=>`<button type="button" class="salesStoreTab ${salesStoreFilter===n?"active":""}" data-store="${escapeHtml(n)}">${n==="ALL"?"Tutti i negozi":escapeHtml(n)}</button>`).join("");box.querySelectorAll(".salesStoreTab").forEach(b=>b.onclick=()=>{salesStoreFilter=b.dataset.store;renderSales();renderSalesStoreTabs();});}
+async function renderStoreAdmin(){const box=document.getElementById("storeAdminList");if(!box||!isAdmin())return;box.innerHTML=storeList.length?storeList.map(s=>`<div class="storeAdminRow" data-id="${s.id}"><div><strong>${escapeHtml(s.name)}</strong><small>${s.admin_only?"Solo Admin":"Visibile agli operatori"}${s.active===false?" · Disattivato":""}</small></div><div><button type="button" class="miniBtn renameStore">Rinomina</button><button type="button" class="miniBtn toggleStore">${s.active===false?"Riattiva":"Disattiva"}</button></div></div>`).join(""):"<div class='emptyState'>Nessun negozio.</div>";box.querySelectorAll(".renameStore").forEach(b=>b.onclick=async()=>{const row=storeList.find(x=>Number(x.id)===Number(b.closest("[data-id]").dataset.id));if(!row)return;const name=prompt("Nuovo nome negozio",row.name);if(!name||!name.trim())return;const {error}=await sb.from("beparytech_stores").update({name:name.trim()}).eq("id",row.id);if(error)alert(error.message);else await loadStores();});box.querySelectorAll(".toggleStore").forEach(b=>b.onclick=async()=>{const row=storeList.find(x=>Number(x.id)===Number(b.closest("[data-id]").dataset.id));if(!row)return;const {error}=await sb.from("beparytech_stores").update({active:row.active===false}).eq("id",row.id);if(error)alert(error.message);else await loadStores();});}
 
 async function loadCloud(){
   if(!currentUser) return;
@@ -144,6 +159,7 @@ function render(){
       const qty=getQty(model,color), [label,cls]=statusFor(qty);
       row.querySelector(".colorName").textContent=color; row.querySelector(".dot").style.background=colorDot(color);
       qtyInput.value=qty; status.textContent=label; status.className="status "+cls;
+      if(isAdmin()){const colorRow=row.querySelector(".colorRow")||row.firstElementChild;const k=fixedCostKey(currentCategory,keyFor(model,color));if(colorRow){const wrap=document.createElement("div");wrap.innerHTML=costBadgeHtml(k);const costNode=wrap.firstElementChild;if(costNode){costNode.querySelector(".editCostBtn").onclick=()=>editCost(k,`${model} · ${color}`);colorRow.appendChild(costNode);}}}
       row.querySelector(".minus").onclick=()=>openSaleModal(model,color,qty);
       const plusBtn=row.querySelector(".plus");
       if(isAdmin()){
@@ -218,21 +234,9 @@ async function loadAccountOperators(){
   if(Array.isArray(data)) accountOperators=data.filter(o=>o && o.name);
 }
 function populateSaleOperatorControl(){
-  const control=document.getElementById("saleOperatorName");
-  if(!control) return;
-  if(accountOperators.length){
-    control.innerHTML='<option value="">Seleziona operatore…</option>'+accountOperators.map(o=>`<option value="${escapeHtml(o.name)}">${escapeHtml(o.name)}</option>`).join("");
-    control.value="";
-    document.getElementById("saleOperatorPassword").placeholder="Codice operatore";
-    const label=control.closest("label")?.querySelector(".fieldLabel"); if(label) label.textContent="Operatore *";
-    const passLabel=document.getElementById("saleOperatorPassword")?.closest("label")?.querySelector(".fieldLabel"); if(passLabel) passLabel.textContent="Codice operatore *";
-  }else{
-    control.innerHTML=`<option value="${escapeHtml(currentProfile?.username||"")}">${escapeHtml(currentProfile?.username||"Operatore")}</option>`;
-    control.value=currentProfile?.username||"";
-    document.getElementById("saleOperatorPassword").placeholder="Password operatore";
-    const label=control.closest("label")?.querySelector(".fieldLabel"); if(label) label.textContent="Nome operatore *";
-    const passLabel=document.getElementById("saleOperatorPassword")?.closest("label")?.querySelector(".fieldLabel"); if(passLabel) passLabel.textContent="Password operatore *";
-  }
+  const hidden=document.getElementById("saleOperatorName");if(hidden){hidden.innerHTML='<option value=""></option>';hidden.value="";}
+  const code=document.getElementById("saleOperatorPassword");if(code){code.placeholder="Codice operatore";code.value="";}
+  const resolved=document.getElementById("saleOperatorResolvedName");if(resolved)resolved.textContent="Automatico dal codice";
 }
 async function loadMyProfile(){
   currentProfile=null; workspaceOwnerId=currentUser?.id || null; accountOperators=[];
@@ -254,8 +258,7 @@ async function showAuth(user){
   if(user){
     document.getElementById("userEmail").textContent=user.email;
     await loadMyProfile();
-    await loadCloud();
-    await loadCustomCatalog();
+    await Promise.all([loadCloud(),loadCustomCatalog(),loadAdminCosts(),loadStores()]);
     document.getElementById("globalSearchBar").hidden=false;
     setCategory("Dashboard");
   }else{
@@ -512,15 +515,11 @@ function closeSaleModal(){
 }
 function updateSaleConfirmState(){
   selectedCustomer=document.getElementById("saleCustomerSelect").value||null;
-  const operator=document.getElementById("saleOperatorName").value.trim();
-  const pass=document.getElementById("saleOperatorPassword").value;
-  const eShare=document.getElementById("saleEShareRef").value.trim();
-  document.getElementById("confirmSaleBtn").disabled=!(selectedCustomer&&operator&&pass.length>=4&&eShare);
+  const pass=document.getElementById("saleOperatorPassword").value.trim();
+  document.getElementById("confirmSaleBtn").disabled=!(selectedCustomer&&pass.length>=4);
 }
 document.getElementById("saleCustomerSelect").addEventListener("change",updateSaleConfirmState);
-document.getElementById("saleOperatorName").addEventListener("change",updateSaleConfirmState);
 document.getElementById("saleOperatorPassword").addEventListener("input",updateSaleConfirmState);
-document.getElementById("saleEShareRef").addEventListener("input",updateSaleConfirmState);
 document.getElementById("cancelSaleBtn").onclick=closeSaleModal;
 document.getElementById("cancelSaleX").onclick=closeSaleModal;
 document.getElementById("saleModal").addEventListener("click",e=>{if(e.target.id==="saleModal") closeSaleModal();});
@@ -532,9 +531,9 @@ document.getElementById("confirmSaleBtn").onclick=async()=>{
   const p=pendingSale;
   const commonOperator={
     p_customer:selectedCustomer,
-    p_operator_name:document.getElementById("saleOperatorName").value.trim(),
+    p_operator_name:"",
     p_operator_password:document.getElementById("saleOperatorPassword").value,
-    p_note:(()=>{const r=document.getElementById("saleEShareRef").value.trim();const n=document.getElementById("saleNote").value.trim();return `Rif. e-Share: ${r}${n?` · ${n}`:""}`;})()
+    p_note:(()=>{const r=document.getElementById("saleEShareRef").value.trim();const n=document.getElementById("saleNote").value.trim();return [r?`Rif. e-Share: ${r}`:"",n].filter(Boolean).join(" · ")||null;})()
   };
   const result=p.kind==="custom"
     ? await sb.rpc("record_beparytech_product_sale",{p_product_id:p.productId,...commonOperator})
@@ -562,7 +561,7 @@ async function loadSales(){
   list.innerHTML='<div class="emptyState">Caricamento vendite…</div>';
   const {data,error}=await sb.from("beparytech_sales").select("id,customer,category,item_key,model,color,quantity,sold_at,is_archived,deleted_at,delete_reason,restored_to_inventory,actor_user_id,operator_name,operator_note,restore_reason,delivered_at,delivered_by").order("sold_at",{ascending:false}).limit(1000);
   if(error){list.innerHTML='<div class="emptyState">Errore nel caricamento delle vendite.</div>'; return;}
-  sales=data||[]; renderSales();
+  sales=data||[]; renderSalesStoreTabs(); renderSales();
 }
 function renderSales(){
   const list=document.getElementById("salesList");
@@ -573,7 +572,7 @@ function renderSales(){
   document.getElementById("soldSummaryTab")?.classList.toggle("active",summary);
   if(summary){renderSalesSummary();return;}
 
-  const visible=sales.filter(s=>Boolean(s.is_archived)===archived);
+  const visible=sales.filter(s=>Boolean(s.is_archived)===archived).filter(s=>salesStoreFilter==="ALL"||s.customer===salesStoreFilter);
   if(!visible.length){list.innerHTML=`<div class="emptyState">${archived?"Nessuna vendita nell’archivio.":"Nessuna vendita registrata."}</div>`; return;}
   const fmt=new Intl.DateTimeFormat("it-IT",{day:"2-digit",month:"2-digit",year:"2-digit",hour:"2-digit",minute:"2-digit"});
   list.innerHTML=visible.map(s=>{
@@ -944,12 +943,12 @@ function renderCustomSection(){
       const q=Number(p.quantity||0),[status,cls]=customStatus(q,Number(p.low_stock_threshold||2));
       const card=document.createElement("article");card.className="customProductCard";card.dataset.productId=String(p.id);
       const customUnitPrice=String(section?.name||"").trim().toLowerCase()==="backglass" ? backGlassUnitPrice(p.name) : null;
-      const customPriceHtml=customUnitPrice==null?"":`<div class="inventoryPriceTag"><span>Prezzo vendita</span><strong>${eur(customUnitPrice)} + IVA</strong><small>${eur(customUnitPrice*1.22)} IVA incl.</small></div>`;
+      const customPriceHtml=(customUnitPrice==null?"":`<div class="inventoryPriceTag"><span>Prezzo vendita</span><strong>${eur(customUnitPrice)} + IVA</strong><small>${eur(customUnitPrice*1.22)} IVA incl.</small></div>`)+costBadgeHtml(customCostKey(p.id));
       card.innerHTML=`<div class="customProductTop"><div class="productVisual"><img class="productModelImage" src="${escapeHtml(imageForModel(p.name))}" alt="${escapeHtml(p.name)}"><span>${escapeHtml(p.name).charAt(0).toUpperCase()}</span></div><div class="customProductInfo"><strong>${escapeHtml(p.variant||p.name)}</strong><span>${escapeHtml(p.variant? p.name : (section?.name||""))}</span>${p.sku||p.barcode?`<small>${escapeHtml(p.sku||p.barcode)}</small>`:""}<b class="status ${cls}">${status}</b></div></div>${customPriceHtml}<div class="customProductBottom"><div class="customQty"><small>Giacenza</small><strong>${q}</strong></div><div class="customActions"><button class="minus customMinus animatedBtn" type="button" title="Scarica 1 dalla giacenza" ${q<=0?"disabled":""}>−1 Scarica</button>${isAdmin()?'<button class="plus customPlus animatedBtn" type="button">+1</button><button class="edit customEdit animatedBtn" type="button" title="Modifica prodotto">✎</button>':""}</div></div>`;
       const modelImg=card.querySelector(".productModelImage");modelImg.onerror=()=>{modelImg.hidden=true;modelImg.nextElementSibling.hidden=false};modelImg.onload=()=>{modelImg.nextElementSibling.hidden=true};
       card.querySelector(".customMinus").onclick=()=>openCustomSaleModal(p,section);
       const plus=card.querySelector(".customPlus"); if(plus)plus.onclick=()=>updateCustomProductQty(p,q+1);
-      const edit=card.querySelector(".customEdit");if(edit)edit.onclick=()=>editCustomProduct(p);
+      const edit=card.querySelector(".customEdit");if(edit)edit.onclick=()=>editCustomProduct(p);const costBtn=card.querySelector(".editCostBtn");if(costBtn)costBtn.onclick=()=>editCost(customCostKey(p.id),`${p.name} · ${p.variant||""}`);
       bodyGrid.appendChild(card);
     });
     const header=group.querySelector(".customModelHeader");
@@ -1564,6 +1563,10 @@ function bindAdminRepairs(){
  });
  updateAdminRepairVatPreview();
 }
+
+const storeAdminForm=document.getElementById("storeAdminForm");
+if(storeAdminForm)storeAdminForm.addEventListener("submit",async e=>{e.preventDefault();if(!isAdmin())return;const name=document.getElementById("storeAdminName").value.trim(),admin_only=document.getElementById("storeAdminPrivate").checked,msg=document.getElementById("storeAdminMsg");if(!name)return;const {error}=await sb.from("beparytech_stores").insert({workspace_owner_id:workspaceOwnerId,name,admin_only,active:true,created_by:currentUser.id});if(error){msg.className="createUserMsg error";msg.textContent=error.message;return;}e.target.reset();msg.className="createUserMsg ok";msg.textContent="Negozio aggiunto.";await loadStores();});
+
 document.addEventListener("DOMContentLoaded",bindAdminRepairs);
 setInterval(bindAdminRepairs,1500);
 

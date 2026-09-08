@@ -10,10 +10,10 @@
   <meta name="apple-mobile-web-app-title" content="BeparyTech">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
   <title>BeparyTech • Magazzino Ricambi iPhone</title>
-  <link rel="manifest" href="manifest.json?v=72">
+  <link rel="manifest" href="manifest.json?v=74">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=72">
+  <link rel="stylesheet" href="style.css?v=74">
 
 
 
@@ -157,6 +157,8 @@
         <button id="archiveSalesTab" class="salesSubTab" type="button">Archivio vendite</button>
         <button id="soldSummaryTab" class="salesSubTab" type="button">Riepilogo venduto</button>
       </div>
+      <div class="salesStoreHead"><strong>Dividi per negozio</strong><span>Scegli un negozio per vedere solo le sue vendite</span></div>
+      <div id="salesStoreTabs" class="salesStoreTabs" role="tablist" aria-label="Vendite per negozio"></div>
       <div id="salesList"></div>
     </section>
 
@@ -341,6 +343,16 @@
         </form>
       </div>
       <div class="catalogCard catalogListCard"><div class="catalogListHead"><div><strong>Sezioni create</strong><small>Prodotti disponibili nel menu</small></div><button id="refreshCatalogBtn" class="miniBtn animatedBtn" type="button">Aggiorna</button></div><div id="catalogAdminList"></div></div>
+      <div class="catalogCard storeManagerCard adminOnlyBlock">
+        <div class="catalogListHead"><div><strong>Gestione negozi</strong><small>Solo Admin · aggiungi, modifica o disattiva negozi</small></div><span class="adminBadge">ADMIN</span></div>
+        <form id="storeAdminForm" class="storeAdminForm">
+          <input id="storeAdminName" maxlength="80" placeholder="Nome negozio" required>
+          <label class="storePrivateToggle"><input id="storeAdminPrivate" type="checkbox"><span>Solo Admin</span></label>
+          <button class="primaryAction" type="submit">+ Aggiungi negozio</button>
+        </form>
+        <div id="storeAdminMsg" class="createUserMsg"></div>
+        <div id="storeAdminList" class="storeAdminList"></div>
+      </div>
     </section>
   </div>
 
@@ -348,29 +360,17 @@
     <div class="saleDialog" role="dialog" aria-modal="true" aria-labelledby="saleTitle">
       <div class="saleDialogHead"><div><span class="saleKicker">SCARICO MAGAZZINO</span><h2 id="saleTitle">Scarica 1 dalla giacenza</h2></div><button id="cancelSaleX" class="closeBtn" type="button" aria-label="Chiudi">×</button></div>
       <div id="saleItemLabel" class="saleItemLabel"></div>
-      <div class="operatorGrid">
-        <label><span class="fieldLabel">Nome operatore *</span><select id="saleOperatorName" class="modalSelect"><option value="">Operatore</option></select></label>
-        <label><span class="fieldLabel">Password operatore *</span><input id="saleOperatorPassword" class="modalInput" type="password" autocomplete="off" placeholder="Password operatore"></label>
+      <div class="operatorGrid operatorCodeOnly">
+        <label><span class="fieldLabel">Codice operatore *</span><input id="saleOperatorPassword" class="modalInput" type="password" inputmode="numeric" maxlength="12" autocomplete="off" placeholder="Inserisci il codice operatore"></label>
+        <div class="operatorResolved"><span>Nome operatore</span><strong id="saleOperatorResolvedName">Automatico dal codice</strong></div>
+        <select id="saleOperatorName" hidden><option value=""></option></select>
       </div>
       <label class="fieldLabel" for="saleCustomerSelect">Negozio *</label>
       <select id="saleCustomerSelect" class="modalSelect customerSelect">
         <option value="">Seleziona un negozio…</option>
-        <option>RPL Piacenza</option>
-        <option>RPL Manerbio</option>
-        <option>MELA Piacenza</option>
-        <option>MELA Lime Store</option>
-        <option>MELA Repubblica</option>
-        <option>MELA Emilia Est</option>
-        <option>DP Udine</option>
-        <option>DP Majano</option>
-        <option>DP Tolmezzo</option>
-        <option>DP Cividale</option>
-        <option>DP Codroipo</option>
-        <option>DP Colugna</option>
-        <option>E-POL</option>
       </select>
-      <label class="fieldLabel" for="saleEShareRef">Riferimento e-Share *</label>
-      <input id="saleEShareRef" class="modalInput" type="text" maxlength="120" autocomplete="off" placeholder="es. 8107" required>
+      <label class="fieldLabel" for="saleEShareRef">Riferimento e-Share <span class="optionalText">(facoltativo)</span></label>
+      <input id="saleEShareRef" class="modalInput" type="text" maxlength="120" autocomplete="off" placeholder="es. 8107">
       <label class="fieldLabel" for="saleNote">Nota <span class="optionalText">(facoltativa)</span></label>
       <textarea id="saleNote" class="reasonInput" rows="3" placeholder="Scrivi una nota sull'operazione…"></textarea>
       <div id="saleError" class="saleError"></div>
@@ -385,7 +385,7 @@
       <div id="editStoreItem" class="saleItemLabel"></div>
       <label class="fieldLabel" for="editStoreSelect">Negozio</label>
       <select id="editStoreSelect" class="modalSelect">
-        <option>RPL Piacenza</option><option>RPL Manerbio</option><option>MELA Piacenza</option><option>MELA Lime Store</option><option>MELA Repubblica</option><option>MELA Emilia Est</option><option>DP Udine</option><option>DP Majano</option><option>DP Tolmezzo</option><option>DP Cividale</option><option>DP Codroipo</option><option>DP Colugna</option><option>E-POL</option>
+        <option value="">Seleziona negozio…</option>
       </select>
       <div id="editStoreError" class="saleError"></div>
       <div class="saleActions"><button id="editStoreCancel" class="secondaryAction" type="button">Annulla</button><button id="editStoreSave" class="primaryAction" type="button">Salva</button></div>
@@ -504,7 +504,7 @@
  <button type="button" data-smart-action="menu"><b>☰</b><span>Menu</span></button>
 </nav>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
-<script src="app.js?v=72"></script>
+<script src="app.js?v=74"></script>
 
 
 

@@ -1,0 +1,9 @@
+BeparyTech v74
+- Header PC responsive su notebook e monitor larghi
+- Vendite divise per negozio con filtri dinamici
+- DL disponibile solo Admin
+- Gestione negozi Admin: aggiungi/rinomina/disattiva
+- Costi prodotto IVA esclusa, separati e visibili solo Admin
+- Codice operatore obbligatorio; nome risolto automaticamente lato database
+- Riferimento e-Share facoltativo
+- Nota facoltativa
