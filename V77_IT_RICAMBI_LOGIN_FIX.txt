@@ -1,0 +1,9 @@
+BeparyTech v77 — IT-Ricambi login fix
+
+- Corretto endpoint login: /login.html
+- Gestione corretta dei form GET e POST
+- Conservazione hidden fields e pulsante submit
+- Redirect/cookie più robusti
+- Verifica sessione su più pagine IT-Ricambi
+- Errori distinti: credenziali, form cambiato, sessione non creata, cookie mancante
+- Password non salvata; sessione lato server fino a 24 ore o scadenza anticipata IT-Ricambi
