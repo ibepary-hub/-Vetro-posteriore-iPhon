@@ -1,0 +1,9 @@
+BeparyTech v76 — IT-Ricambi sessione autenticata
+
+- Login IT-Ricambi una sola volta dalla finestra costo (solo Admin)
+- Password usata soltanto durante il login e non salvata
+- Cookie di sessione conservato esclusivamente lato server
+- Sessione riutilizzata per leggere i prezzi riservati
+- Timeout server + rilevamento scadenza anticipata IT-Ricambi
+- Se la sessione scade, il gestionale richiede automaticamente una nuova connessione
+- Disconnessione manuale disponibile
