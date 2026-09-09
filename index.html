@@ -7,13 +7,13 @@
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; frame-src 'none'; child-src 'none'; manifest-src 'self'; font-src 'self'; script-src 'self' https://cdn.jsdelivr.net; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; img-src 'self' data: blob:; media-src 'self' blob:; worker-src 'self' blob:; connect-src 'self' https://kqdcbrpykaboabjglwxu.supabase.co wss://kqdcbrpykaboabjglwxu.supabase.co; upgrade-insecure-requests;">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="BeparyTech">
+  <meta name="apple-mobile-web-app-title" content="BeparyTech Manager">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
-  <title>BeparyTech • Magazzino Ricambi iPhone</title>
-  <link rel="manifest" href="manifest.json?v=74">
+  <title>BeparyTech Manager</title>
+  <link rel="manifest" href="manifest.json?v=87">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=83">
+  <link rel="stylesheet" href="style.css?v=87">
 
 
 
@@ -21,7 +21,7 @@
 <body>
   <div id="menuOverlay" class="menuOverlay" hidden></div>
   <aside id="mainMenu" class="mainMenu" aria-hidden="true">
-    <div class="menuHead"><div class="menuBrand"><img src="icon-192.png" alt=""><div><strong>BeparyTech</strong><span>Gestionale magazzino</span></div></div><button id="menuClose" class="menuClose animatedBtn" type="button">×</button></div>
+    <div class="menuHead"><div class="menuBrand"><img src="icon-192.png" alt=""><div><strong>BeparyTech Manager</strong><span>Gestionale riparazioni & magazzino</span></div></div><button id="menuClose" class="menuClose animatedBtn" type="button">×</button></div>
     <nav class="menuNav">
       <button class="menuItem active" type="button" data-category="Dashboard"><span class="menuIcon">⌂</span><span><strong>Dashboard</strong><small>Riepilogo magazzino</small></span></button>
       <div id="customMenuSections" class="customMenuSections"></div>
@@ -44,8 +44,8 @@
       <div class="brandHead">
         <img src="icon-192.png" alt="BeparyTech" class="brandIcon">
         <div>
-          <div class="eyebrow">BEPARYTECH</div>
-          <h1>Magazzino ricambi iPhone</h1>
+          <div class="eyebrow">BEPARYTECH MANAGER</div>
+          <h1>Gestionale riparazioni & magazzino</h1>
         </div>
       </div>
       <div class="headerActions">
@@ -109,16 +109,60 @@
         <button id="logoutBtn" class="secondary full">Esci</button>
       </div>
     </section>
-    <section id="dashboardView" class="dashboardView" hidden>
-      <div class="dashboardHero premiumDashboardHero"><div class="dashboardHeroCopy"><span class="usersKicker">BEPARYTECH CONTROL</span><h2>Ciao, <span id="dashboardGreetingName">Admin</span> 👋</h2><p>Tutto sotto controllo. Magazzino, vendite e attività in un unico posto.</p></div><img src="iphone-15-pro.png" alt="" class="dashboardHeroPhone"><button id="refreshDashboardBtn" class="miniBtn animatedBtn" type="button">↻ Aggiorna</button></div>
-      <div class="quickAccessGrid" aria-label="Accesso rapido">
-        <button type="button" data-quick-category="BackGlass"><b>▣</b><span><strong>BackGlass</strong><small>Vetri posteriori</small></span></button>
-        <button type="button" data-quick-category="Housing"><b>▢</b><span><strong>Housing</strong><small>Scocche complete</small></span></button>
-        <button type="button" data-quick-category="Vendite"><b>✓</b><span><strong>Vendite</strong><small>Scarichi e consegne</small></span></button>
-        <button type="button" class="adminQuick" data-quick-category="CatalogoBestek"><b>BK</b><span><strong>Catalogo Bestek</strong><small>Codici e accessori</small></span></button>
+    <section id="dashboardView" class="dashboardView dashboardV87" hidden>
+      <div class="dashTopbar">
+        <div class="dashSearchVisual"><span>⌕</span><strong>Cerca prodotti, IMEI, clienti, fatture…</strong></div>
+        <div class="dashUserMini"><span id="dashUserInitials">BT</span><div><strong id="dashUserName">BeparyTech</strong><small id="dashUserRole">Amministratore</small></div></div>
       </div>
-      <div id="dashboardCards" class="dashboardCards"></div>
-      <div class="dashboardColumns"><div class="dashboardPanel"><button class="panelHead dashboardToggle" type="button" aria-expanded="false"><span><strong>Scorte basse</strong><small>Scorte basse ed esaurite</small></span><b class="panelChevron">⌄</b></button><div id="dashboardLowStock" class="dashboardPanelBody"></div></div><div class="dashboardPanel"><button class="panelHead dashboardToggle" type="button" aria-expanded="false"><span><strong>Ultimi movimenti</strong><small>Movimenti più recenti</small></span><b class="panelChevron">⌄</b></button><div id="dashboardActivity" class="dashboardPanelBody"></div></div></div>
+
+      <div class="dashboardHero premiumDashboardHero v87Hero">
+        <div class="dashboardHeroCopy"><span class="usersKicker">BEPARYTECH MANAGER</span><h2>Benvenuto, <span id="dashboardGreetingName">Admin</span>!</h2><p>Tutto sotto controllo, sempre.</p></div>
+        <div class="heroQuote">“Piccole riparazioni, grandi connessioni.”<small>— BeparyTech</small></div>
+        <button id="refreshDashboardBtn" class="miniBtn animatedBtn" type="button">↻ Aggiorna</button>
+      </div>
+
+      <div class="dashboardMainGrid">
+        <div class="dashboardCenterCol">
+          <div id="adminStatsArea" class="adminStatsArea adminOnly" hidden>
+            <div id="dashboardCards" class="dashboardCards dashboardKpis"></div>
+            <div class="dashboardAnalyticsGrid">
+              <section class="dashAnalyticsCard salesTrendCard">
+                <div class="dashCardHead"><div><strong>Andamento attività</strong><small>Ultimi 6 mesi</small></div><span class="adminBadge">ADMIN</span></div>
+                <div id="dashboardMiniChart" class="dashboardMiniChart"></div>
+              </section>
+              <section class="dashAnalyticsCard categoryMixCard">
+                <div class="dashCardHead"><div><strong>Riepilogo magazzino</strong><small>BackGlass & Housing</small></div></div>
+                <div id="dashboardCategoryMix" class="dashboardCategoryMix"></div>
+              </section>
+            </div>
+          </div>
+
+          <div class="quickAccessGrid v87QuickAccess" aria-label="Accesso rapido">
+            <button type="button" data-quick-category="BackGlass"><b>▣</b><span><strong>BackGlass</strong><small>Vetri posteriori · NO LOGO</small></span><em>Apri →</em></button>
+            <button type="button" data-quick-category="Housing"><b>▢</b><span><strong>Housing</strong><small>Scocche complete · NO LOGO</small></span><em>Apri →</em></button>
+            <button type="button" data-quick-category="Vendite"><b>✓</b><span><strong>Vendite</strong><small>Scarichi e consegne</small></span><em>Apri →</em></button>
+            <button type="button" class="adminQuick" data-quick-category="VenditeAdmin"><b>⌁</b><span><strong>Riparazioni</strong><small>Clienti aziendali</small></span><em>Apri →</em></button>
+          </div>
+
+          <div id="adminOperationalPanels" class="dashboardColumns adminOnly" hidden>
+            <div class="dashboardPanel open"><button class="panelHead dashboardToggle" type="button" aria-expanded="true"><span><strong>Scorte in esaurimento</strong><small>Articoli da controllare</small></span><b class="panelChevron">⌄</b></button><div id="dashboardLowStock" class="dashboardPanelBody"></div></div>
+            <div class="dashboardPanel open"><button class="panelHead dashboardToggle" type="button" aria-expanded="true"><span><strong>Ultimi movimenti</strong><small>Attività più recenti</small></span><b class="panelChevron">⌄</b></button><div id="dashboardActivity" class="dashboardPanelBody"></div></div>
+          </div>
+
+          <div id="standardDashboardNotice" class="standardDashboardNotice" hidden>
+            <strong>Area operativa</strong><span>Usa i collegamenti rapidi per aprire magazzino, vendite e sezioni autorizzate.</span>
+          </div>
+        </div>
+
+        <aside class="dashboardActionRail">
+          <button class="railAction blue" type="button" data-rail-category="Vendite"><b>＋</b><span>Nuova vendita</span></button>
+          <button class="railAction green adminQuick" type="button" data-rail-category="VenditeAdmin" data-work-target="repairs"><b>＋</b><span>Nuova riparazione</span></button>
+          <button class="railAction purple adminQuick" type="button" data-rail-category="Fatturazione"><b>▤</b><span>Genera fattura</span></button>
+          <button class="railAction dark adminQuick" type="button" data-rail-category="Fatturazione"><b>⇧</b><span>Esporta per Aruba</span></button>
+          <div class="noLogoReminder"><strong>⚠ BackGlass & Housing</strong><span>Tutti gli articoli vengono gestiti con la dicitura <b>NO LOGO</b>, anche nelle fatture.</span></div>
+          <div class="railRecent"><div class="dashCardHead"><strong>Accessi rapidi</strong></div><button type="button" data-rail-category="Cronologia">Cronologia <span>→</span></button><button type="button" class="adminQuick" data-rail-category="ScorteZero">Scorte a zero <span>→</span></button><button type="button" class="adminQuick" data-rail-category="Orari">Ore lavorate <span>→</span></button></div>
+        </aside>
+      </div>
     </section>
     <main id="inventory"></main>
     <section id="auditView" class="salesView" hidden><div class="salesHeader"><div><strong>Cronologia completa</strong><span>Movimenti, richieste e modifiche</span></div><button id="refreshAuditBtn" class="miniBtn animatedBtn" type="button">Aggiorna</button></div><div id="auditList"></div></section>
@@ -594,7 +638,7 @@
  <button type="button" data-smart-action="menu"><b>☰</b><span>Menu</span></button>
 </nav>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
-<script src="app.js?v=83"></script>
+<script src="app.js?v=87"></script>
 
 
 

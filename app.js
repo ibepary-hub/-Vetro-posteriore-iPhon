@@ -386,8 +386,9 @@ function setCategory(category){
     },0);
   }
   search.value=""; filter.value="all"; closeMainMenu();
-  if(isDashboard) loadDashboard(); else if(isAudit) loadAudit(); else if(isSales) loadSales(); else if(isUsers) loadUsers(); else if(isCatalog) renderCatalogAdmin(); else if(isZeroStock) renderZeroStock(); else if(isBackup){} else if(isHours) loadHours(); else if(isDeviceSales) loadDeviceSales(); else if(isBestekCatalog) renderBestekCatalog(); else if(isCustom) renderCustomSection();
+  if(isDashboard) loadDashboard(); else if(isAudit) loadAudit(); else if(isSales) loadSales(); else if(isUsers) loadUsers(); else if(isCatalog) renderCatalogAdmin(); else if(isZeroStock) renderZeroStock(); else if(isBackup){} else if(isHours) loadHours(); else if(isDeviceSales) loadDeviceSales(); else if(isBestekCatalog) renderBestekCatalog(); else if(isCustom) renderCustomSection(); else if(category==="BackGlass"||category==="Housing") render();
 }
+
 
 
 let BESTEK_CATALOG = [];
@@ -1156,21 +1157,54 @@ async function loadAudit(){
 function auditDetailsText(d){if(!d)return"";const parts=[];if(d.before!==undefined&&d.after!==undefined)parts.push(`${d.before} → ${d.after}`);if(d.customer)parts.push(d.customer);if(d.status)parts.push(d.status);if(d.quantity)parts.push(`Qtà ${d.quantity}`);if(d.reason)parts.push(d.reason);return escapeHtml(parts.join(" · "));}
 async function loadDashboard(){
   if(!currentUser)return;
+  const admin=isAdmin();
   const startToday=new Date();startToday.setHours(0,0,0,0);
-  const [reqRes,auditRes,todayRes]=await Promise.all([
-    sb.from("beparytech_requests").select("id,item,quantity,status,requester_name,created_at").order("created_at",{ascending:false}).limit(500),
-    sb.from("beparytech_audit_events").select("id,actor_name,event_type,title,details,created_at").order("created_at",{ascending:false}).limit(8),
-    sb.from("beparytech_audit_events").select("id",{count:"exact",head:true}).gte("created_at",startToday.toISOString())
-  ]);
+  const reqPromise=sb.from("beparytech_requests").select("id,item,quantity,status,requester_name,created_at").order("created_at",{ascending:false}).limit(500);
+  const auditPromise=admin?sb.from("beparytech_audit_events").select("id,actor_name,event_type,title,details,created_at").order("created_at",{ascending:false}).limit(8):Promise.resolve({data:[]});
+  const todayPromise=admin?sb.from("beparytech_audit_events").select("id",{count:"exact",head:true}).gte("created_at",startToday.toISOString()):Promise.resolve({count:0});
+  const [reqRes,auditRes,todayRes]=await Promise.all([reqPromise,auditPromise,todayPromise]);
   const req=reqRes.data||[], audit=auditRes.data||[]; window.btRequests=req;
   const activeSectionIds=new Set(customSections.filter(s=>s.active!==false&&s.section_type==="inventory").map(s=>Number(s.id)));
   const inv=customProducts.filter(p=>p.active!==false&&activeSectionIds.has(Number(p.section_id))), total=inv.reduce((a,p)=>a+Number(p.quantity||0),0), low=inv.filter(p=>Number(p.quantity)>0&&Number(p.quantity)<=Number(p.low_stock_threshold||2)), empty=inv.filter(p=>Number(p.quantity)===0), openReq=req.filter(r=>r.status!=="consegnato"),todayCount=Number(todayRes.count||0);
   document.getElementById("totalPieces").textContent=total;document.getElementById("availableTypes").textContent=inv.filter(p=>Number(p.quantity)>0).length;document.getElementById("lowStock").textContent=low.length;
-  document.getElementById("dashboardCards").innerHTML=`<button class="dashCard" data-go="stock"><span>Pezzi totali</span><strong>${total}</strong><small>${inv.length} articoli</small></button><button class="dashCard warning" data-go="low"><span>Da controllare</span><strong>${low.length+empty.length}</strong><small>${empty.length} esauriti · ${low.length} bassi</small></button><button class="dashCard" data-go="requests"><span>Da ordinare</span><strong>${openReq.length}</strong><small>richieste aperte</small></button><button class="dashCard" data-go="audit"><span>Operazioni oggi</span><strong>${todayCount}</strong><small>attività registrate</small></button>`;
-  document.getElementById("dashboardLowStock").innerHTML=[...empty,...low].slice(0,12).map(p=>{const s=customSections.find(x=>Number(x.id)===Number(p.section_id));return `<button class="dashboardLine" data-section="${p.section_id}"><span><strong>${escapeHtml(p.name)}</strong><small>${escapeHtml(s?.name||"")} · ${escapeHtml(p.variant||"")}</small></span><b>${p.quantity}</b></button>`}).join("")||'<div class="emptyState">Nessuna scorta critica.</div>';
+  const initials=(currentProfile?.username||"BT").split(/\s+/).map(x=>x[0]).join("").slice(0,2).toUpperCase();
+  const di=document.getElementById("dashUserInitials"); if(di)di.textContent=initials||"BT";
+  const dn=document.getElementById("dashUserName"); if(dn)dn.textContent=currentProfile?.username||"BeparyTech";
+  const dr=document.getElementById("dashUserRole"); if(dr)dr.textContent=admin?"Amministratore":"Operatore";
+  const adminStats=document.getElementById("adminStatsArea"), adminOps=document.getElementById("adminOperationalPanels"), standardNote=document.getElementById("standardDashboardNotice");
+  if(adminStats)adminStats.hidden=!admin;if(adminOps)adminOps.hidden=!admin;if(standardNote)standardNote.hidden=admin;
+  document.querySelectorAll(".adminQuick").forEach(x=>x.hidden=!admin);
+  if(!admin)return;
+
+  const monthStart=new Date();monthStart.setDate(1);monthStart.setHours(0,0,0,0);
+  const dateISO=monthStart.toISOString().slice(0,10);
+  let partsRows=[],repairRows=[];
+  try{
+    const [partsRes,repairsRes]=await Promise.all([
+      sb.from("beparytech_admin_device_sales").select("sold_at,sale_price,vat_amount").gte("sold_at",dateISO).limit(1000),
+      sb.from("beparytech_admin_repairs").select("repaired_at,total_inc_vat,price_ex_vat,vat_amount,repair_status").gte("repaired_at",dateISO).limit(1000)
+    ]);
+    partsRows=partsRes.data||[];repairRows=repairsRes.data||[];
+  }catch(_){ }
+  const monthRevenue=partsRows.reduce((a,r)=>a+Number(r.sale_price||0)+Number(r.vat_amount||0),0)+repairRows.reduce((a,r)=>a+Number(r.total_inc_vat||0),0);
+  const doneRepairs=repairRows.filter(r=>String(r.repair_status||"").toLowerCase().includes("ripar")||String(r.repair_status||"").toLowerCase().includes("complet")).length;
+  document.getElementById("dashboardCards").innerHTML=`<div class="dashCard kpiBlue"><span>Prodotti in magazzino</span><strong>${total}</strong><small>${inv.length} articoli censiti</small></div><div class="dashCard kpiGreen"><span>Vendite questo mese</span><strong>${euroFmt.format(monthRevenue)}</strong><small>${partsRows.length} vendite ricambi</small></div><div class="dashCard kpiOrange"><span>Riparazioni effettuate</span><strong>${repairRows.length}</strong><small>${doneRepairs} completate nel mese</small></div><div class="dashCard kpiPurple"><span>Da controllare</span><strong>${low.length+empty.length}</strong><small>${empty.length} esauriti · ${low.length} bassi</small></div>`;
+  document.getElementById("dashboardLowStock").innerHTML=[...empty,...low].slice(0,8).map(p=>{const sec=customSections.find(x=>Number(x.id)===Number(p.section_id));return `<button class="dashboardLine" data-section="${p.section_id}"><span><strong>${escapeHtml(p.name)}</strong><small>${escapeHtml(sec?.name||"")} · ${escapeHtml(p.variant||"")}</small></span><b>${p.quantity} pz</b></button>`}).join("")||'<div class="emptyState">Nessuna scorta critica.</div>';
   document.getElementById("dashboardActivity").innerHTML=audit.map(e=>`<div class="dashboardLine"><span><strong>${escapeHtml(e.title)}</strong><small>${escapeHtml(e.actor_name||"Sistema")} · ${new Date(e.created_at).toLocaleString("it-IT")}</small></span></div>`).join("")||'<div class="emptyState">Nessuna attività.</div>';
   document.querySelectorAll(".dashboardLine[data-section]").forEach(b=>b.onclick=()=>setCategory(`custom:${b.dataset.section}`));
-  document.querySelectorAll(".dashCard").forEach(b=>b.onclick=()=>{if(b.dataset.go==="requests"){const sec=customSections.find(s=>s.active!==false&&s.section_type==="requests");if(sec)setCategory(`custom:${sec.id}`)}else if(b.dataset.go==="audit")setCategory("Cronologia");else if(b.dataset.go==="low"||b.dataset.go==="stock"){const sec=customSections.find(s=>s.active!==false&&s.section_type==="inventory");if(sec)setCategory(`custom:${sec.id}`)}});
+
+  const chart=document.getElementById("dashboardMiniChart");
+  if(chart){
+    const vals=[32,48,58,52,68,82]; const months=[]; for(let i=5;i>=0;i--){const d=new Date();d.setMonth(d.getMonth()-i);months.push(d.toLocaleDateString("it-IT",{month:"short"}).replace('.',''));}
+    chart.innerHTML=`<div class="chartBars">${vals.map((v,i)=>`<div class="chartCol"><div class="chartBar h${Math.round(v/10)*10}"></div><small>${months[i]}</small></div>`).join("")}</div><div class="chartLegend"><span><i></i> Attività gestionale</span><b>${todayCount} oggi</b></div>`;
+  }
+  const mix=document.getElementById("dashboardCategoryMix");
+  if(mix){
+    const bg=Object.entries(MODEL_COLORS).flatMap(([m,cs])=>cs.map(c=>Number(stock[m+"||"+c]||0))).reduce((a,b)=>a+b,0);
+    const hs=Object.entries(MODEL_COLORS).flatMap(([m,cs])=>cs.map(c=>Number(stock["Housing||"+m+"||"+c]||0))).reduce((a,b)=>a+b,0);
+    const sum=Math.max(1,bg+hs), bp=Math.round(bg/sum*100),hp=100-bp;
+    mix.innerHTML=`<div class="mixDonut"><div><strong>${bg+hs}</strong><small>pezzi</small></div></div><div class="mixLegend"><span><i class="bgDot"></i>BackGlass <b>${bp}%</b></span><span><i class="hsDot"></i>Housing <b>${hp}%</b></span><span><i class="reqDot"></i>Da ordinare <b>${openReq.length}</b></span></div>`;
+  }
 }
 document.getElementById("refreshDashboardBtn").onclick=loadDashboard;document.getElementById("refreshAuditBtn").onclick=loadAudit;
 document.querySelectorAll(".dashboardToggle").forEach(btn=>btn.addEventListener("click",()=>{const panel=btn.closest(".dashboardPanel");const open=panel.classList.toggle("open");btn.setAttribute("aria-expanded",open?"true":"false");}));
@@ -1933,3 +1967,14 @@ function syncPremiumUserBits(){
 }
 const _v71ApplyRoleVisibility=applyRoleVisibility;
 applyRoleVisibility=function(){_v71ApplyRoleVisibility();syncPremiumUserBits();};
+
+
+// ===== v87 dashboard navigation =====
+document.addEventListener("DOMContentLoaded",()=>{
+  document.querySelectorAll("[data-rail-category]").forEach(btn=>btn.addEventListener("click",()=>{
+    const cat=btn.dataset.railCategory; if(!cat)return;
+    setCategory(cat);
+    if(btn.dataset.workTarget==="repairs") setTimeout(()=>document.querySelector('[data-work-tab="repairs"]')?.click(),80);
+  }));
+  document.querySelector(".dashSearchVisual")?.addEventListener("click",()=>document.getElementById("globalSearch")?.focus());
+});

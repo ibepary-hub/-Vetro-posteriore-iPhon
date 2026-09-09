@@ -1,0 +1,11 @@
+V87 — BeparyTech Manager
+
+- Nuova dashboard ispirata al mockup approvato.
+- Nome gestionale aggiornato a BeparyTech Manager.
+- Dashboard Admin: KPI, andamento attività, riepilogo magazzino, scorte critiche, ultimi movimenti e azioni rapide.
+- Utenti standard: nessuna statistica/KPI/report Admin.
+- Collegamenti BackGlass e Housing corretti: ora aprono e renderizzano direttamente la sezione selezionata.
+- Accessi rapidi per vendite, riparazioni, fatturazione Aruba, cronologia, scorte a zero e orari.
+- Dicitura NO LOGO mantenuta dalla v86.
+- Layout responsive desktop/tablet/mobile.
+- Cache service worker aggiornata a v87.
