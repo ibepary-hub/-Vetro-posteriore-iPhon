@@ -1,0 +1,10 @@
+BeparyTech Manager v90 - Security Hardened
+
+Supabase hardening applicato:
+- beparytech_bestek_touch_updated_at() non e piu SECURITY DEFINER.
+- EXECUTE revocato a PUBLIC, anon e authenticated per la funzione trigger.
+- Verifica eseguita: accesso anonimo rimosso.
+- Le RPC operative necessarie sono state mantenute per non interrompere vendite, magazzino e gestione operatori.
+- Foto di accettazione mantenute in storage privato.
+
+Nota: Supabase segnala ancora Leaked Password Protection disabilitata nelle impostazioni Auth.

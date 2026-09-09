@@ -10,10 +10,10 @@
   <meta name="apple-mobile-web-app-title" content="BeparyTech Manager">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
   <title>BeparyTech Manager</title>
-  <link rel="manifest" href="manifest.json?v=87">
+  <link rel="manifest" href="manifest.json?v=88">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=87">
+  <link rel="stylesheet" href="style.css?v=88">
 
 
 
@@ -226,7 +226,7 @@
     </button>
     <button type="button" class="adminWorkTab" data-work-tab="repairs" role="tab" aria-selected="false">
       <span class="adminWorkIcon">🛠️</span>
-      <span class="adminWorkText"><strong>Riparazioni</strong><small>Scheda madre e altre lavorazioni</small></span>
+      <span class="adminWorkText"><strong>Accettazione & Riparazioni</strong><small>Pratiche, preventivi, garanzie e consegna</small></span>
     </button>
     <button type="button" class="adminWorkTab" data-work-tab="invoices" role="tab" aria-selected="false">
       <span class="adminWorkIcon">🧾</span>
@@ -276,24 +276,26 @@
 
   <div id="adminRepairsPanel" class="adminWorkPanel" data-work-panel="repairs" hidden>
     <div class="adminPanelHeader">
-      <div><strong>Riparazioni dispositivi</strong><small>Registra le lavorazioni effettuate sui dispositivi.</small></div>
+      <div><strong>Accettazione & Riparazioni</strong><small>Gestisci la pratica dal ritiro del dispositivo fino alla consegna e alla garanzia.</small></div>
     </div>
 
     <form id="adminRepairForm" class="deviceSaleCard adminUniformCard">
-      <div class="deviceSaleCardHead"><div><strong>Nuova riparazione</strong><small>Prezzo inserito escluso IVA</small></div></div>
+      <div class="deviceSaleCardHead"><div><strong>Nuova pratica di riparazione</strong><small>Accettazione, preventivo, lavorazione, consegna e garanzia</small></div><div class="practicePill" id="adminRepairPracticePreview">RIP-AUTO</div></div>
       <div class="deviceSaleGrid">
-        <label><span>Data riparazione *</span><input id="adminRepairDate" type="date" required></label>
+        <label><span>Data riparazione *</span><input id="adminRepairDate" type="date" required></label><label><span>Codice pratica</span><input id="adminRepairPracticeCode" maxlength="40" placeholder="Generato automaticamente"></label>
         <label><span>Cliente *</span><select id="adminRepairClient" required><option value="">Seleziona cliente…</option><option value="RIPARALO S.R.L.">RIPARALO S.R.L.</option><option value="VR Trasporti">VR Trasporti</option><option value="ALTRO">Altro cliente</option></select></label>
         <label><span>Sede / Negozio</span><select id="adminRepairStore"><option value="">Nessuna / sede cliente</option>
 <option>VR Trasporti</option><option>RPL Piacenza</option><option>RPL Manerbio</option>
 <option>MELA Piacenza</option><option>MELA Lime Store</option><option>MELA Repubblica</option><option>MELA Emilia Est</option>
 <option>DP Udine</option><option>DP Majano</option><option>DP Tolmezzo</option><option>DP Cividale</option><option>DP Codroipo</option><option>DP Colugna</option>
 <option>E-POL</option></select></label>
-        <label class="wide"><span>Cliente personalizzato</span><input id="adminRepairCustomClient" maxlength="160" placeholder="Usa solo se hai scelto Altro cliente" disabled></label>
+        <label class="wide"><span>Cliente personalizzato</span><input id="adminRepairCustomClient" maxlength="160" placeholder="Usa solo se hai scelto Altro cliente" disabled></label><label><span>Telefono cliente</span><input id="adminRepairCustomerPhone" type="tel" maxlength="40" placeholder="es. +39 333 1234567"></label><label><span>Email cliente</span><input id="adminRepairCustomerEmail" type="email" maxlength="160" placeholder="Facoltativa"></label>
         <label class="wide"><span>Dispositivo *</span><input id="adminRepairDevice" maxlength="160" placeholder="es. iPhone 15 Pro, S21 Ultra 5G..." required></label>
         <label><span>Tipo di riparazione *</span><input id="adminRepairType" list="adminRepairTypeOptions" maxlength="240" placeholder="Seleziona o scrivi l’intervento" required><datalist id="adminRepairTypeOptions"><option value="Cambio display"><option value="Cambio batteria"><option value="Cambio connettore"><option value="Riparazione scheda madre"><option value="Altro"></datalist></label>
-        <label><span>IMEI / Seriale</span><input id="adminRepairImei" maxlength="120" placeholder="Facoltativo"></label>
-        <label><span>Stato</span><select id="adminRepairStatus"><option>Da riparare</option><option>In lavorazione</option><option selected>Riparato</option><option>Consegnato</option></select></label>
+        <label><span>IMEI / Seriale</span><input id="adminRepairImei" maxlength="120" placeholder="Facoltativo"></label><label class="wide"><span>Difetto dichiarato dal cliente *</span><textarea id="adminRepairReportedIssue" maxlength="1000" rows="2" placeholder="es. Non carica, display rotto, non si accende…" required></textarea></label><label class="wide"><span>Stato estetico all’accettazione</span><input id="adminRepairDeviceCondition" maxlength="500" placeholder="es. Vetro posteriore graffiato, cornice segnata…"></label><label class="wide"><span>Accessori consegnati</span><input id="adminRepairAccessories" maxlength="500" placeholder="es. Custodia, SIM, caricatore · oppure Nessuno"></label>
+        <div class="wide repairMediaBox"><div class="repairMediaHead"><strong>Foto all’accettazione</strong><small>Fino a 6 foto · JPG/PNG/WEBP · max 8 MB ciascuna</small></div><input id="adminRepairPhotos" type="file" accept="image/jpeg,image/png,image/webp" multiple><div id="adminRepairPhotoPreview" class="repairPhotoPreview"></div></div>
+        <div class="wide repairSignatureBox"><div class="repairMediaHead"><strong>Firma cliente</strong><small>Firma direttamente sullo schermo. Verrà allegata alla ricevuta della pratica.</small></div><canvas id="adminRepairSignatureCanvas" width="900" height="260" aria-label="Area firma cliente"></canvas><div class="signatureActions"><button id="clearAdminRepairSignature" class="miniBtn" type="button">Cancella firma</button><span id="adminRepairSignatureState">Nessuna firma</span></div><label class="signatureConsent"><input id="adminRepairSignatureConsent" type="checkbox"><span>Il cliente conferma presa in carico, stato estetico, accessori e condizioni indicate nella ricevuta.</span></label></div>
+        <label><span>Stato</span><select id="adminRepairStatus"><option>Da riparare</option><option>In lavorazione</option><option selected>Riparato</option><option>Consegnato</option></select></label><label><span>Preventivo</span><select id="adminRepairQuoteStatus"><option>Da diagnosticare</option><option>Preventivo da inviare</option><option>In attesa cliente</option><option>Accettato</option><option>Rifiutato</option></select></label><label><span>Importo preventivo</span><div class="moneyInput"><span>€</span><input id="adminRepairQuoteAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></div></label><label><span>Garanzia intervento</span><select id="adminRepairWarrantyMonths"><option value="0">Nessuna</option><option value="3" selected>3 mesi</option><option value="6">6 mesi</option><option value="12">12 mesi</option><option value="24">24 mesi</option></select></label>
         <label class="wide"><span>Riferimento e-Share</span><input id="adminRepairEShareRef" maxlength="120" placeholder="Facoltativo"></label>
         <label><span>Costo ricambio (solo Admin)</span><div class="moneyInput"><span>€</span><input id="adminRepairPartCost" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></div></label>
         <label><span>Prezzo escluso IVA *</span><div class="moneyInput"><span>€</span><input id="adminRepairPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" required></div></label>
@@ -312,7 +314,7 @@
     <div class="deviceSaleCard deviceSaleHistoryCard adminUniformCard">
       <div class="deviceSaleCardHead">
         <div><strong>Riparazioni registrate</strong><small>Storico delle lavorazioni</small></div>
-        <button id="refreshAdminRepairsBtn" class="miniBtn" type="button">Aggiorna</button>
+        <div class="repairHistoryTools"><input id="adminRepairSearch" type="search" placeholder="Cerca pratica, cliente, IMEI…"><button id="refreshAdminRepairsBtn" class="miniBtn" type="button">Aggiorna</button></div>
       </div>
       <div id="adminRepairsSummary" class="deviceSalesSummary"></div>
       <div id="adminRepairsList"><div class="emptyState">Nessuna riparazione caricata</div></div>
@@ -614,6 +616,8 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@3.0.2/dist/jspdf.umd.min.js"></script>
 
   <div id="passwordRecoveryModal" class="saleModal" hidden>
     <div class="saleDialog" role="dialog" aria-modal="true" aria-labelledby="passwordRecoveryTitle">
@@ -638,7 +642,7 @@
  <button type="button" data-smart-action="menu"><b>☰</b><span>Menu</span></button>
 </nav>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
-<script src="app.js?v=87"></script>
+<script src="app.js?v=88"></script>
 
 
 
