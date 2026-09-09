@@ -10,10 +10,10 @@
   <meta name="apple-mobile-web-app-title" content="BeparyTech Manager">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
   <title>BeparyTech Manager</title>
-  <link rel="manifest" href="manifest.json?v=93">
+  <link rel="manifest" href="manifest.json?v=94">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=93">
+  <link rel="stylesheet" href="style.css?v=94">
 
 
 
@@ -302,9 +302,11 @@
       <div class="deviceSaleCardHead"><div><strong>⚡ Accettazione rapida</strong><small>Quando hai poche informazioni: salva in pochi secondi e completa la pratica dopo.</small></div><span class="practicePill">SOLO ESSENZIALE</span></div>
       <form id="quickRepairForm" class="quickRepairForm">
         <div class="quickRepairGrid">
-          <label><span>Cliente *</span><input id="quickRepairClient" maxlength="160" list="quickRepairClients" placeholder="es. VR Trasporti" required><datalist id="quickRepairClients"><option value="VR Trasporti"><option value="RIPARALO S.R.L."><option value="E-POL"></datalist></label>
+          <label><span>Cliente *</span><select id="quickRepairClient" required><option value="">Seleziona cliente…</option><option value="VR Trasporti">VR Trasporti</option><option value="RIPARALO S.R.L.">RIPARALO S.R.L.</option><option value="E-POL">E-POL</option><option value="ALTRO">+ Altro cliente</option></select></label>
+          <label id="quickRepairCustomClientWrap" hidden><span>Nome cliente *</span><input id="quickRepairCustomClient" maxlength="160" placeholder="Scrivi il nome del cliente"></label>
           <label><span>Dispositivo *</span><input id="quickRepairDevice" maxlength="160" placeholder="es. iPhone 14 Pro" required></label>
-          <label class="wide"><span>Lavoro da fare *</span><input id="quickRepairType" maxlength="240" list="adminRepairTypeOptions" placeholder="es. Cambio display" required></label>
+          <label class="wide"><span>Lavoro da fare *</span><select id="quickRepairType" required><option value="">Seleziona lavoro…</option><option>Cambio display</option><option>Cambio batteria</option><option>Cambio connettore</option><option>Riparazione scheda madre</option><option>Diagnosi</option><option>Sostituzione fotocamera</option><option>Sostituzione altoparlante</option><option>Sostituzione microfono</option><option>Cambio vetro posteriore</option><option>Cambio housing / scocca</option><option>Recupero dati</option><option>Problema software</option><option value="ALTRO">+ Altro intervento</option></select></label>
+          <label id="quickRepairCustomTypeWrap" class="wide" hidden><span>Altro intervento *</span><input id="quickRepairCustomType" maxlength="240" placeholder="Scrivi il lavoro da fare"></label>
           <label class="wide"><span>Nota veloce</span><input id="quickRepairNote" maxlength="500" placeholder="Facoltativa"></label>
         </div>
         <div class="quickRepairActions"><button class="primaryAction animatedBtn" type="submit">Salva accettazione rapida</button><button id="openFullRepairBtn" class="secondaryAction animatedBtn" type="button">Apri accettazione completa</button></div>
@@ -704,7 +706,7 @@
  <button type="button" data-smart-action="menu"><b>☰</b><span>Menu</span></button>
 </nav>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
-<script src="app.js?v=93"></script>
+<script src="app.js?v=94"></script>
 
 
 

@@ -1572,11 +1572,11 @@ document.getElementById("saveRecoveryPassword").onclick=async()=>{
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("./sw.js?v=93", { updateViaCache: "none" });
+      const reg = await navigator.serviceWorker.register("./sw.js?v=94", { updateViaCache: "none" });
       await reg.update();
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (!sessionStorage.getItem("bt-cache-reloaded-v93")) {
-          sessionStorage.setItem("bt-cache-reloaded-v93", "1");
+        if (!sessionStorage.getItem("bt-cache-reloaded-v94")) {
+          sessionStorage.setItem("bt-cache-reloaded-v94", "1");
           location.reload();
         }
       });
@@ -2077,16 +2077,24 @@ setCategory=function(category,fromBack=false){
 
 function bindQuickRepairV92(){
   const form=document.getElementById("quickRepairForm");if(!form||form.dataset.bound==="1")return;form.dataset.bound="1";
+  const clientSel=document.getElementById("quickRepairClient"),clientWrap=document.getElementById("quickRepairCustomClientWrap"),clientCustom=document.getElementById("quickRepairCustomClient");
+  const typeSel=document.getElementById("quickRepairType"),typeWrap=document.getElementById("quickRepairCustomTypeWrap"),typeCustom=document.getElementById("quickRepairCustomType");
+  const syncClient=()=>{const other=clientSel?.value==="ALTRO";if(clientWrap)clientWrap.hidden=!other;if(clientCustom){clientCustom.required=!!other;if(!other)clientCustom.value="";}};
+  const syncType=()=>{const other=typeSel?.value==="ALTRO";if(typeWrap)typeWrap.hidden=!other;if(typeCustom){typeCustom.required=!!other;if(!other)typeCustom.value="";}};
+  clientSel?.addEventListener("change",syncClient);typeSel?.addEventListener("change",syncType);syncClient();syncType();
   document.getElementById("openFullRepairBtn")?.addEventListener("click",()=>{const full=document.getElementById("adminRepairForm");if(full){full.hidden=false;full.scrollIntoView({behavior:"smooth",block:"start"});}});
   form.addEventListener("submit",async e=>{
     e.preventDefault();const msg=document.getElementById("quickRepairMsg");if(msg){msg.className="createUserMsg";msg.textContent="Salvataggio…";}
     try{
-      const ctx=await btGetWorkspaceOwnerId();const client=document.getElementById("quickRepairClient").value.trim(),device=document.getElementById("quickRepairDevice").value.trim(),work=document.getElementById("quickRepairType").value.trim(),note=document.getElementById("quickRepairNote").value.trim();
+      const ctx=await btGetWorkspaceOwnerId();
+      const clientChoice=clientSel?.value||"",client=clientChoice==="ALTRO"?(clientCustom?.value||"").trim():clientChoice.trim();
+      const typeChoice=typeSel?.value||"",work=typeChoice==="ALTRO"?(typeCustom?.value||"").trim():typeChoice.trim();
+      const device=document.getElementById("quickRepairDevice").value.trim(),note=document.getElementById("quickRepairNote").value.trim();
       if(!client||!device||!work)throw new Error("Inserisci cliente, dispositivo e lavoro da fare.");
       const day=new Date().toISOString().slice(0,10),code=`RIP-${day.replaceAll("-","")}-${String(Date.now()).slice(-5)}`;
       const payload={workspace_owner_id:ctx.owner,created_by:ctx.user,repaired_at:day,accepted_at:new Date().toISOString(),practice_code:code,receipt_token:code,store:client,client_name:client,device,repair_type:work,reported_issue:null,price_ex_vat:0,vat_rate:22,repair_status:"Da completare",quote_status:"Da diagnosticare",warranty_months:0,invoiced:false,note:note||null,photo_paths:[]};
       const {error}=await sb.from("beparytech_admin_repairs").insert(payload);if(error)throw error;
-      form.reset();if(msg){msg.className="createUserMsg ok";msg.textContent=`Pratica ${code} salvata. Puoi completarla anche più tardi.`;}await loadAdminRepairs();
+      form.reset();syncClient();syncType();if(msg){msg.className="createUserMsg ok";msg.textContent=`Pratica ${code} salvata. Puoi completarla anche più tardi.`;}await loadAdminRepairs();
     }catch(err){if(msg){msg.className="createUserMsg error";msg.textContent=err.message||"Errore salvataggio";}}
   });
 }
