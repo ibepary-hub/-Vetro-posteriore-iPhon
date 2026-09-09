@@ -267,6 +267,13 @@ function applyRoleVisibility(){
   const deviceSalesMenu=document.getElementById("deviceSalesMenuItem");
   const invoicesMenu=document.getElementById("invoicesMenuItem");
   const bestekCatalogMenu=document.getElementById("bestekCatalogMenuItem");
+  const repairsMenu=document.getElementById("repairsMenuItem");
+  const quickRepairMenu=document.getElementById("quickRepairMenuItem");
+  const fullRepairMenu=document.getElementById("fullRepairMenuItem");
+  const settingsMenu=document.getElementById("settingsMenuItem");
+  const repairMenuGroup=document.getElementById("repairMenuGroup");
+  const salesMenuGroup=document.getElementById("salesMenuGroup");
+  const adminMenuGroup=document.getElementById("adminMenuGroup");
   usersTab.hidden=!admin;
   if(catalogMenu) catalogMenu.hidden=!admin;
   if(usersMenu) usersMenu.hidden=!admin;
@@ -276,13 +283,21 @@ function applyRoleVisibility(){
   if(deviceSalesMenu) deviceSalesMenu.hidden=!admin;
   if(invoicesMenu) invoicesMenu.hidden=!admin;
   if(bestekCatalogMenu) bestekCatalogMenu.hidden=!admin;
+  if(repairsMenu) repairsMenu.hidden=!admin;
+  if(quickRepairMenu) quickRepairMenu.hidden=!admin;
+  if(fullRepairMenu) fullRepairMenu.hidden=!admin;
+  if(settingsMenu) settingsMenu.hidden=!admin;
+  if(repairMenuGroup) repairMenuGroup.hidden=!admin;
+  if(salesMenuGroup) salesMenuGroup.hidden=!admin;
+  if(adminMenuGroup) adminMenuGroup.hidden=!admin;
   if(!admin){
     usersView.hidden=true;
     if(catalogView) catalogView.hidden=true;
     usersTab.classList.remove("active");
     document.getElementById("hoursView").hidden=true;
     const dsv=document.getElementById("deviceSalesView"); if(dsv) dsv.hidden=true;
-    if(["Utenti","GestioneMagazzino","ScorteZero","Backup","Orari","VenditeAdmin","Fatturazione","CatalogoBestek"].includes(currentCategory)) setCategory("Dashboard");
+    const sv=document.getElementById("settingsView"); if(sv) sv.hidden=true;
+    if(["Utenti","GestioneMagazzino","ScorteZero","Backup","Orari","VenditeAdmin","Fatturazione","CatalogoBestek","RiparazioniAdmin","AccettazioneRapida","AccettazioneCompleta","Impostazioni"].includes(currentCategory)) setCategory("Dashboard");
   }
   const menuUser=document.getElementById("menuUserName"), menuRole=document.getElementById("menuUserRole");
   if(menuUser) menuUser.textContent=currentProfile?.username||currentUser?.email||"Utente";
@@ -1557,11 +1572,11 @@ document.getElementById("saveRecoveryPassword").onclick=async()=>{
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("./sw.js?v=92", { updateViaCache: "none" });
+      const reg = await navigator.serviceWorker.register("./sw.js?v=93", { updateViaCache: "none" });
       await reg.update();
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (!sessionStorage.getItem("bt-cache-reloaded-v92")) {
-          sessionStorage.setItem("bt-cache-reloaded-v92", "1");
+        if (!sessionStorage.getItem("bt-cache-reloaded-v93")) {
+          sessionStorage.setItem("bt-cache-reloaded-v93", "1");
           location.reload();
         }
       });
@@ -1933,7 +1948,7 @@ function updateSmartNavigation(){
  const p=nav.querySelector('[data-smart-action="primary"]'), h=nav.querySelector('[data-smart-action="history"]');
  let pl='Cerca', pi='⌕', hl='Cronologia', hi='≋';
  if(currentCategory==='Orari'){pl='Orario';pi='◷';hl='Extra';hi='＋'}
- else if(currentCategory==='VenditeAdmin'){pl='Vendita';pi='−1';hl='Cronologia';hi='◷'}else if(currentCategory==='RiparazioniAdmin'){pl='Nuova';pi='＋';hl='Pratiche';hi='⌁'}
+ else if(currentCategory==='VenditeAdmin'){pl='Vendita';pi='−1';hl='Cronologia';hi='◷'}else if(['RiparazioniAdmin','AccettazioneRapida','AccettazioneCompleta'].includes(currentCategory)){pl='Nuova';pi='＋';hl='Pratiche';hi='⌁'}else if(currentCategory==='Impostazioni'){pl='Etichette';pi='🏷';hl='Home';hi='⌂'}
  else if(currentCategory==='Fatturazione'){pl='Fattura';pi='🧾';hl='Vendite';hi='€'}
  else if(currentCategory==='Vendite'){pl='Vendite';pi='✓';hl='Cronologia';hi='≋'}
  else if(currentCategory==='Utenti'){pl='Nuovo utente';pi='＋';hl='Gestisci';hi='♙'}
@@ -1943,7 +1958,7 @@ function updateSmartNavigation(){
 document.addEventListener('DOMContentLoaded',()=>{
  bindHourAccordions(); const nav=document.getElementById('mobileBottomNav'), back=document.getElementById('smartBackBtn');
  back?.addEventListener('click',smartBack);
- nav?.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.smartAction;if(a==='home')setCategory('Dashboard');else if(a==='scanner')openScanner();else if(a==='menu')openMainMenu();else if(currentCategory==='Orari'&&a==='primary')document.querySelector('#hoursForm .hourCardToggle')?.click();else if(currentCategory==='Orari'&&a==='history')document.querySelector('#extraForm .hourCardToggle')?.click();else if(currentCategory==='VenditeAdmin'&&a==='primary')document.querySelector('[data-work-tab="sales"]')?.click();else if(currentCategory==='VenditeAdmin'&&a==='history')setCategory('Cronologia');else if(currentCategory==='RiparazioniAdmin'&&a==='primary'){const f=document.getElementById('adminRepairForm');if(f){f.hidden=false;f.scrollIntoView({behavior:'smooth',block:'start'});}}else if(currentCategory==='RiparazioniAdmin'&&a==='history')document.getElementById('adminRepairsList')?.scrollIntoView({behavior:'smooth',block:'start'});else if(currentCategory==='Fatturazione'&&a==='primary')document.querySelector('[data-work-tab="invoices"]')?.click();else if(currentCategory==='Fatturazione'&&a==='history')setCategory('VenditeAdmin');else if(a==='history')setCategory('Cronologia');else document.getElementById('globalSearch')?.focus();});
+ nav?.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.smartAction;if(a==='home')setCategory('Dashboard');else if(a==='scanner')openScanner();else if(a==='menu')openMainMenu();else if(currentCategory==='Orari'&&a==='primary')document.querySelector('#hoursForm .hourCardToggle')?.click();else if(currentCategory==='Orari'&&a==='history')document.querySelector('#extraForm .hourCardToggle')?.click();else if(currentCategory==='VenditeAdmin'&&a==='primary')document.querySelector('[data-work-tab="sales"]')?.click();else if(currentCategory==='VenditeAdmin'&&a==='history')setCategory('Cronologia');else if(['RiparazioniAdmin','AccettazioneRapida','AccettazioneCompleta'].includes(currentCategory)&&a==='primary')setCategory('AccettazioneRapida');else if(['RiparazioniAdmin','AccettazioneRapida','AccettazioneCompleta'].includes(currentCategory)&&a==='history')setCategory('RiparazioniAdmin');else if(currentCategory==='Impostazioni'&&a==='primary')document.querySelector('.repairLabelSettings')?.scrollIntoView({behavior:'smooth',block:'start'});else if(currentCategory==='Impostazioni'&&a==='history')setCategory('Dashboard');else if(currentCategory==='Fatturazione'&&a==='primary')document.querySelector('[data-work-tab="invoices"]')?.click();else if(currentCategory==='Fatturazione'&&a==='history')setCategory('VenditeAdmin');else if(a==='history')setCategory('Cronologia');else document.getElementById('globalSearch')?.focus();});
  let sx=0,sy=0,st=0;document.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;sx=e.touches[0].clientX;sy=e.touches[0].clientY;st=Date.now()},{passive:true});document.addEventListener('touchend',e=>{if(!e.changedTouches?.length||sx>35)return;const dx=e.changedTouches[0].clientX-sx,dy=Math.abs(e.changedTouches[0].clientY-sy);if(dx>85&&dy<70&&Date.now()-st<700)smartBack()},{passive:true});
  updateSmartNavigation();
 });
@@ -2094,6 +2109,50 @@ async function printRepairDymoV92(id){
   const q=document.getElementById("repairDymoQr");q.innerHTML="";if(st.qr){try{new QRCode(q,{text:`${location.origin}${location.pathname}?practice=${encodeURIComponent(r.practice_code||r.id)}`,width:120,height:120,correctLevel:QRCode.CorrectLevel?.M});}catch(_){q.hidden=true;}}q.hidden=!st.qr;
   let ps=document.getElementById("repairDymoPageStyle");if(!ps){ps=document.createElement("style");ps.id="repairDymoPageStyle";document.head.appendChild(ps);}ps.textContent=`@page{size:${st.w}mm ${st.h}mm;margin:0}`;document.body.classList.add("printingRepairDymo");const cleanup=()=>document.body.classList.remove("printingRepairDymo");window.addEventListener("afterprint",cleanup,{once:true});setTimeout(()=>{window.print();setTimeout(cleanup,1200);},80);
 }
+
+
+
+/* ===== v93 · Navigazione riparazioni separata + impostazioni DYMO ===== */
+function v93SetRepairMode(mode){
+  const quick=document.getElementById("quickIntakeCard"), divider=document.getElementById("repairModeDivider"), full=document.getElementById("adminRepairForm"), history=document.getElementById("adminRepairsHistoryCard");
+  if(quick) quick.hidden=mode!=="quick";
+  if(divider) divider.hidden=true;
+  if(full){
+    if(mode==="full"){ full.hidden=false; if(!adminRepairEditingId){ try{resetAdminRepairForm();}catch(_){ } } }
+    else full.hidden=true;
+  }
+  if(history) history.hidden=mode!=="practices";
+  const title=document.getElementById("adminWorkHeroTitle"), text=document.getElementById("adminWorkHeroText");
+  if(mode==="quick"){if(title)title.textContent="Accettazione rapida";if(text)text.textContent="Registra in pochi secondi cliente, dispositivo e lavoro da fare. Completerai la stessa pratica dopo.";}
+  if(mode==="full"){if(title)title.textContent="Accettazione completa";if(text)text.textContent="Scheda completa con foto, firma, IMEI, preventivo, prezzo, garanzia e consegna.";}
+  if(mode==="practices"){if(title)title.textContent="Riparazioni / Pratiche";if(text)text.textContent="Tutte le pratiche: da completare, in lavorazione, in attesa, pronte e consegnate.";}
+}
+const v93PreviousSetCategory=setCategory;
+setCategory=function(category,fromBack=false){
+  if(category==="AccettazioneRapida"||category==="AccettazioneCompleta"||category==="RiparazioniAdmin"){
+    const sv=document.getElementById("settingsView");if(sv)sv.hidden=true;
+    v93PreviousSetCategory("RiparazioniAdmin",fromBack);
+    currentCategory=category;
+    const mode=category==="AccettazioneRapida"?"quick":category==="AccettazioneCompleta"?"full":"practices";
+    setTimeout(()=>{v93SetRepairMode(mode);document.querySelectorAll(".menuItem[data-category]").forEach(b=>b.classList.toggle("active",b.dataset.category===category));updateSmartNavigation();},0);
+    return;
+  }
+  if(category==="Impostazioni"){
+    v92PreviousSetCategory("Dashboard",fromBack);
+    currentCategory="Impostazioni";
+    const d=document.getElementById("dashboardView");if(d)d.hidden=true;
+    const sv=document.getElementById("settingsView");if(sv)sv.hidden=false;
+    document.getElementById("categoryName").textContent="Impostazioni";
+    document.getElementById("categoryDescription").textContent="Area privata Admin · stampa DYMO e preferenze";
+    document.querySelectorAll(".menuItem[data-category]").forEach(b=>b.classList.toggle("active",b.dataset.category==="Impostazioni"));
+    closeMainMenu();bindRepairLabelSettingsV92();updateSmartNavigation();return;
+  }
+  const sv=document.getElementById("settingsView");if(sv)sv.hidden=true;
+  v93PreviousSetCategory(category,fromBack);
+};
+
+// Il pulsante “Apri accettazione completa” usa la voce dedicata del menu.
+document.getElementById("openFullRepairBtn")?.addEventListener("click",()=>setCategory("AccettazioneCompleta"));
 
 document.addEventListener("DOMContentLoaded",()=>{bindQuickRepairV92();bindRepairLabelSettingsV92();});
 setInterval(()=>{if(currentCategory==="RiparazioniAdmin"){bindQuickRepairV92();bindRepairLabelSettingsV92();}},1500);

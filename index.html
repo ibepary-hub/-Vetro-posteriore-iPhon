@@ -10,10 +10,10 @@
   <meta name="apple-mobile-web-app-title" content="BeparyTech Manager">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
   <title>BeparyTech Manager</title>
-  <link rel="manifest" href="manifest.json?v=92">
+  <link rel="manifest" href="manifest.json?v=93">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=92">
+  <link rel="stylesheet" href="style.css?v=93">
 
 
 
@@ -25,18 +25,36 @@
     <nav class="menuNav">
       <button class="menuItem active" type="button" data-category="Dashboard"><span class="menuIcon">⌂</span><span><strong>Dashboard</strong><small>Riepilogo magazzino</small></span></button>
       <div id="customMenuSections" class="customMenuSections"></div>
-      <div class="menuDivider"></div>
-      <button class="menuItem" type="button" data-category="Cronologia"><span class="menuIcon">≋</span><span><strong>Cronologia</strong><small>Tutte le attività</small></span></button>
-      <button class="menuItem" type="button" data-category="Vendite"><span class="menuIcon">✓</span><span><strong>Vendute</strong><small>Vendite, note e rientri</small></span></button>
-      <button id="bestekCatalogMenuItem" class="menuItem adminOnly" type="button" data-category="CatalogoBestek" hidden><span class="menuIcon">BK</span><span><strong>Catalogo Bestek</strong><small>Codici e accessori verificati</small></span></button>
-      <button id="catalogMenuItem" class="menuItem adminOnly" type="button" data-category="GestioneMagazzino" hidden><span class="menuIcon">＋</span><span><strong>Gestione magazzino</strong><small>Sezioni e prodotti</small></span></button>
-      <button id="deviceSalesMenuItem" class="menuItem adminOnly" type="button" data-category="VenditeAdmin" hidden><span class="menuIcon">€</span><span><strong>Vendite ricambi</strong><small>Prezzi, IVA e riferimenti acquisto</small></span></button>
-      <button id="repairsMenuItem" class="menuItem adminOnly" type="button" data-category="RiparazioniAdmin" hidden><span class="menuIcon">🛠</span><span><strong>Accettazione</strong><small>Rapida, completa e riparazioni</small></span></button>
-      <button id="invoicesMenuItem" class="menuItem adminOnly" type="button" data-category="Fatturazione" hidden><span class="menuIcon">🧾</span><span><strong>Fatturazione</strong><small>Riparalo / MELA · XML Aruba</small></span></button>
-      <button id="hoursMenuItem" class="menuItem adminOnly" type="button" data-category="Orari" hidden><span class="menuIcon">◷</span><span><strong>Orari</strong><small>Ore lavorate ed extra</small></span></button>
-      <button id="zeroStockMenuItem" class="menuItem adminOnly" type="button" data-category="ScorteZero" hidden><span class="menuIcon">0</span><span><strong>Scorte a zero</strong><small>BackGlass e Housing separati</small></span></button>
-      <button id="backupMenuItem" class="menuItem adminOnly" type="button" data-category="Backup" hidden><span class="menuIcon">⇩</span><span><strong>Backup</strong><small>Esporta dati</small></span></button>
-      <button id="usersMenuItem" class="menuItem adminOnly" type="button" data-category="Utenti" hidden><span class="menuIcon">♙</span><span><strong>Utenti</strong><small>Accessi e password</small></span></button>
+
+      <div id="repairMenuGroup" class="menuGroup adminOnly" hidden>
+        <div class="menuGroupTitle">RIPARAZIONI</div>
+        <button id="quickRepairMenuItem" class="menuItem adminOnly" type="button" data-category="AccettazioneRapida"><span class="menuIcon">⚡</span><span><strong>Accettazione rapida</strong><small>Cliente, dispositivo e lavoro</small></span></button>
+        <button id="fullRepairMenuItem" class="menuItem adminOnly" type="button" data-category="AccettazioneCompleta"><span class="menuIcon">＋</span><span><strong>Accettazione completa</strong><small>Foto, firma, IMEI e preventivo</small></span></button>
+        <button id="repairsMenuItem" class="menuItem adminOnly" type="button" data-category="RiparazioniAdmin"><span class="menuIcon">🛠</span><span><strong>Riparazioni / Pratiche</strong><small>In lavorazione, pronti e storico</small></span></button>
+      </div>
+
+      <div class="menuGroup">
+        <div class="menuGroupTitle">MAGAZZINO</div>
+        <button class="menuItem" type="button" data-category="Cronologia"><span class="menuIcon">≋</span><span><strong>Cronologia magazzino</strong><small>Tutte le attività</small></span></button>
+        <button class="menuItem" type="button" data-category="Vendite"><span class="menuIcon">✓</span><span><strong>Uscite magazzino</strong><small>Scarichi, note e rientri</small></span></button>
+        <button id="bestekCatalogMenuItem" class="menuItem adminOnly" type="button" data-category="CatalogoBestek" hidden><span class="menuIcon">BK</span><span><strong>Catalogo Bestek</strong><small>Codici e accessori verificati</small></span></button>
+        <button id="catalogMenuItem" class="menuItem adminOnly" type="button" data-category="GestioneMagazzino" hidden><span class="menuIcon">＋</span><span><strong>Gestione magazzino</strong><small>Sezioni e prodotti</small></span></button>
+        <button id="zeroStockMenuItem" class="menuItem adminOnly" type="button" data-category="ScorteZero" hidden><span class="menuIcon">0</span><span><strong>Scorte a zero</strong><small>BackGlass e Housing separati</small></span></button>
+      </div>
+
+      <div id="salesMenuGroup" class="menuGroup adminOnly" hidden>
+        <div class="menuGroupTitle">VENDITE</div>
+        <button id="deviceSalesMenuItem" class="menuItem adminOnly" type="button" data-category="VenditeAdmin"><span class="menuIcon">€</span><span><strong>Vendita ricambi</strong><small>Prezzi, IVA e riferimenti acquisto</small></span></button>
+        <button id="invoicesMenuItem" class="menuItem adminOnly" type="button" data-category="Fatturazione"><span class="menuIcon">🧾</span><span><strong>Fatturazione</strong><small>Riparalo / MELA · XML Aruba</small></span></button>
+      </div>
+
+      <div id="adminMenuGroup" class="menuGroup adminOnly" hidden>
+        <div class="menuGroupTitle">AMMINISTRAZIONE</div>
+        <button id="hoursMenuItem" class="menuItem adminOnly" type="button" data-category="Orari"><span class="menuIcon">◷</span><span><strong>Orari</strong><small>Ore lavorate ed extra</small></span></button>
+        <button id="backupMenuItem" class="menuItem adminOnly" type="button" data-category="Backup"><span class="menuIcon">⇩</span><span><strong>Backup</strong><small>Esporta dati</small></span></button>
+        <button id="usersMenuItem" class="menuItem adminOnly" type="button" data-category="Utenti"><span class="menuIcon">♙</span><span><strong>Utenti</strong><small>Accessi e password</small></span></button>
+        <button id="settingsMenuItem" class="menuItem adminOnly" type="button" data-category="Impostazioni"><span class="menuIcon">⚙</span><span><strong>Impostazioni</strong><small>DYMO e preferenze gestionale</small></span></button>
+      </div>
     </nav>
     <div class="menuFooter"><span id="menuUserName">Utente</span><small id="menuUserRole">Standard</small></div>
   </aside>
@@ -294,7 +312,7 @@
       </form>
     </section>
 
-    <div class="repairSectionDivider"><span>oppure</span></div>
+    <div id="repairModeDivider" class="repairSectionDivider"><span>oppure</span></div>
 
     <form id="adminRepairForm" class="deviceSaleCard adminUniformCard" hidden>
       <div class="deviceSaleCardHead"><div><strong>📝 Accettazione completa</strong><small>Cliente, foto, firma, preventivo, lavorazione, consegna e garanzia</small></div><div class="practicePill" id="adminRepairPracticePreview">RIP-AUTO</div></div>
@@ -328,26 +346,7 @@
       <div id="adminRepairMsg" class="createUserMsg" aria-live="polite"></div>
     </form>
 
-    <section class="deviceSaleCard adminUniformCard repairLabelSettings">
-      <div class="deviceSaleCardHead"><div><strong>🏷 Etichette DYMO</strong><small>Scegli una volta il formato. Verrà ricordato su questo dispositivo.</small></div><span id="dymoRepairSizeBadge" class="practicePill">32 × 57 mm</span></div>
-      <div class="labelConfigGrid">
-        <label><span>Formato etichetta</span><select id="repairLabelPreset">
-          <option value="32x57" selected>32 × 57 mm · Durable / piccola</option>
-          <option value="25x54">25 × 54 mm</option>
-          <option value="36x89">36 × 89 mm</option>
-          <option value="19x51">19 × 51 mm · stretta</option>
-          <option value="54x101">54 × 101 mm · grande</option>
-          <option value="57x32">57 × 32 mm · orizzontale</option>
-          <option value="custom">Personalizzata</option>
-        </select></label>
-        <label><span>Larghezza mm</span><input id="repairLabelWidth" type="number" min="10" max="120" step="1" value="32"></label>
-        <label><span>Altezza mm</span><input id="repairLabelHeight" type="number" min="10" max="200" step="1" value="57"></label>
-        <label class="labelQrToggle"><span>Contenuto</span><label class="inlineCheck"><input id="repairLabelIncludeQr" type="checkbox" checked> QR pratica</label></label>
-      </div>
-      <div class="labelConfigHint">La stampa usa le dimensioni reali in millimetri. Nella finestra di stampa seleziona scala 100% / dimensioni effettive e nessun margine.</div>
-    </section>
-
-    <div class="deviceSaleCard deviceSaleHistoryCard adminUniformCard">
+    <div id="adminRepairsHistoryCard" class="deviceSaleCard deviceSaleHistoryCard adminUniformCard">
       <div class="deviceSaleCardHead">
         <div><strong>Riparazioni registrate</strong><small>Storico delle lavorazioni</small></div>
         <div class="repairHistoryTools"><input id="adminRepairSearch" type="search" placeholder="Cerca pratica, cliente, IMEI…"><button id="refreshAdminRepairsBtn" class="miniBtn" type="button">Aggiorna</button></div>
@@ -438,6 +437,32 @@
   </div>
 </section>
 
+
+
+<section id="settingsView" class="catalogView settingsView" hidden>
+  <div class="adminHero"><div><span class="usersKicker">IMPOSTAZIONI</span><h2>Stampa ed etichette</h2><p>Configura una volta la DYMO. Le preferenze restano memorizzate su questo dispositivo.</p></div><span class="adminBadge">ADMIN</span></div>
+  <section class="deviceSaleCard adminUniformCard repairLabelSettings">
+      <div class="deviceSaleCardHead"><div><strong>🏷 Etichette DYMO</strong><small>Scegli una volta il formato. Verrà ricordato su questo dispositivo.</small></div><span id="dymoRepairSizeBadge" class="practicePill">32 × 57 mm</span></div>
+      <div class="labelConfigGrid">
+        <label><span>Formato etichetta</span><select id="repairLabelPreset">
+          <option value="32x57" selected>32 × 57 mm · Durable / piccola</option>
+          <option value="25x54">25 × 54 mm</option>
+          <option value="36x89">36 × 89 mm</option>
+          <option value="19x51">19 × 51 mm · stretta</option>
+          <option value="54x101">54 × 101 mm · grande</option>
+          <option value="57x32">57 × 32 mm · orizzontale</option>
+          <option value="custom">Personalizzata</option>
+        </select></label>
+        <label><span>Larghezza mm</span><input id="repairLabelWidth" type="number" min="10" max="120" step="1" value="32"></label>
+        <label><span>Altezza mm</span><input id="repairLabelHeight" type="number" min="10" max="200" step="1" value="57"></label>
+        <label class="labelQrToggle"><span>Contenuto</span><label class="inlineCheck"><input id="repairLabelIncludeQr" type="checkbox" checked> QR pratica</label></label>
+      </div>
+      <div class="labelConfigHint">La stampa usa le dimensioni reali in millimetri. Nella finestra di stampa seleziona scala 100% / dimensioni effettive e nessun margine.</div>
+  </section>
+
+
+  <div class="settingsInfoCard"><strong>Come funziona</strong><span>Nelle pratiche usa “Stampa DYMO”. Il gestionale applicherà automaticamente il formato scelto qui e, se attivo, inserirà anche il QR della pratica.</span></div>
+</section>
 
 <section id="hoursView" class="hoursView" hidden>
       <div class="hoursHero"><div><span class="usersKicker">AREA PRIVATA ADMIN</span><h2>I miei orari</h2><p>Registra ore lavorate, note e attività extra. Questa sezione è visibile solo a te.</p></div><span class="adminBadge">SOLO ADMIN</span></div>
@@ -679,7 +704,7 @@
  <button type="button" data-smart-action="menu"><b>☰</b><span>Menu</span></button>
 </nav>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
-<script src="app.js?v=92"></script>
+<script src="app.js?v=93"></script>
 
 
 

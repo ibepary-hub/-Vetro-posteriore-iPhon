@@ -1,0 +1,8 @@
+BeparyTech Manager v93
+- Fix Supabase status constraint for quick repair statuses
+- Dedicated admin menu: Accettazione rapida, Accettazione completa, Riparazioni / Pratiche
+- Menu grouped into Riparazioni, Magazzino, Vendite, Amministrazione
+- DYMO configuration moved to Impostazioni
+- Mobile bottom navigation and Indietro overlap corrected
+- Vendute renamed Uscite magazzino to avoid confusion with Vendita ricambi
+- Asset cache version bumped to 93
