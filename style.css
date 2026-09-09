@@ -1796,3 +1796,218 @@ body[data-theme="light"] .dashSearchVisual,body[data-theme="light"] .dashAnalyti
 #adminRepairSignatureCanvas{width:100%;height:180px;display:block;background:#fff;border:1px dashed #9db0c8;border-radius:12px;touch-action:none}.signatureActions{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-top:8px}.signatureConsent{display:flex!important;flex-direction:row!important;align-items:flex-start!important;gap:8px;margin-top:10px}.signatureConsent input{width:auto!important;margin-top:3px}
 .receiptBtn{background:#edf5ff!important;color:#0b67d1!important}.photoCountBadge{display:inline-flex;padding:4px 8px;border-radius:999px;background:#eef4ff;color:#1b64c8;font-size:12px;font-weight:700}
 @media(max-width:700px){.repairMediaHead{display:block}.repairMediaHead small{display:block;margin-top:4px}#adminRepairSignatureCanvas{height:150px}.repairPhotoPreview{grid-template-columns:repeat(3,1fr)}}
+
+/* =========================================================
+   v91 — RESPONSIVE REWRITE / FINAL AUTHORITY LAYER
+   Breakpoint coerenti:
+   mobile <= 600 | tablet 601-899 | laptop 900-1199 | desktop >= 1200
+   ========================================================= */
+html,body{max-width:100%;overflow-x:hidden}
+*,*::before,*::after{box-sizing:border-box}
+img,svg,video,canvas{max-width:100%;height:auto}
+input,select,textarea,button{max-width:100%}
+.app{width:100%!important;max-width:none!important;margin:0!important;min-width:0!important}
+.app>*{min-width:0}
+header,.dashboardMainGrid,.dashboardCenterCol,.dashboardActionRail,.dashboardAnalyticsGrid,.dashboardKpis,.v87QuickAccess,.deviceSalesLayout,.deviceSaleGrid,.catalogGrid,.customProductGrid,.hoursGrid,.hoursSeparatedGrid,.hoursOtherGrid,.bestekEditorGrid,.premiumBestekCard,.salesView,.catalogView,.hoursView,.deviceSalesView{min-width:0}
+
+/* tabelle/liste larghe: scroll interno, mai pagina fuori schermo */
+.tableWrap,.salesTableWrap,.invoiceTableWrap,.hoursTableWrap,.catalogTableWrap,.usersTableWrap,.adminTableWrap,[class*="TableWrap"],[class*="tableWrap"]{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{max-width:100%}
+
+/* header fluido */
+header{width:100%;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:clamp(8px,1.5vw,16px)!important}
+.brandHead{min-width:0!important;flex:1 1 auto!important}
+.brandHead>div{min-width:0!important}
+.brandHead h1{font-size:clamp(18px,2.2vw,32px)!important;line-height:1.05!important;overflow-wrap:anywhere!important}
+.headerActions{flex:0 0 auto!important;max-width:100%}
+
+/* contenuti e form sempre restringibili */
+.tools,.deviceSaleGrid,.catalogTwoCols,.hoursTwoCols,.scannerManual,.orderRequestWrap,.repairHistoryTools,.adminRepairForm,.invoiceClientGrid{min-width:0}
+.tools input,.tools select,.deviceSaleGrid input,.deviceSaleGrid select,.deviceSaleGrid textarea,.catalogCard input,.catalogCard select,.hoursCard input,.hoursCard textarea,.repairHistoryTools input{min-width:0!important;width:100%!important}
+
+/* Dashboard: basi fluide indipendenti dai vecchi breakpoint */
+.dashboardMainGrid{grid-template-columns:minmax(0,1fr) clamp(250px,22vw,300px)!important}
+.dashboardKpis{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+.dashboardAnalyticsGrid{grid-template-columns:minmax(0,1.45fr) minmax(220px,.75fr)!important}
+.v87QuickAccess{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+.dashboardActionRail{grid-template-columns:1fr!important}
+.dashSearchVisual{min-width:0!important;width:min(520px,48vw)!important}
+.v87Hero{display:flex!important;align-items:center!important;gap:18px!important}
+.v87Hero .dashboardHeroCopy{min-width:0!important;max-width:min(62%,720px)!important}
+.heroQuote{min-width:0!important}
+
+/* =========================================================
+   MOBILE <= 600
+   ========================================================= */
+@media (max-width:600px){
+  .app{padding:calc(8px + env(safe-area-inset-top)) 10px calc(104px + env(safe-area-inset-bottom))!important}
+  header{position:sticky!important;top:6px!important;padding:9px 10px!important;border-radius:16px!important;margin-top:0!important;gap:7px!important}
+  .brandIcon{width:42px!important;height:42px!important;flex:0 0 42px!important}
+  .brandHead{gap:8px!important}
+  .brandHead .eyebrow{font-size:8px!important;letter-spacing:.12em!important}
+  .brandHead h1{font-size:clamp(16px,5vw,20px)!important;max-width:none!important;white-space:normal!important}
+  .headerActions{gap:4px!important;padding:2px!important}
+  .headerActions .menuToggle,.headerActions .themeToggle,.headerActions .headerLogoutBtn{width:38px!important;min-width:38px!important;height:38px!important;padding:0!important;border-radius:10px!important}
+  .headerActions .themeToggle{width:44px!important;min-width:44px!important}
+  .headerActions .themeWord,.headerActions .menuToggle>span:last-child,.headerActions .headerLogoutBtn strong,.headerActions .themeSun,.headerActions .themeMoon{display:none!important}
+
+  .globalSearchBox{grid-template-columns:minmax(0,1fr) auto!important}
+  .tools{grid-template-columns:minmax(0,1fr)!important}
+  .categoryTabs,.categoryTabs3,.categoryTabs4{grid-template-columns:1fr!important}
+
+  .dashboardMainGrid,.dashboardAnalyticsGrid,.dashboardKpis,.v87QuickAccess,.dashboardActionRail,.dashboardColumns{grid-template-columns:minmax(0,1fr)!important}
+  .dashboardActionRail .noLogoReminder,.dashboardActionRail .railRecent{grid-column:auto!important}
+  .dashTopbar{display:none!important}
+  .v87Hero{display:block!important;min-height:0!important;padding:17px!important}
+  .v87Hero .dashboardHeroCopy{max-width:100%!important}
+  .v87Hero h2{font-size:clamp(23px,8vw,30px)!important}
+  .heroQuote{display:none!important}
+  .dashboardKpis .dashCard{min-height:102px!important}
+  .dashboardAnalyticsGrid .dashAnalyticsCard{min-height:220px!important;padding:13px!important}
+  .chartBars{gap:7px!important;padding-inline:2px!important}
+  .railAction{min-height:56px!important}
+
+  .catalogGrid,.customProductGrid,.deviceSalesLayout,.deviceSaleGrid,.hoursGrid,.hoursSeparatedGrid,.hoursOtherGrid,.bestekEditorGrid{grid-template-columns:minmax(0,1fr)!important}
+  .deviceSaleGrid .wide{grid-column:auto!important}
+  .deviceSalesSummary,.vatPreview,.hoursSummary{grid-template-columns:1fr 1fr!important}
+  .hoursNotesColumn{grid-column:auto!important}
+  .hoursToolbar{display:grid!important;grid-template-columns:1fr!important;align-items:stretch!important}
+  .hoursToolbar label{grid-column:auto!important}
+  .hoursTwoCols,.catalogTwoCols{grid-template-columns:1fr!important}
+  .premiumBestekCard{grid-template-columns:1fr!important}
+  .bestekPrice{text-align:left!important}
+  .bestekCardActions{grid-column:auto!important;justify-content:stretch!important;flex-wrap:wrap!important}
+  .bestekCardActions>*{flex:1 1 120px!important}
+  .adminHero,.deviceSalesHero,.hoursHero{flex-direction:column!important;align-items:stretch!important}
+  .adminBadge{align-self:flex-start!important}
+  .repairHistoryTools{width:100%!important;display:grid!important;grid-template-columns:1fr!important}
+  .repairHistoryTools input{min-width:0!important}
+  .repairPhotoPreview{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .signatureActions{align-items:stretch!important;flex-direction:column!important}
+  .invoiceLine{grid-template-columns:auto minmax(0,1fr)!important}
+  .invoiceLineMoney{grid-column:2!important}
+  .invoiceLinePick{grid-row:auto!important}
+
+  .colorRow,.saleRow,.requestRow,.userRow{min-width:0!important}
+  .colorInfo,.saleMain,.requestMain,.userMain{min-width:0!important}
+  .stepper{flex:0 0 auto!important;gap:4px!important}
+  .stepper button{width:34px!important;height:36px!important}
+  .qty{width:40px!important;height:36px!important}
+}
+
+/* telefoni molto stretti */
+@media (max-width:380px){
+  .app{padding-inline:7px!important}
+  header{padding-inline:7px!important}
+  .brandIcon{width:38px!important;height:38px!important;flex-basis:38px!important}
+  .brandHead h1{font-size:16px!important}
+  .headerActions .menuToggle,.headerActions .headerLogoutBtn{width:34px!important;min-width:34px!important}
+  .headerActions .themeToggle{width:39px!important;min-width:39px!important}
+  .deviceSalesSummary,.vatPreview,.hoursSummary{grid-template-columns:1fr!important}
+  .repairPhotoPreview{grid-template-columns:1fr 1fr!important}
+}
+
+/* =========================================================
+   TABLET 601-899
+   ========================================================= */
+@media (min-width:601px) and (max-width:899px){
+  .app{padding:14px 16px calc(96px + env(safe-area-inset-bottom))!important}
+  header{top:8px!important;padding:12px 14px!important;border-radius:19px!important}
+  .brandIcon{width:50px!important;height:50px!important}
+  .headerActions{gap:6px!important}
+  .headerActions .menuToggle,.headerActions .themeToggle,.headerActions .headerLogoutBtn{height:42px!important;padding:0 9px!important;min-width:48px!important}
+  .headerActions .themeWord,.headerActions .menuToggle>span:last-child,.headerActions .headerLogoutBtn strong{font-size:10px!important}
+
+  .dashboardMainGrid{grid-template-columns:1fr!important}
+  .dashboardKpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .dashboardAnalyticsGrid{grid-template-columns:1fr!important}
+  .v87QuickAccess{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .dashboardActionRail{grid-template-columns:repeat(2,minmax(0,1fr))!important;position:static!important}
+  .dashboardActionRail .noLogoReminder,.dashboardActionRail .railRecent{grid-column:1/-1!important}
+  .heroQuote{display:none!important}
+
+  .catalogGrid,.customProductGrid,.hoursGrid,.hoursSeparatedGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .hoursNotesColumn{grid-column:1/-1!important}
+  .deviceSalesLayout{grid-template-columns:1fr!important}
+  .bestekEditorGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .premiumBestekCard{grid-template-columns:110px minmax(0,1fr)!important}
+  .bestekPrice,.bestekCardActions{grid-column:2!important;text-align:left!important;justify-content:flex-start!important}
+}
+
+/* =========================================================
+   LAPTOP 900-1199
+   ========================================================= */
+@media (min-width:900px) and (max-width:1199px){
+  .app{padding:16px 20px 54px!important;margin:0!important}
+  .mainMenu{width:min(292px,34vw)!important}
+  /* sidebar resta overlay: niente margine fisso finché non c'è spazio sufficiente */
+  body:not(.menu-open) .mainMenu{transform:translateX(-110%)!important;visibility:hidden!important;opacity:0!important}
+  body.menu-open .mainMenu{transform:translateX(0)!important;visibility:visible!important;opacity:1!important}
+  .menuOverlay{display:block}
+  .menuToggle{display:inline-flex!important}
+
+  .dashboardMainGrid{grid-template-columns:1fr!important}
+  .dashboardKpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .dashboardAnalyticsGrid{grid-template-columns:minmax(0,1.3fr) minmax(220px,.7fr)!important}
+  .v87QuickAccess{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .dashboardActionRail{position:static!important;grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  .dashboardActionRail .noLogoReminder,.dashboardActionRail .railRecent{grid-column:span 2!important}
+
+  .customProductGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .catalogGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .deviceSalesLayout{grid-template-columns:minmax(0,.95fr) minmax(0,1.05fr)!important}
+  .bestekEditorGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+
+/* =========================================================
+   DESKTOP >= 1200
+   ========================================================= */
+@media (min-width:1200px){
+  .mainMenu{width:292px!important;transform:none!important;visibility:visible!important;opacity:1!important;left:0!important;top:0!important;bottom:0!important;border-radius:0!important;display:flex!important;flex-direction:column!important}
+  .menuOverlay{display:none!important}
+  .menuClose{display:none!important}
+  .app{margin-left:292px!important;width:calc(100% - 292px)!important;padding:16px clamp(20px,2vw,34px) 56px!important}
+  .menuToggle{display:inline-flex!important}
+  .dashboardMainGrid{grid-template-columns:minmax(0,1fr) clamp(260px,20vw,310px)!important}
+  .dashboardKpis{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  .dashboardAnalyticsGrid{grid-template-columns:minmax(0,1.5fr) minmax(250px,.75fr)!important}
+  .v87QuickAccess{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  .dashboardActionRail{position:sticky!important;top:15px!important;grid-template-columns:1fr!important}
+  .customProductGrid{grid-template-columns:repeat(3,minmax(0,1fr))!important}
+  .catalogGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+
+@media (min-width:1500px){
+  .customProductGrid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
+  .app{padding-inline:36px!important}
+}
+
+/* landscape mobile: usa altezza, non forza layout desktop */
+@media (max-height:520px) and (orientation:landscape) and (max-width:899px){
+  header{position:relative!important;top:auto!important}
+  .app{padding-bottom:82px!important}
+  .dashboardKpis{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  .v87QuickAccess{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+
+/* fix typo tema chiaro introdotto in v87 */
+body[data-theme="light"] .heroQuote,
+body[data-theme="light"] .dashboardMiniChart{color:#17364f}
+
+/* ===== v92 · Repair workflow / quick intake / DYMO ===== */
+.quickIntakeCard{border:1px solid rgba(16,185,129,.26);box-shadow:0 18px 44px rgba(16,185,129,.08)}
+.quickRepairGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.quickRepairGrid label{display:grid;gap:7px;min-width:0}.quickRepairGrid label>span{font-size:12px;font-weight:800;letter-spacing:.02em;color:var(--muted)}
+.quickRepairGrid input{width:100%;min-width:0;box-sizing:border-box}.quickRepairGrid .wide{grid-column:1/-1}
+.quickRepairActions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.quickRepairActions>*{min-height:46px}
+.repairSectionDivider{display:flex;align-items:center;gap:12px;margin:12px 0;color:var(--muted);font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.16em}.repairSectionDivider:before,.repairSectionDivider:after{content:"";height:1px;flex:1;background:var(--line)}
+.repairLabelSettings{margin-top:16px}.labelConfigGrid{display:grid;grid-template-columns:minmax(220px,1.5fr) repeat(3,minmax(120px,.6fr));gap:12px;align-items:end}.labelConfigGrid>label{display:grid;gap:7px}.labelConfigGrid>label>span{font-size:12px;font-weight:800;color:var(--muted)}.labelConfigGrid input,.labelConfigGrid select{width:100%;box-sizing:border-box}.inlineCheck{display:flex!important;align-items:center;gap:8px;min-height:44px}.inlineCheck input{width:auto}.labelConfigHint{margin-top:11px;padding:10px 12px;border-radius:12px;background:rgba(59,130,246,.08);font-size:12px;color:var(--muted)}
+.repairDymoPrintLabel{display:none}
+@media print{
+ body.printingRepairDymo>*:not(.repairDymoPrintLabel){display:none!important}
+ body.printingRepairDymo .repairDymoPrintLabel{display:grid!important;position:fixed;inset:0;width:var(--repair-label-w,32mm)!important;height:var(--repair-label-h,57mm)!important;padding:2mm!important;box-sizing:border-box!important;background:#fff!important;color:#000!important;font-family:Arial,sans-serif!important;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto auto 1fr;gap:.5mm 1mm;overflow:hidden}
+ body.printingRepairDymo .repairDymoQr{grid-column:2;grid-row:1/5;align-self:start;width:min(21mm,38%);height:auto}.repairDymoQr canvas,.repairDymoQr img{width:100%!important;height:auto!important;display:block!important}
+ body.printingRepairDymo .repairDymoPrintLabel strong{grid-column:1;font-size:11pt;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.repairDymoPrintLabel span{grid-column:1;font-size:7pt;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.repairDymoPrintLabel b{grid-column:1;font-size:9pt;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.repairDymoPrintLabel p{grid-column:1;font-size:7.2pt;line-height:1.08;margin:0;overflow:hidden;overflow-wrap:anywhere}
+}
+@media(max-width:899px){.quickRepairGrid{grid-template-columns:1fr}.quickRepairGrid .wide{grid-column:auto}.labelConfigGrid{grid-template-columns:1fr 1fr}.labelConfigGrid>label:first-child{grid-column:1/-1}}
+@media(max-width:560px){.quickRepairActions{display:grid;grid-template-columns:1fr}.quickRepairActions>*{width:100%}.labelConfigGrid{grid-template-columns:1fr}.labelConfigGrid>label:first-child{grid-column:auto}}

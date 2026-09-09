@@ -1557,11 +1557,11 @@ document.getElementById("saveRecoveryPassword").onclick=async()=>{
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("./sw.js?v=89", { updateViaCache: "none" });
+      const reg = await navigator.serviceWorker.register("./sw.js?v=92", { updateViaCache: "none" });
       await reg.update();
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (!sessionStorage.getItem("bt-cache-reloaded-v89")) {
-          sessionStorage.setItem("bt-cache-reloaded-v89", "1");
+        if (!sessionStorage.getItem("bt-cache-reloaded-v92")) {
+          sessionStorage.setItem("bt-cache-reloaded-v92", "1");
           location.reload();
         }
       });
@@ -1611,7 +1611,7 @@ async function showAdminRepairPhotos(id){
 }
 
 async function generateAdminRepairReceipt(id){
- const r=adminRepairRows.find(x=>Number(x.id)===Number(id));if(!r)return;try{if(!window.jspdf?.jsPDF)throw new Error('Modulo PDF non disponibile.');const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:'mm',format:'a4'});const code=r.practice_code||('RIP-'+r.id);const qrText=`${location.origin}${location.pathname}?practice=${encodeURIComponent(code)}`;let qr=null;if(window.QRCode?.toDataURL)qr=await QRCode.toDataURL(qrText,{width:260,margin:1});doc.setFont('helvetica','bold');doc.setFontSize(20);doc.text('BeparyTech Manager',18,20);doc.setFontSize(13);doc.text('Ricevuta presa in carico / riparazione',18,29);if(qr)doc.addImage(qr,'PNG',164,14,28,28);doc.setFontSize(10);doc.setFont('helvetica','normal');let y=43;const line=(a,b)=>{doc.setFont('helvetica','bold');doc.text(a,18,y);doc.setFont('helvetica','normal');const vals=doc.splitTextToSize(String(b||'-'),125);doc.text(vals,62,y);y+=Math.max(7,vals.length*5);};line('Pratica',code);line('Data',r.repaired_at?new Date(r.repaired_at+'T12:00:00').toLocaleDateString('it-IT'):'-');line('Cliente',r.client_name);line('Telefono',r.customer_phone);line('Email',r.customer_email);line('Dispositivo',r.device);line('IMEI / Seriale',r.imei_serial);line('Difetto dichiarato',r.reported_issue);line('Stato estetico',r.device_condition);line('Accessori',r.accessories);line('Intervento',r.repair_type);line('Stato pratica',r.repair_status);line('Preventivo',`${r.quote_status||'-'}${r.quote_amount!=null?' · '+euroFmt.format(Number(r.quote_amount)):''}`);line('Foto accettazione',`${Array.isArray(r.photo_paths)?r.photo_paths.length:0} foto archiviate`);if(r.warranty_until)line('Garanzia fino al',new Date(r.warranty_until+'T12:00:00').toLocaleDateString('it-IT'));y+=3;doc.setDrawColor(200);doc.line(18,y,192,y);y+=8;doc.setFontSize(9);doc.text(doc.splitTextToSize('Il cliente conferma i dati di presa in carico, lo stato estetico e gli accessori sopra indicati. Eventuali lavorazioni restano soggette al preventivo e alle condizioni concordate.',174),18,y);y+=18;if(r.signature_data){try{doc.addImage(r.signature_data,'PNG',18,y,70,20);doc.setFontSize(8);doc.text('Firma cliente',18,y+25);if(r.signed_at)doc.text('Firmato: '+new Date(r.signed_at).toLocaleString('it-IT'),18,y+30);}catch(e){}}doc.setFontSize(8);doc.text(`QR pratica: ${qrText}`,18,286);doc.save(`Ricevuta_${code}.pdf`);
+ const r=adminRepairRows.find(x=>Number(x.id)===Number(id));if(!r)return;try{if(!window.jspdf?.jsPDF)throw new Error('Modulo PDF non disponibile.');const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:'mm',format:'a4'});const code=r.practice_code||('RIP-'+r.id);const qrText=`${location.origin}${location.pathname}?practice=${encodeURIComponent(code)}`;let qr=null;try{qr=await btMakeQrDataUrl(qrText,260);}catch(_){qr=null;}doc.setFont('helvetica','bold');doc.setFontSize(20);doc.text('BeparyTech Manager',18,20);doc.setFontSize(13);doc.text('Ricevuta presa in carico / riparazione',18,29);if(qr)doc.addImage(qr,'PNG',164,14,28,28);doc.setFontSize(10);doc.setFont('helvetica','normal');let y=43;const line=(a,b)=>{doc.setFont('helvetica','bold');doc.text(a,18,y);doc.setFont('helvetica','normal');const vals=doc.splitTextToSize(String(b||'-'),125);doc.text(vals,62,y);y+=Math.max(7,vals.length*5);};line('Pratica',code);line('Data',r.repaired_at?new Date(r.repaired_at+'T12:00:00').toLocaleDateString('it-IT'):'-');line('Cliente',r.client_name);line('Telefono',r.customer_phone);line('Email',r.customer_email);line('Dispositivo',r.device);line('IMEI / Seriale',r.imei_serial);line('Difetto dichiarato',r.reported_issue);line('Stato estetico',r.device_condition);line('Accessori',r.accessories);line('Intervento',r.repair_type);line('Stato pratica',r.repair_status);line('Preventivo',`${r.quote_status||'-'}${r.quote_amount!=null?' · '+euroFmt.format(Number(r.quote_amount)):''}`);line('Foto accettazione',`${Array.isArray(r.photo_paths)?r.photo_paths.length:0} foto archiviate`);if(r.warranty_until)line('Garanzia fino al',new Date(r.warranty_until+'T12:00:00').toLocaleDateString('it-IT'));y+=3;doc.setDrawColor(200);doc.line(18,y,192,y);y+=8;doc.setFontSize(9);doc.text(doc.splitTextToSize('Il cliente conferma i dati di presa in carico, lo stato estetico e gli accessori sopra indicati. Eventuali lavorazioni restano soggette al preventivo e alle condizioni concordate.',174),18,y);y+=18;if(r.signature_data){try{doc.addImage(r.signature_data,'PNG',18,y,70,20);doc.setFontSize(8);doc.text('Firma cliente',18,y+25);if(r.signed_at)doc.text('Firmato: '+new Date(r.signed_at).toLocaleString('it-IT'),18,y+30);}catch(e){}}doc.setFontSize(8);doc.text(`QR pratica: ${qrText}`,18,286);doc.save(`Ricevuta_${code}.pdf`);
  }catch(e){alert(e.message||'Impossibile generare la ricevuta PDF.');}
 }
 
@@ -1677,8 +1677,10 @@ async function loadAdminRepairs(){
     const net=rows.reduce((x,r)=>x+Number(r.price_ex_vat||0),0), vat=rows.reduce((x,r)=>x+Number(r.vat_amount||0),0), total=rows.reduce((x,r)=>x+Number(r.total_inc_vat||0),0);
     const sum=document.getElementById("adminRepairsSummary");
     if(sum)sum.innerHTML=`<div><span>Riparazioni</span><strong>${rows.length}</strong></div><div><span>Imponibile</span><strong>${euroFmt.format(net)}</strong></div><div><span>IVA</span><strong>${euroFmt.format(vat)}</strong></div><div><span>Totale</span><strong>${euroFmt.format(total)}</strong></div>`;
-    list.innerHTML=rows.length?rows.map(r=>`<article class="deviceAdminSaleRow businessRepairRow"><div class="deviceAdminSaleTop"><div>${r.practice_code?`<span class="practiceCodeBadge">${escapeHtml(r.practice_code)}</span>`:""}<strong>${escapeHtml(r.device)}</strong><span>${escapeHtml(r.repair_type)} · ${escapeHtml(r.client_name||r.store||"Cliente")} · ${new Date(r.repaired_at+"T12:00:00").toLocaleDateString("it-IT")}</span><div class="repairBadges"><span class="repairStatusBadge">${escapeHtml(r.repair_status||"Riparato")}</span><span class="repairInvoiceBadge ${r.invoiced?"done":"pending"}">${r.invoiced?"Fatturato":"Da fatturare"}</span></div>${r.imei_serial?`<small>IMEI/Seriale: ${escapeHtml(r.imei_serial)}</small>`:""}${r.reported_issue?`<small>Difetto: ${escapeHtml(r.reported_issue)}</small>`:""}<div class="repairBadges">${r.quote_status?`<span class="quoteBadge">${escapeHtml(r.quote_status)}</span>`:""}${r.warranty_until?`<span class="warrantyBadge">Garanzia fino al ${new Date(r.warranty_until+"T12:00:00").toLocaleDateString("it-IT")}</span>`:""}</div>${r.note?`<small>${escapeHtml(r.note)}</small>`:""}</div><div class="deviceAdminSalePrice"><strong>${euroFmt.format(Number(r.total_inc_vat||0))}</strong><span>IVA ${Number(r.vat_rate||0).toLocaleString("it-IT")}% · ${euroFmt.format(Number(r.vat_amount||0))}</span></div></div><div class="deviceAdminSaleMeta"><span>Imponibile ${euroFmt.format(Number(r.price_ex_vat||0))}</span>${r.part_cost!=null?`<span class="adminCostMeta">Costo ricambio ${euroFmt.format(Number(r.part_cost||0))}</span>`:""}${r.store?`<span>Sede: ${escapeHtml(r.store)}</span>`:""}${Array.isArray(r.photo_paths)&&r.photo_paths.length?`<span class="photoCountBadge">📷 ${r.photo_paths.length} foto</span>`:""}${r.signature_data?`<span class="photoCountBadge">✍️ Firmata</span>`:""}</div><div class="deviceAdminSaleActions repairRowActions">${Array.isArray(r.photo_paths)&&r.photo_paths.length?`<button class="rowAction viewAdminRepairPhotos" data-id="${r.id}" type="button">Foto (${r.photo_paths.length})</button>`:""}<button class="rowAction receiptBtn receiptAdminRepair" data-id="${r.id}" type="button">Ricevuta PDF + QR</button><button class="rowAction editAdminRepair" data-id="${r.id}" type="button">Modifica</button><button class="rowAction delete deleteAdminRepair" data-id="${r.id}" type="button">Elimina</button></div></article>`).join(""):'<div class="emptyState">Nessuna riparazione registrata</div>';
+    list.innerHTML=rows.length?rows.map(r=>`<article class="deviceAdminSaleRow businessRepairRow"><div class="deviceAdminSaleTop"><div>${r.practice_code?`<span class="practiceCodeBadge">${escapeHtml(r.practice_code)}</span>`:""}<strong>${escapeHtml(r.device)}</strong><span>${escapeHtml(r.repair_type)} · ${escapeHtml(r.client_name||r.store||"Cliente")} · ${new Date(r.repaired_at+"T12:00:00").toLocaleDateString("it-IT")}</span><div class="repairBadges"><span class="repairStatusBadge">${escapeHtml(r.repair_status||"Riparato")}</span><span class="repairInvoiceBadge ${r.invoiced?"done":"pending"}">${r.invoiced?"Fatturato":"Da fatturare"}</span></div>${r.imei_serial?`<small>IMEI/Seriale: ${escapeHtml(r.imei_serial)}</small>`:""}${r.reported_issue?`<small>Difetto: ${escapeHtml(r.reported_issue)}</small>`:""}<div class="repairBadges">${r.quote_status?`<span class="quoteBadge">${escapeHtml(r.quote_status)}</span>`:""}${r.warranty_until?`<span class="warrantyBadge">Garanzia fino al ${new Date(r.warranty_until+"T12:00:00").toLocaleDateString("it-IT")}</span>`:""}</div>${r.note?`<small>${escapeHtml(r.note)}</small>`:""}</div><div class="deviceAdminSalePrice"><strong>${euroFmt.format(Number(r.total_inc_vat||0))}</strong><span>IVA ${Number(r.vat_rate||0).toLocaleString("it-IT")}% · ${euroFmt.format(Number(r.vat_amount||0))}</span></div></div><div class="deviceAdminSaleMeta"><span>Imponibile ${euroFmt.format(Number(r.price_ex_vat||0))}</span>${r.part_cost!=null?`<span class="adminCostMeta">Costo ricambio ${euroFmt.format(Number(r.part_cost||0))}</span>`:""}${r.store?`<span>Sede: ${escapeHtml(r.store)}</span>`:""}${Array.isArray(r.photo_paths)&&r.photo_paths.length?`<span class="photoCountBadge">📷 ${r.photo_paths.length} foto</span>`:""}${r.signature_data?`<span class="photoCountBadge">✍️ Firmata</span>`:""}</div><div class="deviceAdminSaleActions repairRowActions">${Array.isArray(r.photo_paths)&&r.photo_paths.length?`<button class="rowAction viewAdminRepairPhotos" data-id="${r.id}" type="button">Foto (${r.photo_paths.length})</button>`:""}${r.repair_status==="Da completare"?`<button class="rowAction completeAdminRepair" data-id="${r.id}" type="button">Completa pratica</button>`:""}<button class="rowAction printRepairDymo" data-id="${r.id}" type="button">Stampa DYMO</button><button class="rowAction receiptBtn receiptAdminRepair" data-id="${r.id}" type="button">Ricevuta PDF + QR</button><button class="rowAction editAdminRepair" data-id="${r.id}" type="button">Modifica</button><button class="rowAction delete deleteAdminRepair" data-id="${r.id}" type="button">Elimina</button></div></article>`).join(""):'<div class="emptyState">Nessuna riparazione registrata</div>';
     list.querySelectorAll(".viewAdminRepairPhotos").forEach(b=>b.onclick=()=>showAdminRepairPhotos(Number(b.dataset.id)));
+    list.querySelectorAll(".completeAdminRepair").forEach(b=>b.onclick=()=>completeAdminRepairV92(Number(b.dataset.id)));
+    list.querySelectorAll(".printRepairDymo").forEach(b=>b.onclick=()=>printRepairDymoV92(Number(b.dataset.id)));
     list.querySelectorAll(".receiptAdminRepair").forEach(b=>b.onclick=()=>generateAdminRepairReceipt(Number(b.dataset.id)));
     list.querySelectorAll(".editAdminRepair").forEach(b=>b.onclick=()=>startAdminRepairEdit(Number(b.dataset.id)));
     list.querySelectorAll(".deleteAdminRepair").forEach(b=>b.onclick=()=>deleteAdminRepair(Number(b.dataset.id)));
@@ -1931,7 +1933,7 @@ function updateSmartNavigation(){
  const p=nav.querySelector('[data-smart-action="primary"]'), h=nav.querySelector('[data-smart-action="history"]');
  let pl='Cerca', pi='⌕', hl='Cronologia', hi='≋';
  if(currentCategory==='Orari'){pl='Orario';pi='◷';hl='Extra';hi='＋'}
- else if(currentCategory==='VenditeAdmin'){pl='Vendita';pi='−1';hl='Riparazioni';hi='⌁'}
+ else if(currentCategory==='VenditeAdmin'){pl='Vendita';pi='−1';hl='Cronologia';hi='◷'}else if(currentCategory==='RiparazioniAdmin'){pl='Nuova';pi='＋';hl='Pratiche';hi='⌁'}
  else if(currentCategory==='Fatturazione'){pl='Fattura';pi='🧾';hl='Vendite';hi='€'}
  else if(currentCategory==='Vendite'){pl='Vendite';pi='✓';hl='Cronologia';hi='≋'}
  else if(currentCategory==='Utenti'){pl='Nuovo utente';pi='＋';hl='Gestisci';hi='♙'}
@@ -1941,7 +1943,7 @@ function updateSmartNavigation(){
 document.addEventListener('DOMContentLoaded',()=>{
  bindHourAccordions(); const nav=document.getElementById('mobileBottomNav'), back=document.getElementById('smartBackBtn');
  back?.addEventListener('click',smartBack);
- nav?.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.smartAction;if(a==='home')setCategory('Dashboard');else if(a==='scanner')openScanner();else if(a==='menu')openMainMenu();else if(currentCategory==='Orari'&&a==='primary')document.querySelector('#hoursForm .hourCardToggle')?.click();else if(currentCategory==='Orari'&&a==='history')document.querySelector('#extraForm .hourCardToggle')?.click();else if(currentCategory==='VenditeAdmin'&&a==='primary')document.querySelector('[data-work-tab="sales"]')?.click();else if(currentCategory==='VenditeAdmin'&&a==='history')document.querySelector('[data-work-tab="repairs"]')?.click();else if(currentCategory==='Fatturazione'&&a==='primary')document.querySelector('[data-work-tab="invoices"]')?.click();else if(currentCategory==='Fatturazione'&&a==='history')setCategory('VenditeAdmin');else if(a==='history')setCategory('Cronologia');else document.getElementById('globalSearch')?.focus();});
+ nav?.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.smartAction;if(a==='home')setCategory('Dashboard');else if(a==='scanner')openScanner();else if(a==='menu')openMainMenu();else if(currentCategory==='Orari'&&a==='primary')document.querySelector('#hoursForm .hourCardToggle')?.click();else if(currentCategory==='Orari'&&a==='history')document.querySelector('#extraForm .hourCardToggle')?.click();else if(currentCategory==='VenditeAdmin'&&a==='primary')document.querySelector('[data-work-tab="sales"]')?.click();else if(currentCategory==='VenditeAdmin'&&a==='history')setCategory('Cronologia');else if(currentCategory==='RiparazioniAdmin'&&a==='primary'){const f=document.getElementById('adminRepairForm');if(f){f.hidden=false;f.scrollIntoView({behavior:'smooth',block:'start'});}}else if(currentCategory==='RiparazioniAdmin'&&a==='history')document.getElementById('adminRepairsList')?.scrollIntoView({behavior:'smooth',block:'start'});else if(currentCategory==='Fatturazione'&&a==='primary')document.querySelector('[data-work-tab="invoices"]')?.click();else if(currentCategory==='Fatturazione'&&a==='history')setCategory('VenditeAdmin');else if(a==='history')setCategory('Cronologia');else document.getElementById('globalSearch')?.focus();});
  let sx=0,sy=0,st=0;document.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;sx=e.touches[0].clientX;sy=e.touches[0].clientY;st=Date.now()},{passive:true});document.addEventListener('touchend',e=>{if(!e.changedTouches?.length||sx>35)return;const dx=e.changedTouches[0].clientX-sx,dy=Math.abs(e.changedTouches[0].clientY-sy);if(dx>85&&dy<70&&Date.now()-st<700)smartBack()},{passive:true});
  updateSmartNavigation();
 });
@@ -2014,4 +2016,84 @@ document.addEventListener("DOMContentLoaded",()=>{
 
 
 // v89 · deep link QR pratica
-(function(){let done=false;async function openPracticeFromUrl(){if(done||!isAdmin?.())return;const code=new URLSearchParams(location.search).get('practice');if(!code)return;done=true;try{setCategory('VenditeAdmin');setTimeout(async()=>{const tab=document.querySelector('[data-work-tab="repairs"]');if(tab&&!tab.classList.contains('active'))tab.click();await loadAdminRepairs();const q=document.getElementById('adminRepairSearch');if(q){q.value=code;q.dispatchEvent(new Event('input',{bubbles:true}));}setTimeout(()=>document.querySelector('#adminRepairsList .businessRepairRow:not([hidden])')?.scrollIntoView({behavior:'smooth',block:'center'}),250);},250);}catch(e){done=false;}}setInterval(openPracticeFromUrl,1200);})();
+(function(){let done=false;async function openPracticeFromUrl(){if(done||!isAdmin?.())return;const code=new URLSearchParams(location.search).get('practice');if(!code)return;done=true;try{setCategory('RiparazioniAdmin');setTimeout(async()=>{await loadAdminRepairs();const q=document.getElementById('adminRepairSearch');if(q){q.value=code;q.dispatchEvent(new Event('input',{bubbles:true}));}setTimeout(()=>document.querySelector('#adminRepairsList .businessRepairRow:not([hidden])')?.scrollIntoView({behavior:'smooth',block:'center'}),250);},250);}catch(e){done=false;}}setInterval(openPracticeFromUrl,1200);})();
+
+
+// ===== v92: Accettazione separata, rapida, QR affidabile e DYMO configurabile =====
+async function btMakeQrDataUrl(text,size=256){
+  if(typeof QRCode!=="function") throw new Error("Modulo QR non disponibile");
+  const host=document.createElement("div");host.style.cssText="position:fixed;left:-99999px;top:-99999px;width:1px;height:1px;overflow:hidden";document.body.appendChild(host);
+  try{
+    new QRCode(host,{text:String(text||""),width:size,height:size,correctLevel:QRCode.CorrectLevel?.M});
+    await new Promise(r=>setTimeout(r,40));
+    const canvas=host.querySelector("canvas"); if(canvas) return canvas.toDataURL("image/png");
+    const img=host.querySelector("img"); if(img?.src) return img.src;
+    throw new Error("QR non generato");
+  }finally{host.remove();}
+}
+
+function v92ShowRepairArea(){
+  const root=document.getElementById("deviceSalesView");if(!root)return;
+  document.getElementById("adminWorkTabs")?.setAttribute("hidden","");
+  const sales=document.getElementById("adminSalesPanel"),repairs=document.getElementById("adminRepairsPanel"),invoices=document.getElementById("adminInvoicesPanel");
+  if(sales)sales.hidden=true;if(repairs)repairs.hidden=false;if(invoices)invoices.hidden=true;
+  const h=document.getElementById("adminWorkHeroTitle"),p=document.getElementById("adminWorkHeroText");if(h)h.textContent="Accettazione & Riparazioni";if(p)p.textContent="Accettazione rapida o completa, lavorazione, preventivo, etichette e consegna.";
+  try{bindAdminRepairs();loadAdminRepairs();bindQuickRepairV92();bindRepairLabelSettingsV92();}catch(_){ }
+}
+function v92ShowSalesArea(){
+  document.getElementById("adminWorkTabs")?.setAttribute("hidden","");
+  const sales=document.getElementById("adminSalesPanel"),repairs=document.getElementById("adminRepairsPanel"),invoices=document.getElementById("adminInvoicesPanel");
+  if(sales)sales.hidden=false;if(repairs)repairs.hidden=true;if(invoices)invoices.hidden=true;
+  const h=document.getElementById("adminWorkHeroTitle"),p=document.getElementById("adminWorkHeroText");if(h)h.textContent="Vendita ricambi";if(p)p.textContent="Vendite di ricambi e articoli elettronici, separate dalle pratiche di riparazione.";
+  try{loadDeviceSales();}catch(_){ }
+}
+const v92PreviousSetCategory=setCategory;
+setCategory=function(category,fromBack=false){
+  if(category==="RiparazioniAdmin"){
+    v92PreviousSetCategory("VenditeAdmin",fromBack);currentCategory="RiparazioniAdmin";
+    document.getElementById("categoryName").textContent="Accettazione & Riparazioni";
+    document.getElementById("categoryDescription").textContent="Area privata Admin · accettazione rapida, completa e gestione pratiche";
+    document.querySelectorAll(".menuItem[data-category]").forEach(b=>b.classList.toggle("active",b.dataset.category==="RiparazioniAdmin"));
+    setTimeout(v92ShowRepairArea,0);return;
+  }
+  v92PreviousSetCategory(category,fromBack);
+  if(category==="VenditeAdmin")setTimeout(v92ShowSalesArea,0);
+};
+
+function bindQuickRepairV92(){
+  const form=document.getElementById("quickRepairForm");if(!form||form.dataset.bound==="1")return;form.dataset.bound="1";
+  document.getElementById("openFullRepairBtn")?.addEventListener("click",()=>{const full=document.getElementById("adminRepairForm");if(full){full.hidden=false;full.scrollIntoView({behavior:"smooth",block:"start"});}});
+  form.addEventListener("submit",async e=>{
+    e.preventDefault();const msg=document.getElementById("quickRepairMsg");if(msg){msg.className="createUserMsg";msg.textContent="Salvataggio…";}
+    try{
+      const ctx=await btGetWorkspaceOwnerId();const client=document.getElementById("quickRepairClient").value.trim(),device=document.getElementById("quickRepairDevice").value.trim(),work=document.getElementById("quickRepairType").value.trim(),note=document.getElementById("quickRepairNote").value.trim();
+      if(!client||!device||!work)throw new Error("Inserisci cliente, dispositivo e lavoro da fare.");
+      const day=new Date().toISOString().slice(0,10),code=`RIP-${day.replaceAll("-","")}-${String(Date.now()).slice(-5)}`;
+      const payload={workspace_owner_id:ctx.owner,created_by:ctx.user,repaired_at:day,accepted_at:new Date().toISOString(),practice_code:code,receipt_token:code,store:client,client_name:client,device,repair_type:work,reported_issue:null,price_ex_vat:0,vat_rate:22,repair_status:"Da completare",quote_status:"Da diagnosticare",warranty_months:0,invoiced:false,note:note||null,photo_paths:[]};
+      const {error}=await sb.from("beparytech_admin_repairs").insert(payload);if(error)throw error;
+      form.reset();if(msg){msg.className="createUserMsg ok";msg.textContent=`Pratica ${code} salvata. Puoi completarla anche più tardi.`;}await loadAdminRepairs();
+    }catch(err){if(msg){msg.className="createUserMsg error";msg.textContent=err.message||"Errore salvataggio";}}
+  });
+}
+function completeAdminRepairV92(id){
+  const full=document.getElementById("adminRepairForm");if(full)full.hidden=false;startAdminRepairEdit(id);setTimeout(()=>full?.scrollIntoView({behavior:"smooth",block:"start"}),60);
+  const msg=document.getElementById("adminRepairMsg");if(msg){msg.className="createUserMsg";msg.textContent="Completa i dati mancanti e salva: resterà la stessa pratica.";}
+}
+
+const REPAIR_LABEL_KEY="bt-repair-label-v92";
+const REPAIR_LABEL_PRESETS={"32x57":[32,57],"25x54":[25,54],"36x89":[36,89],"19x51":[19,51],"54x101":[54,101],"57x32":[57,32]};
+function getRepairLabelSettingsV92(){try{return {...{preset:"32x57",w:32,h:57,qr:true},...JSON.parse(localStorage.getItem(REPAIR_LABEL_KEY)||"{}")};}catch(_){return {preset:"32x57",w:32,h:57,qr:true};}}
+function saveRepairLabelSettingsV92(){const p=document.getElementById("repairLabelPreset")?.value||"32x57",w=Math.max(10,Math.min(120,Number(document.getElementById("repairLabelWidth")?.value)||32)),h=Math.max(10,Math.min(200,Number(document.getElementById("repairLabelHeight")?.value)||57)),qr=!!document.getElementById("repairLabelIncludeQr")?.checked;localStorage.setItem(REPAIR_LABEL_KEY,JSON.stringify({preset:p,w,h,qr}));const b=document.getElementById("dymoRepairSizeBadge");if(b)b.textContent=`${w} × ${h} mm`;return {preset:p,w,h,qr};}
+function bindRepairLabelSettingsV92(){
+  const preset=document.getElementById("repairLabelPreset");if(!preset||preset.dataset.bound==="1")return;preset.dataset.bound="1";const st=getRepairLabelSettingsV92(),w=document.getElementById("repairLabelWidth"),h=document.getElementById("repairLabelHeight"),qr=document.getElementById("repairLabelIncludeQr");preset.value=st.preset||"32x57";w.value=st.w;h.value=st.h;qr.checked=st.qr!==false;
+  const sync=()=>{if(preset.value!=="custom"&&REPAIR_LABEL_PRESETS[preset.value]){[w.value,h.value]=REPAIR_LABEL_PRESETS[preset.value];}saveRepairLabelSettingsV92();};preset.addEventListener("change",sync);w.addEventListener("input",()=>{preset.value="custom";saveRepairLabelSettingsV92();});h.addEventListener("input",()=>{preset.value="custom";saveRepairLabelSettingsV92();});qr.addEventListener("change",saveRepairLabelSettingsV92);saveRepairLabelSettingsV92();
+}
+async function printRepairDymoV92(id){
+  const r=adminRepairRows.find(x=>Number(x.id)===Number(id));if(!r)return;const st=getRepairLabelSettingsV92(),label=document.getElementById("repairDymoPrintLabel");if(!label)return;
+  label.style.setProperty("--repair-label-w",`${st.w}mm`);label.style.setProperty("--repair-label-h",`${st.h}mm`);document.getElementById("repairDymoCode").textContent=r.practice_code||`RIP-${r.id}`;document.getElementById("repairDymoClient").textContent=r.client_name||r.store||"Cliente";document.getElementById("repairDymoDevice").textContent=r.device||"Dispositivo";document.getElementById("repairDymoWork").textContent=r.repair_type||"Riparazione";
+  const q=document.getElementById("repairDymoQr");q.innerHTML="";if(st.qr){try{new QRCode(q,{text:`${location.origin}${location.pathname}?practice=${encodeURIComponent(r.practice_code||r.id)}`,width:120,height:120,correctLevel:QRCode.CorrectLevel?.M});}catch(_){q.hidden=true;}}q.hidden=!st.qr;
+  let ps=document.getElementById("repairDymoPageStyle");if(!ps){ps=document.createElement("style");ps.id="repairDymoPageStyle";document.head.appendChild(ps);}ps.textContent=`@page{size:${st.w}mm ${st.h}mm;margin:0}`;document.body.classList.add("printingRepairDymo");const cleanup=()=>document.body.classList.remove("printingRepairDymo");window.addEventListener("afterprint",cleanup,{once:true});setTimeout(()=>{window.print();setTimeout(cleanup,1200);},80);
+}
+
+document.addEventListener("DOMContentLoaded",()=>{bindQuickRepairV92();bindRepairLabelSettingsV92();});
+setInterval(()=>{if(currentCategory==="RiparazioniAdmin"){bindQuickRepairV92();bindRepairLabelSettingsV92();}},1500);

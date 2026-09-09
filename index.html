@@ -10,10 +10,10 @@
   <meta name="apple-mobile-web-app-title" content="BeparyTech Manager">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
   <title>BeparyTech Manager</title>
-  <link rel="manifest" href="manifest.json?v=88">
+  <link rel="manifest" href="manifest.json?v=92">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=88">
+  <link rel="stylesheet" href="style.css?v=92">
 
 
 
@@ -31,6 +31,7 @@
       <button id="bestekCatalogMenuItem" class="menuItem adminOnly" type="button" data-category="CatalogoBestek" hidden><span class="menuIcon">BK</span><span><strong>Catalogo Bestek</strong><small>Codici e accessori verificati</small></span></button>
       <button id="catalogMenuItem" class="menuItem adminOnly" type="button" data-category="GestioneMagazzino" hidden><span class="menuIcon">＋</span><span><strong>Gestione magazzino</strong><small>Sezioni e prodotti</small></span></button>
       <button id="deviceSalesMenuItem" class="menuItem adminOnly" type="button" data-category="VenditeAdmin" hidden><span class="menuIcon">€</span><span><strong>Vendite ricambi</strong><small>Prezzi, IVA e riferimenti acquisto</small></span></button>
+      <button id="repairsMenuItem" class="menuItem adminOnly" type="button" data-category="RiparazioniAdmin" hidden><span class="menuIcon">🛠</span><span><strong>Accettazione</strong><small>Rapida, completa e riparazioni</small></span></button>
       <button id="invoicesMenuItem" class="menuItem adminOnly" type="button" data-category="Fatturazione" hidden><span class="menuIcon">🧾</span><span><strong>Fatturazione</strong><small>Riparalo / MELA · XML Aruba</small></span></button>
       <button id="hoursMenuItem" class="menuItem adminOnly" type="button" data-category="Orari" hidden><span class="menuIcon">◷</span><span><strong>Orari</strong><small>Ore lavorate ed extra</small></span></button>
       <button id="zeroStockMenuItem" class="menuItem adminOnly" type="button" data-category="ScorteZero" hidden><span class="menuIcon">0</span><span><strong>Scorte a zero</strong><small>BackGlass e Housing separati</small></span></button>
@@ -141,7 +142,7 @@
             <button type="button" data-quick-category="BackGlass"><b>▣</b><span><strong>BackGlass</strong><small>Vetri posteriori · NO LOGO</small></span><em>Apri →</em></button>
             <button type="button" data-quick-category="Housing"><b>▢</b><span><strong>Housing</strong><small>Scocche complete · NO LOGO</small></span><em>Apri →</em></button>
             <button type="button" data-quick-category="Vendite"><b>✓</b><span><strong>Vendite</strong><small>Scarichi e consegne</small></span><em>Apri →</em></button>
-            <button type="button" class="adminQuick" data-quick-category="VenditeAdmin"><b>⌁</b><span><strong>Riparazioni</strong><small>Clienti aziendali</small></span><em>Apri →</em></button>
+            <button type="button" class="adminQuick" data-quick-category="RiparazioniAdmin"><b>⌁</b><span><strong>Riparazioni</strong><small>Clienti aziendali</small></span><em>Apri →</em></button>
           </div>
 
           <div id="adminOperationalPanels" class="dashboardColumns adminOnly" hidden>
@@ -156,7 +157,7 @@
 
         <aside class="dashboardActionRail">
           <button class="railAction blue" type="button" data-rail-category="Vendite"><b>＋</b><span>Nuova vendita</span></button>
-          <button class="railAction green adminQuick" type="button" data-rail-category="VenditeAdmin" data-work-target="repairs"><b>＋</b><span>Nuova riparazione</span></button>
+          <button class="railAction green adminQuick" type="button" data-rail-category="RiparazioniAdmin" data-work-target="repairs"><b>＋</b><span>Nuova riparazione</span></button>
           <button class="railAction purple adminQuick" type="button" data-rail-category="Fatturazione"><b>▤</b><span>Genera fattura</span></button>
           <button class="railAction dark adminQuick" type="button" data-rail-category="Fatturazione"><b>⇧</b><span>Esporta per Aruba</span></button>
           <div class="noLogoReminder"><strong>⚠ BackGlass & Housing</strong><span>Tutti gli articoli vengono gestiti con la dicitura <b>NO LOGO</b>, anche nelle fatture.</span></div>
@@ -213,8 +214,8 @@
   <div class="adminWorkHero">
     <div>
       <span class="usersKicker">AREA PRIVATA ADMIN</span>
-      <h2>Vendite e riparazioni</h2>
-      <p>Scegli cosa vuoi registrare. Le due aree sono separate e una sola resta visibile alla volta.</p>
+      <h2 id="adminWorkHeroTitle">Area amministrativa</h2>
+      <p id="adminWorkHeroText">Gestisci vendite, accettazioni e fatturazione in aree separate.</p>
     </div>
     <span class="adminBadge">SOLO ADMIN</span>
   </div>
@@ -279,8 +280,24 @@
       <div><strong>Accettazione & Riparazioni</strong><small>Gestisci la pratica dal ritiro del dispositivo fino alla consegna e alla garanzia.</small></div>
     </div>
 
-    <form id="adminRepairForm" class="deviceSaleCard adminUniformCard">
-      <div class="deviceSaleCardHead"><div><strong>Nuova pratica di riparazione</strong><small>Accettazione, preventivo, lavorazione, consegna e garanzia</small></div><div class="practicePill" id="adminRepairPracticePreview">RIP-AUTO</div></div>
+    <section class="quickIntakeCard deviceSaleCard adminUniformCard" id="quickIntakeCard">
+      <div class="deviceSaleCardHead"><div><strong>⚡ Accettazione rapida</strong><small>Quando hai poche informazioni: salva in pochi secondi e completa la pratica dopo.</small></div><span class="practicePill">SOLO ESSENZIALE</span></div>
+      <form id="quickRepairForm" class="quickRepairForm">
+        <div class="quickRepairGrid">
+          <label><span>Cliente *</span><input id="quickRepairClient" maxlength="160" list="quickRepairClients" placeholder="es. VR Trasporti" required><datalist id="quickRepairClients"><option value="VR Trasporti"><option value="RIPARALO S.R.L."><option value="E-POL"></datalist></label>
+          <label><span>Dispositivo *</span><input id="quickRepairDevice" maxlength="160" placeholder="es. iPhone 14 Pro" required></label>
+          <label class="wide"><span>Lavoro da fare *</span><input id="quickRepairType" maxlength="240" list="adminRepairTypeOptions" placeholder="es. Cambio display" required></label>
+          <label class="wide"><span>Nota veloce</span><input id="quickRepairNote" maxlength="500" placeholder="Facoltativa"></label>
+        </div>
+        <div class="quickRepairActions"><button class="primaryAction animatedBtn" type="submit">Salva accettazione rapida</button><button id="openFullRepairBtn" class="secondaryAction animatedBtn" type="button">Apri accettazione completa</button></div>
+        <div id="quickRepairMsg" class="createUserMsg" aria-live="polite"></div>
+      </form>
+    </section>
+
+    <div class="repairSectionDivider"><span>oppure</span></div>
+
+    <form id="adminRepairForm" class="deviceSaleCard adminUniformCard" hidden>
+      <div class="deviceSaleCardHead"><div><strong>📝 Accettazione completa</strong><small>Cliente, foto, firma, preventivo, lavorazione, consegna e garanzia</small></div><div class="practicePill" id="adminRepairPracticePreview">RIP-AUTO</div></div>
       <div class="deviceSaleGrid">
         <label><span>Data riparazione *</span><input id="adminRepairDate" type="date" required></label><label><span>Codice pratica</span><input id="adminRepairPracticeCode" maxlength="40" placeholder="Generato automaticamente"></label>
         <label><span>Cliente *</span><select id="adminRepairClient" required><option value="">Seleziona cliente…</option><option value="RIPARALO S.R.L.">RIPARALO S.R.L.</option><option value="VR Trasporti">VR Trasporti</option><option value="ALTRO">Altro cliente</option></select></label>
@@ -295,7 +312,7 @@
         <label><span>IMEI / Seriale</span><input id="adminRepairImei" maxlength="120" placeholder="Facoltativo"></label><label class="wide"><span>Difetto dichiarato dal cliente *</span><textarea id="adminRepairReportedIssue" maxlength="1000" rows="2" placeholder="es. Non carica, display rotto, non si accende…" required></textarea></label><label class="wide"><span>Stato estetico all’accettazione</span><input id="adminRepairDeviceCondition" maxlength="500" placeholder="es. Vetro posteriore graffiato, cornice segnata…"></label><label class="wide"><span>Accessori consegnati</span><input id="adminRepairAccessories" maxlength="500" placeholder="es. Custodia, SIM, caricatore · oppure Nessuno"></label>
         <div class="wide repairMediaBox"><div class="repairMediaHead"><strong>Foto all’accettazione</strong><small>Fino a 6 foto · JPG/PNG/WEBP · max 8 MB ciascuna</small></div><input id="adminRepairPhotos" type="file" accept="image/jpeg,image/png,image/webp" multiple><div id="adminRepairPhotoPreview" class="repairPhotoPreview"></div></div>
         <div class="wide repairSignatureBox"><div class="repairMediaHead"><strong>Firma cliente</strong><small>Firma direttamente sullo schermo. Verrà allegata alla ricevuta della pratica.</small></div><canvas id="adminRepairSignatureCanvas" width="900" height="260" aria-label="Area firma cliente"></canvas><div class="signatureActions"><button id="clearAdminRepairSignature" class="miniBtn" type="button">Cancella firma</button><span id="adminRepairSignatureState">Nessuna firma</span></div><label class="signatureConsent"><input id="adminRepairSignatureConsent" type="checkbox"><span>Il cliente conferma presa in carico, stato estetico, accessori e condizioni indicate nella ricevuta.</span></label></div>
-        <label><span>Stato</span><select id="adminRepairStatus"><option>Da riparare</option><option>In lavorazione</option><option selected>Riparato</option><option>Consegnato</option></select></label><label><span>Preventivo</span><select id="adminRepairQuoteStatus"><option>Da diagnosticare</option><option>Preventivo da inviare</option><option>In attesa cliente</option><option>Accettato</option><option>Rifiutato</option></select></label><label><span>Importo preventivo</span><div class="moneyInput"><span>€</span><input id="adminRepairQuoteAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></div></label><label><span>Garanzia intervento</span><select id="adminRepairWarrantyMonths"><option value="0">Nessuna</option><option value="3" selected>3 mesi</option><option value="6">6 mesi</option><option value="12">12 mesi</option><option value="24">24 mesi</option></select></label>
+        <label><span>Stato</span><select id="adminRepairStatus"><option>Da completare</option><option>Da diagnosticare</option><option>Da riparare</option><option>In lavorazione</option><option>Attesa ricambio</option><option>Attesa cliente</option><option selected>Riparato</option><option>Pronto</option><option>Consegnato</option></select></label><label><span>Preventivo</span><select id="adminRepairQuoteStatus"><option>Da diagnosticare</option><option>Preventivo da inviare</option><option>In attesa cliente</option><option>Accettato</option><option>Rifiutato</option></select></label><label><span>Importo preventivo</span><div class="moneyInput"><span>€</span><input id="adminRepairQuoteAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></div></label><label><span>Garanzia intervento</span><select id="adminRepairWarrantyMonths"><option value="0">Nessuna</option><option value="3" selected>3 mesi</option><option value="6">6 mesi</option><option value="12">12 mesi</option><option value="24">24 mesi</option></select></label>
         <label class="wide"><span>Riferimento e-Share</span><input id="adminRepairEShareRef" maxlength="120" placeholder="Facoltativo"></label>
         <label><span>Costo ricambio (solo Admin)</span><div class="moneyInput"><span>€</span><input id="adminRepairPartCost" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></div></label>
         <label><span>Prezzo escluso IVA *</span><div class="moneyInput"><span>€</span><input id="adminRepairPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" required></div></label>
@@ -310,6 +327,25 @@
       <div class="repairFormActions"><button id="adminRepairSubmitBtn" class="primaryAction animatedBtn" type="submit">Salva riparazione</button><button id="adminRepairCancelEdit" class="secondaryAction animatedBtn" type="button" hidden>Annulla modifica</button></div>
       <div id="adminRepairMsg" class="createUserMsg" aria-live="polite"></div>
     </form>
+
+    <section class="deviceSaleCard adminUniformCard repairLabelSettings">
+      <div class="deviceSaleCardHead"><div><strong>🏷 Etichette DYMO</strong><small>Scegli una volta il formato. Verrà ricordato su questo dispositivo.</small></div><span id="dymoRepairSizeBadge" class="practicePill">32 × 57 mm</span></div>
+      <div class="labelConfigGrid">
+        <label><span>Formato etichetta</span><select id="repairLabelPreset">
+          <option value="32x57" selected>32 × 57 mm · Durable / piccola</option>
+          <option value="25x54">25 × 54 mm</option>
+          <option value="36x89">36 × 89 mm</option>
+          <option value="19x51">19 × 51 mm · stretta</option>
+          <option value="54x101">54 × 101 mm · grande</option>
+          <option value="57x32">57 × 32 mm · orizzontale</option>
+          <option value="custom">Personalizzata</option>
+        </select></label>
+        <label><span>Larghezza mm</span><input id="repairLabelWidth" type="number" min="10" max="120" step="1" value="32"></label>
+        <label><span>Altezza mm</span><input id="repairLabelHeight" type="number" min="10" max="200" step="1" value="57"></label>
+        <label class="labelQrToggle"><span>Contenuto</span><label class="inlineCheck"><input id="repairLabelIncludeQr" type="checkbox" checked> QR pratica</label></label>
+      </div>
+      <div class="labelConfigHint">La stampa usa le dimensioni reali in millimetri. Nella finestra di stampa seleziona scala 100% / dimensioni effettive e nessun margine.</div>
+    </section>
 
     <div class="deviceSaleCard deviceSaleHistoryCard adminUniformCard">
       <div class="deviceSaleCardHead">
@@ -569,6 +605,7 @@
     </div>
   </div>
   <div id="dymoPrintLabel" class="dymoPrintLabel" aria-hidden="true"><strong id="dymoPrintTitle"></strong><span id="dymoPrintMeta"></span><p id="dymoPrintNote"></p></div>
+  <div id="repairDymoPrintLabel" class="repairDymoPrintLabel" aria-hidden="true"><div id="repairDymoQr" class="repairDymoQr"></div><strong id="repairDymoCode"></strong><span id="repairDymoClient"></span><b id="repairDymoDevice"></b><p id="repairDymoWork"></p></div>
 
   <div id="operatorPasswordModal" class="saleModal" hidden>
     <div class="saleDialog compactDialog" role="dialog" aria-modal="true" aria-labelledby="operatorPasswordTitle">
@@ -616,7 +653,7 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.4"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@3.0.2/dist/jspdf.umd.min.js"></script>
 
   <div id="passwordRecoveryModal" class="saleModal" hidden>
@@ -642,7 +679,7 @@
  <button type="button" data-smart-action="menu"><b>☰</b><span>Menu</span></button>
 </nav>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
-<script src="app.js?v=88"></script>
+<script src="app.js?v=92"></script>
 
 
 

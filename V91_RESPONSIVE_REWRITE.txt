@@ -1,0 +1,21 @@
+BeparyTech Manager v91 — Responsive Rewrite
+
+Obiettivo: adattamento coerente a telefoni, tablet, portatili e desktop senza modificare le funzioni.
+
+Breakpoint finali che hanno priorità sulle regole storiche:
+- Mobile: <= 600 px
+- Tablet: 601–899 px
+- Laptop: 900–1199 px
+- Desktop: >= 1200 px
+- Desktop largo: >= 1500 px
+
+Correzioni principali:
+- eliminato overflow orizzontale della pagina;
+- app e contenuti resi realmente fluidi;
+- sidebar fissa solo da 1200 px, overlay sui laptop più stretti;
+- dashboard KPI, analytics, quick action e rail ridimensionati per fascia;
+- header reso fluido e compatto sui telefoni;
+- form, vendite, ore, catalogo, Bestek e riparazioni adattati;
+- tabelle larghe con scroll orizzontale interno invece di rompere la pagina;
+- foto pratica e firma adattate al mobile;
+- corretto selettore tema chiaro `.body[...]` -> `body[...]` per dashboard.

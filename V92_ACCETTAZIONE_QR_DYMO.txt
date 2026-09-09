@@ -1,0 +1,13 @@
+BeparyTech Manager v92
+
+- Vendita ricambi separata dal menu Accettazione & Riparazioni.
+- Nuova Accettazione rapida Admin: cliente, dispositivo, lavoro, nota facoltativa.
+- Le pratiche rapide vengono salvate come "Da completare" e possono essere completate senza duplicazione.
+- Accettazione completa con stati estesi: Da completare, Da diagnosticare, Da riparare, In lavorazione, Attesa ricambio, Attesa cliente, Riparato, Pronto, Consegnato.
+- Corretto QR: sostituito riferimento CDN non valido con qrcodejs browser.
+- QR nella ricevuta PDF e nelle etichette pratica.
+- Stampa DYMO dalle riparazioni.
+- Configurazione etichette: 32x57, 25x54, 36x89, 19x51, 54x101, 57x32 o misura personalizzata.
+- Scelta QR sì/no per etichetta.
+- Formato DYMO salvato in locale sul dispositivo.
+- Versioni asset/cache aggiornate a v92.
