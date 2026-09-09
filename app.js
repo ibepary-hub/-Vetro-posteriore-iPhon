@@ -38,6 +38,18 @@ const search = document.getElementById("search");
 const filter = document.getElementById("filter");
 const authMsg = document.getElementById("authMsg");
 
+// Descrizione commerciale: BackGlass e Housing sono ricambi senza logo.
+// Le chiavi interne e i modelli originali restano invariati per non rompere stock, storico o rientri.
+function isNoLogoCategory(category){
+  const c=String(category||"").trim().toLowerCase();
+  return c==="backglass" || c==="housing";
+}
+function noLogoName(model,category){
+  const base=String(model||"").trim().replace(/\s+NO\s+LOGO\s*$/i,"").trim();
+  return isNoLogoCategory(category) && base ? `${base} NO LOGO` : base;
+}
+function saleDisplayName(s){ return noLogoName(s?.model,s?.category); }
+
 function keyFor(model,color){
   // Mantiene le chiavi BackGlass storiche per non perdere le quantità già salvate.
   return currentCategory === "BackGlass" ? model + "||" + color : "Housing||" + model + "||" + color;
@@ -193,16 +205,16 @@ function render(){
   Object.entries(MODEL_COLORS).sort((a,b)=>compareModels(a[0],b[0])).forEach(([model,colors])=>{
     if(currentCategory === "BackGlass" && (model === "iPhone 7" || model === "iPhone 7 Plus")) return;
     const filteredColors=colors.filter(color=>{
-      const qty=getQty(model,color); return (model+" "+color).toLowerCase().includes(q)&&passesFilter(qty);
+      const qty=getQty(model,color); return (noLogoName(model,currentCategory)+" "+color).toLowerCase().includes(q)&&passesFilter(qty);
     });
     if(!filteredColors.length)return; visibleModels++;
     const node=modelTemplate.content.cloneNode(true), section=node.querySelector(".model"), header=node.querySelector(".modelHeader");
     section.classList.add("closed");
     header.setAttribute("aria-expanded","false");
-    node.querySelector("h2").textContent=model;
+    node.querySelector("h2").textContent=noLogoName(model,currentCategory);
     const thumb=node.querySelector(".modelThumb");
     thumb.src=imageForModel(model);
-    thumb.alt=model;
+    thumb.alt=noLogoName(model,currentCategory);
     node.querySelector(".modelCount").textContent=colors.reduce((s,c)=>s+getQty(model,c),0)+" pezzi";
     const colorsBox=node.querySelector(".colors");
     filteredColors.forEach(color=>{
@@ -253,6 +265,7 @@ function applyRoleVisibility(){
   const zeroStockMenu=document.getElementById("zeroStockMenuItem");
   const hoursMenu=document.getElementById("hoursMenuItem");
   const deviceSalesMenu=document.getElementById("deviceSalesMenuItem");
+  const invoicesMenu=document.getElementById("invoicesMenuItem");
   const bestekCatalogMenu=document.getElementById("bestekCatalogMenuItem");
   usersTab.hidden=!admin;
   if(catalogMenu) catalogMenu.hidden=!admin;
@@ -261,6 +274,7 @@ function applyRoleVisibility(){
   if(zeroStockMenu) zeroStockMenu.hidden=!admin;
   if(hoursMenu) hoursMenu.hidden=!admin;
   if(deviceSalesMenu) deviceSalesMenu.hidden=!admin;
+  if(invoicesMenu) invoicesMenu.hidden=!admin;
   if(bestekCatalogMenu) bestekCatalogMenu.hidden=!admin;
   if(!admin){
     usersView.hidden=true;
@@ -268,7 +282,7 @@ function applyRoleVisibility(){
     usersTab.classList.remove("active");
     document.getElementById("hoursView").hidden=true;
     const dsv=document.getElementById("deviceSalesView"); if(dsv) dsv.hidden=true;
-    if(["Utenti","GestioneMagazzino","ScorteZero","Backup","Orari","VenditeAdmin","CatalogoBestek"].includes(currentCategory)) setCategory("Dashboard");
+    if(["Utenti","GestioneMagazzino","ScorteZero","Backup","Orari","VenditeAdmin","Fatturazione","CatalogoBestek"].includes(currentCategory)) setCategory("Dashboard");
   }
   const menuUser=document.getElementById("menuUserName"), menuRole=document.getElementById("menuUserRole");
   if(menuUser) menuUser.textContent=currentProfile?.username||currentUser?.email||"Utente";
@@ -340,7 +354,7 @@ document.getElementById("headerLogoutBtn")?.addEventListener("click",performLogo
 
 
 function setCategory(category){
-  const isDashboard=category==="Dashboard", isSales=category==="Vendite", isAudit=category==="Cronologia", isUsers=category==="Utenti", isCatalog=category==="GestioneMagazzino", isZeroStock=category==="ScorteZero", isBackup=category==="Backup", isHours=category==="Orari", isDeviceSales=category==="VenditeAdmin", isBestekCatalog=category==="CatalogoBestek";
+  const isDashboard=category==="Dashboard", isSales=category==="Vendite", isAudit=category==="Cronologia", isUsers=category==="Utenti", isCatalog=category==="GestioneMagazzino", isZeroStock=category==="ScorteZero", isBackup=category==="Backup", isHours=category==="Orari", isDeviceSales=(category==="VenditeAdmin" || category==="Fatturazione"), isBestekCatalog=category==="CatalogoBestek";
   const isCustom=String(category).startsWith("custom:");
   if((isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog)&&!isAdmin()) return;
   currentCategory=category;
@@ -364,6 +378,13 @@ function setCategory(category){
   document.getElementById("hoursView").hidden=!isHours;
   const deviceSalesView=document.getElementById("deviceSalesView"); if(deviceSalesView) deviceSalesView.hidden=!isDeviceSales;
   document.querySelectorAll(".menuItem[data-category]").forEach(b=>b.classList.toggle("active",b.dataset.category===category));
+  if(category==="Fatturazione"){
+    setTimeout(()=>{
+      const btn=document.querySelector('[data-work-tab="invoices"]');
+      const panel=document.getElementById("adminInvoicesPanel");
+      if(btn && panel?.hidden) btn.click();
+    },0);
+  }
   search.value=""; filter.value="all"; closeMainMenu();
   if(isDashboard) loadDashboard(); else if(isAudit) loadAudit(); else if(isSales) loadSales(); else if(isUsers) loadUsers(); else if(isCatalog) renderCatalogAdmin(); else if(isZeroStock) renderZeroStock(); else if(isBackup){} else if(isHours) loadHours(); else if(isDeviceSales) loadDeviceSales(); else if(isBestekCatalog) renderBestekCatalog(); else if(isCustom) renderCustomSection();
 }
@@ -554,7 +575,7 @@ async function openSaleModal(model,color,qty){
   document.getElementById("saleOperatorPassword").value="";
   document.getElementById("saleNote").value="";
   document.getElementById("saleEShareRef").value="";
-  document.getElementById("saleItemLabel").innerHTML=`<strong>${escapeHtml(model)}</strong><span>${escapeHtml(color)} · ${currentCategory === "BackGlass" ? "Vetro posteriore" : "Scocca completa"}</span>`;
+  document.getElementById("saleItemLabel").innerHTML=`<strong>${escapeHtml(noLogoName(model,currentCategory))}</strong><span>${escapeHtml(color)} · ${currentCategory === "BackGlass" ? "Vetro posteriore · NO LOGO" : "Scocca completa · NO LOGO"}</span>`;
   const customerSelect=document.getElementById("saleCustomerSelect");
   customerSelect.value="";
   document.getElementById("confirmSaleBtn").disabled=true;
@@ -634,17 +655,17 @@ function renderSales(){
       if(delivered){
         const deliveredDate=s.delivered_at||s.deleted_at||s.sold_at;
         const deliveredAt=fmt.format(new Date(deliveredDate));
-        return `<article class="saleRow archiveRow deliveredRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${escapeHtml(s.category)}</span><b class="archiveBadge deliveredBadge">✓ CONSEGNATO</b></div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · Vendita ${sold}</span><span>Consegnato ${deliveredAt}</span>${price}${s.operator_note?`<span class="saleNoteText">Nota: ${escapeHtml(s.operator_note)}</span>`:""}</div><div class="saleNoteActions"><button class="rowAction printSaleNote" type="button" data-id="${s.id}">Stampa DYMO</button><button class="rowAction exportSaleNote" type="button" data-id="${s.id}">Esporta nota</button>${isAdmin()?`<button class="rowAction editSaleNote" type="button" data-id="${s.id}">Modifica nota / storico</button>`:""}</div></article>`;
+        return `<article class="saleRow archiveRow deliveredRow"><div class="saleMain"><strong>${escapeHtml(saleDisplayName(s))}</strong><span>${escapeHtml(s.color)} · ${escapeHtml(s.category)}${isNoLogoCategory(s.category)?" · NO LOGO":""}</span><b class="archiveBadge deliveredBadge">✓ CONSEGNATO</b></div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · Vendita ${sold}</span><span>Consegnato ${deliveredAt}</span>${price}${s.operator_note?`<span class="saleNoteText">Nota: ${escapeHtml(s.operator_note)}</span>`:""}</div><div class="saleNoteActions"><button class="rowAction printSaleNote" type="button" data-id="${s.id}">Stampa DYMO</button><button class="rowAction exportSaleNote" type="button" data-id="${s.id}">Esporta nota</button>${isAdmin()?`<button class="rowAction editSaleNote" type="button" data-id="${s.id}">Modifica nota / storico</button>`:""}</div></article>`;
       }
       const deleted=s.deleted_at?fmt.format(new Date(s.deleted_at)):"—";
-      return `<article class="saleRow archiveRow deletedArchiveRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${escapeHtml(s.category)}</span><b class="archiveBadge">ARCHIVIATA</b></div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · Vendita ${sold}</span><span>Eliminata ${deleted}</span>${price}${s.operator_note?`<span class="saleNoteText">Nota: ${escapeHtml(s.operator_note)}</span>`:""}${s.restored_to_inventory?`<span class="restoredBadge">↩ Rimesso in magazzino +${s.quantity}</span>`:""}</div><div class="archiveReason"><strong>Motivo:</strong> ${escapeHtml(s.delete_reason||"Nessun motivo registrato")}</div><div class="saleNoteActions"><button class="rowAction printSaleNote" type="button" data-id="${s.id}">Stampa DYMO</button><button class="rowAction exportSaleNote" type="button" data-id="${s.id}">Esporta nota</button>${isAdmin()?`<button class="rowAction editSaleNote" type="button" data-id="${s.id}">Modifica nota / storico</button>`:""}</div></article>`;
+      return `<article class="saleRow archiveRow deletedArchiveRow"><div class="saleMain"><strong>${escapeHtml(saleDisplayName(s))}</strong><span>${escapeHtml(s.color)} · ${escapeHtml(s.category)}${isNoLogoCategory(s.category)?" · NO LOGO":""}</span><b class="archiveBadge">ARCHIVIATA</b></div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · Vendita ${sold}</span><span>Eliminata ${deleted}</span>${price}${s.operator_note?`<span class="saleNoteText">Nota: ${escapeHtml(s.operator_note)}</span>`:""}${s.restored_to_inventory?`<span class="restoredBadge">↩ Rimesso in magazzino +${s.quantity}</span>`:""}</div><div class="archiveReason"><strong>Motivo:</strong> ${escapeHtml(s.delete_reason||"Nessun motivo registrato")}</div><div class="saleNoteActions"><button class="rowAction printSaleNote" type="button" data-id="${s.id}">Stampa DYMO</button><button class="rowAction exportSaleNote" type="button" data-id="${s.id}">Esporta nota</button>${isAdmin()?`<button class="rowAction editSaleNote" type="button" data-id="${s.id}">Modifica nota / storico</button>`:""}</div></article>`;
     }
     const ownSale=String(s.actor_user_id||"")===String(currentUser?.id||"");
     const commonActions=`${isAdmin()?`<button class="rowAction deliveredSale" type="button" data-id="${s.id}">✓ Consegnato</button>`:""}<button class="rowAction printSaleNote" type="button" data-id="${s.id}">Stampa DYMO</button><button class="rowAction exportSaleNote" type="button" data-id="${s.id}">Esporta nota</button>`;
     const actions=isAdmin()
       ? `<div class="saleActionsRow">${commonActions}<button class="rowAction editStore" type="button" data-id="${s.id}">Modifica negozio</button><button class="rowAction editSaleNote" type="button" data-id="${s.id}">Modifica nota / storico</button><button class="rowAction restoreSale" type="button" data-id="${s.id}">Rimetti in magazzino</button><button class="rowAction delete archiveSale" type="button" data-id="${s.id}">Elimina</button></div>`
       : ownSale ? `<div class="saleActionsRow">${commonActions}<button class="rowAction restoreSale" type="button" data-id="${s.id}">Rimetti in magazzino</button></div>` : `<div class="saleActionsRow">${commonActions}</div>`;
-    return `<article class="saleRow"><div class="saleMain"><strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${escapeHtml(s.category)}</span>${s.operator_name?`<span class="operatorTag">Operatore: ${escapeHtml(s.operator_name)}</span>`:""}</div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · ${sold}</span>${price}${s.operator_note?`<span class="saleNoteText">Nota: ${escapeHtml(s.operator_note)}</span>`:""}</div>${actions}</article>`;
+    return `<article class="saleRow"><div class="saleMain"><strong>${escapeHtml(saleDisplayName(s))}</strong><span>${escapeHtml(s.color)} · ${escapeHtml(s.category)}${isNoLogoCategory(s.category)?" · NO LOGO":""}</span>${s.operator_name?`<span class="operatorTag">Operatore: ${escapeHtml(s.operator_name)}</span>`:""}</div><div class="saleMeta"><strong>${escapeHtml(s.customer)}</strong><span>−${s.quantity} · ${sold}</span>${price}${s.operator_note?`<span class="saleNoteText">Nota: ${escapeHtml(s.operator_note)}</span>`:""}</div>${actions}</article>`;
   }).join("");
   list.querySelectorAll(".printSaleNote").forEach(btn=>btn.addEventListener("click",()=>printSaleNote(Number(btn.dataset.id))));
   list.querySelectorAll(".exportSaleNote").forEach(btn=>btn.addEventListener("click",()=>exportSaleNote(Number(btn.dataset.id))));
@@ -741,10 +762,10 @@ function renderSalesSummary(){
     const unitAvg=r.pricedQty? r.salesValue/r.pricedQty:null;
     const unit=unitAvg==null?'<span class="summaryNoPrice">Prezzo non impostato</span>':`<span class="summaryUnitPrice">${eur(unitAvg)} + IVA <small>(${eur(unitAvg*1.22)})</small></span>`;
     const adminDetail=isAdmin()?`<span class="summaryModelTotal">Vendita: <b>${eur(r.salesValue)}</b>${r.costedQty?` · Costo: <b>${eur(r.costValue)}</b>`:" · Costo non completo"}</span>`:"";
-    return `<article class="modelSaleSummaryRow"><div class="summaryModelInfo"><strong>${escapeHtml(r.model)}</strong><span>${escapeHtml(r.category)}</span></div><div class="summaryPriceInfo">${unit}${adminDetail}</div><div class="summaryQty"><span>Venduti</span><strong>${r.quantity}</strong></div></article>`;
+    return `<article class="modelSaleSummaryRow"><div class="summaryModelInfo"><strong>${escapeHtml(noLogoName(r.model,r.category))}</strong><span>${escapeHtml(r.category)}${isNoLogoCategory(r.category)?" · NO LOGO":""}</span></div><div class="summaryPriceInfo">${unit}${adminDetail}</div><div class="summaryQty"><span>Venduti</span><strong>${r.quantity}</strong></div></article>`;
   }).join("")}</div>`;
 }
-function saleLabelHtml(s){ return `<strong>${escapeHtml(s.model)}</strong><span>${escapeHtml(s.color)} · ${escapeHtml(s.category)} · ${escapeHtml(s.customer)}</span>`; }
+function saleLabelHtml(s){ return `<strong>${escapeHtml(saleDisplayName(s))}</strong><span>${escapeHtml(s.color)} · ${escapeHtml(s.category)}${isNoLogoCategory(s.category)?" · NO LOGO":""} · ${escapeHtml(s.customer)}</span>`; }
 
 
 function saleNoteText(s){ return (s?.operator_note||"").trim(); }
@@ -754,7 +775,7 @@ function prepareDymoLabel(s){
   const meta=document.getElementById("dymoPrintMeta");
   const note=document.getElementById("dymoPrintNote");
   const noteText=saleNoteText(s)||"Nessuna nota";
-  title.textContent=s?.model||"Vendita";
+  title.textContent=saleDisplayName(s)||"Vendita";
   meta.textContent=[s?.color,s?.customer].filter(Boolean).join(" · ");
   note.textContent=noteText;
 
@@ -777,7 +798,7 @@ function printSaleNote(id){
 function safeFilePart(v){return String(v||"nota").normalize("NFKD").replace(/[^a-zA-Z0-9_-]+/g,"_").replace(/^_+|_+$/g,"").slice(0,60)||"nota";}
 function exportSaleNote(id){
   const s=saleById(id); if(!s)return;
-  const text=`BEPARYTECH - NOTA VENDITA\nArticolo: ${s.model}\nVariante: ${s.color}\nNegozio: ${s.customer}\nOperatore: ${s.operator_name||"—"}\nData: ${new Date(s.sold_at).toLocaleString("it-IT")}\n\nNOTA\n${saleNoteText(s)||"Nessuna nota"}\n`;
+  const text=`BEPARYTECH - NOTA VENDITA\nArticolo: ${saleDisplayName(s)}\nVariante: ${s.color}\nNegozio: ${s.customer}\nOperatore: ${s.operator_name||"—"}\nData: ${new Date(s.sold_at).toLocaleString("it-IT")}\n\nNOTA\n${saleNoteText(s)||"Nessuna nota"}\n`;
   const blob=new Blob([text],{type:"text/plain;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");
   a.href=url;a.download=`nota_${safeFilePart(s.model)}_${s.id}.txt`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
@@ -1288,6 +1309,7 @@ document.getElementById("exportZeroHousing")?.addEventListener("click",()=>expor
       else if(currentCategory==="ScorteZero") renderZeroStock();
       else if(currentCategory==="Orari") await loadHours();
       else if(currentCategory==="VenditeAdmin") await loadDeviceSales();
+      else if(currentCategory==="Fatturazione") { try{ bindInvoiceAutomation(); }catch(_){} }
       else if(String(currentCategory).startsWith("custom:")) renderCustomSection();
       else if(currentCategory==="BackGlass"||currentCategory==="Housing") render();
       const cs=document.getElementById("cloudStatus");if(cs)cs.textContent="☁︎ Aggiornato";
@@ -1542,7 +1564,8 @@ function resetAdminRepairEditor(){
   if(cancel) cancel.hidden=true;
   const d=document.getElementById("adminRepairDate");
   if(d) d.value=new Date().toISOString().slice(0,10);
-  ["adminRepairStore","adminRepairDevice","adminRepairType","adminRepairPrice","adminRepairNote","adminRepairEShareRef"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
+  ["adminRepairStore","adminRepairClient","adminRepairCustomClient","adminRepairDevice","adminRepairType","adminRepairPrice","adminRepairNote","adminRepairEShareRef","adminRepairImei","adminRepairPartCost"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
+  const st=document.getElementById("adminRepairStatus");if(st)st.value="Riparato";const inv=document.getElementById("adminRepairInvoiced");if(inv)inv.value="false";const cc=document.getElementById("adminRepairCustomClient");if(cc)cc.disabled=true;
   const vat=document.getElementById("adminRepairVatRate"); if(vat)vat.value="22";
   updateAdminRepairVatPreview();
 }
@@ -1553,10 +1576,12 @@ function startAdminRepairEdit(id){
   const form=document.getElementById("adminRepairForm"); if(form)form.dataset.editing="1";
   document.getElementById("adminRepairDate").value=r.repaired_at||"";
   document.getElementById("adminRepairStore").value=r.store||"";
+  const knownClient=["RIPARALO S.R.L.","VR Trasporti"].includes(r.client_name);document.getElementById("adminRepairClient").value=knownClient?r.client_name:"ALTRO";document.getElementById("adminRepairCustomClient").disabled=knownClient;document.getElementById("adminRepairCustomClient").value=knownClient?"":(r.client_name||"");
   document.getElementById("adminRepairDevice").value=r.device||"";
   document.getElementById("adminRepairType").value=r.repair_type||"";
   document.getElementById("adminRepairPrice").value=Number(r.price_ex_vat||0);
   document.getElementById("adminRepairVatRate").value=Number(r.vat_rate??22);
+  document.getElementById("adminRepairImei").value=r.imei_serial||"";document.getElementById("adminRepairPartCost").value=r.part_cost==null?"":Number(r.part_cost);document.getElementById("adminRepairStatus").value=r.repair_status||"Riparato";document.getElementById("adminRepairInvoiced").value=r.invoiced?"true":"false";
   const repairNote=r.note||""; const em=repairNote.match(/^Rif\. e-Share:\s*([^·]+?)(?:\s*·\s*(.*))?$/);
   document.getElementById("adminRepairEShareRef").value=em?em[1].trim():"";
   document.getElementById("adminRepairNote").value=em?(em[2]||"").trim():repairNote;
@@ -1589,7 +1614,7 @@ async function loadAdminRepairs(){
     const net=rows.reduce((x,r)=>x+Number(r.price_ex_vat||0),0), vat=rows.reduce((x,r)=>x+Number(r.vat_amount||0),0), total=rows.reduce((x,r)=>x+Number(r.total_inc_vat||0),0);
     const sum=document.getElementById("adminRepairsSummary");
     if(sum)sum.innerHTML=`<div><span>Riparazioni</span><strong>${rows.length}</strong></div><div><span>Imponibile</span><strong>${euroFmt.format(net)}</strong></div><div><span>IVA</span><strong>${euroFmt.format(vat)}</strong></div><div><span>Totale</span><strong>${euroFmt.format(total)}</strong></div>`;
-    list.innerHTML=rows.length?rows.map(r=>`<article class="deviceAdminSaleRow"><div class="deviceAdminSaleTop"><div><strong>${escapeHtml(r.device)}</strong><span>${escapeHtml(r.repair_type)} · ${escapeHtml(r.store)} · ${new Date(r.repaired_at+"T12:00:00").toLocaleDateString("it-IT")}</span>${r.note?`<small>${escapeHtml(r.note)}</small>`:""}</div><div class="deviceAdminSalePrice"><strong>${euroFmt.format(Number(r.total_inc_vat||0))}</strong><span>IVA ${Number(r.vat_rate||0).toLocaleString("it-IT")}% · ${euroFmt.format(Number(r.vat_amount||0))}</span></div></div><div class="deviceAdminSaleMeta"><span>Imponibile ${euroFmt.format(Number(r.price_ex_vat||0))}</span></div><div class="deviceAdminSaleActions repairRowActions"><button class="rowAction editAdminRepair" data-id="${r.id}" type="button">Modifica</button><button class="rowAction delete deleteAdminRepair" data-id="${r.id}" type="button">Elimina</button></div></article>`).join(""):'<div class="emptyState">Nessuna riparazione registrata</div>';
+    list.innerHTML=rows.length?rows.map(r=>`<article class="deviceAdminSaleRow businessRepairRow"><div class="deviceAdminSaleTop"><div><strong>${escapeHtml(r.device)}</strong><span>${escapeHtml(r.repair_type)} · ${escapeHtml(r.client_name||r.store||"Cliente")} · ${new Date(r.repaired_at+"T12:00:00").toLocaleDateString("it-IT")}</span><div class="repairBadges"><span class="repairStatusBadge">${escapeHtml(r.repair_status||"Riparato")}</span><span class="repairInvoiceBadge ${r.invoiced?"done":"pending"}">${r.invoiced?"Fatturato":"Da fatturare"}</span></div>${r.imei_serial?`<small>IMEI/Seriale: ${escapeHtml(r.imei_serial)}</small>`:""}${r.note?`<small>${escapeHtml(r.note)}</small>`:""}</div><div class="deviceAdminSalePrice"><strong>${euroFmt.format(Number(r.total_inc_vat||0))}</strong><span>IVA ${Number(r.vat_rate||0).toLocaleString("it-IT")}% · ${euroFmt.format(Number(r.vat_amount||0))}</span></div></div><div class="deviceAdminSaleMeta"><span>Imponibile ${euroFmt.format(Number(r.price_ex_vat||0))}</span>${r.part_cost!=null?`<span class="adminCostMeta">Costo ricambio ${euroFmt.format(Number(r.part_cost||0))}</span>`:""}${r.store?`<span>Sede: ${escapeHtml(r.store)}</span>`:""}</div><div class="deviceAdminSaleActions repairRowActions"><button class="rowAction editAdminRepair" data-id="${r.id}" type="button">Modifica</button><button class="rowAction delete deleteAdminRepair" data-id="${r.id}" type="button">Elimina</button></div></article>`).join(""):'<div class="emptyState">Nessuna riparazione registrata</div>';
     list.querySelectorAll(".editAdminRepair").forEach(b=>b.onclick=()=>startAdminRepairEdit(Number(b.dataset.id)));
     list.querySelectorAll(".deleteAdminRepair").forEach(b=>b.onclick=()=>deleteAdminRepair(Number(b.dataset.id)));
   }catch(e){list.innerHTML=`<div class="emptyState">${escapeHtml(e.message||"Errore caricamento")}</div>`;}
@@ -1600,12 +1625,13 @@ function bindAdminRepairs(){
  document.getElementById("adminRepairPrice")?.addEventListener("input",updateAdminRepairVatPreview);
  document.getElementById("adminRepairVatRate")?.addEventListener("input",updateAdminRepairVatPreview);
  document.getElementById("refreshAdminRepairsBtn")?.addEventListener("click",loadAdminRepairs);
+ const clientSel=document.getElementById("adminRepairClient"),customClient=document.getElementById("adminRepairCustomClient");clientSel?.addEventListener("change",()=>{if(customClient){customClient.disabled=clientSel.value!=="ALTRO";if(clientSel.value==="VR Trasporti"){document.getElementById("adminRepairStore").value="VR Trasporti";}else if(clientSel.value!=="ALTRO"&&customClient)customClient.value="";}});
  document.getElementById("adminRepairCancelEdit")?.addEventListener("click",()=>{resetAdminRepairEditor();const msg=document.getElementById("adminRepairMsg");if(msg)msg.textContent="Modifica annullata.";});
  form.addEventListener("submit",async ev=>{
    ev.preventDefault(); const msg=document.getElementById("adminRepairMsg"); if(msg){msg.className="createUserMsg";msg.textContent=adminRepairEditingId?"Salvataggio modifiche…":"Salvataggio…";}
    try{
     const ctx=await btGetWorkspaceOwnerId();
-    const payload={repaired_at:document.getElementById("adminRepairDate").value,store:document.getElementById("adminRepairStore").value,device:document.getElementById("adminRepairDevice").value.trim(),repair_type:document.getElementById("adminRepairType").value.trim(),price_ex_vat:Number(document.getElementById("adminRepairPrice").value||0),vat_rate:Number(document.getElementById("adminRepairVatRate").value||22),note:(()=>{const r=document.getElementById("adminRepairEShareRef").value.trim();const n=document.getElementById("adminRepairNote").value.trim();return `Rif. e-Share: ${r}${n?` · ${n}`:""}`;})()};
+    const clientChoice=document.getElementById("adminRepairClient").value;const clientName=clientChoice==="ALTRO"?document.getElementById("adminRepairCustomClient").value.trim():clientChoice;if(!clientName)throw new Error("Seleziona o inserisci il cliente.");const payload={repaired_at:document.getElementById("adminRepairDate").value,client_name:clientName,store:document.getElementById("adminRepairStore").value||clientName,device:document.getElementById("adminRepairDevice").value.trim(),repair_type:document.getElementById("adminRepairType").value.trim(),imei_serial:document.getElementById("adminRepairImei").value.trim()||null,part_cost:document.getElementById("adminRepairPartCost").value===""?null:Number(document.getElementById("adminRepairPartCost").value),repair_status:document.getElementById("adminRepairStatus").value,invoiced:document.getElementById("adminRepairInvoiced").value==="true",price_ex_vat:Number(document.getElementById("adminRepairPrice").value||0),vat_rate:Number(document.getElementById("adminRepairVatRate").value||22),note:(()=>{const r=document.getElementById("adminRepairEShareRef").value.trim();const n=document.getElementById("adminRepairNote").value.trim();return `${r?`Rif. e-Share: ${r}${n?` · `:""}`:""}${n}`||null;})()};
     let error;
     if(adminRepairEditingId){
       ({error}=await sb.from("beparytech_admin_repairs").update(payload).eq("id",adminRepairEditingId).eq("workspace_owner_id",ctx.owner));
@@ -1742,7 +1768,7 @@ setInterval(bindAdminWorkTabs,1500);
 
 
 
-// ===== v82: Fatturazione automatica Riparalo / MELA -> XML Aruba =====
+// ===== v85: Fatturazione clienti aziendali Riparalo / VR Trasporti -> XML Aruba =====
 const RIPARALO_INVOICE_CLIENT={
   name:"RIPARALO S.R.L.", vat:"01787740339", taxCode:"01787740339",
   address:"VIA ANTONIO EMMANUELI, 7", zip:"29121", city:"PIACENZA", province:"PC", country:"IT", recipientCode:"KRRH6B9"
@@ -1753,83 +1779,68 @@ function invoiceIsTargetStore(v){return RIPARALO_STORES.includes(String(v||"").t
 function xmlEsc(v){return String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;");}
 function csvEsc(v){const x=String(v??"");return /[;"\n\r]/.test(x)?`"${x.replace(/"/g,'""')}"`:x;}
 function localDateISO(d=new Date()){const x=new Date(d.getTime()-d.getTimezoneOffset()*60000);return x.toISOString().slice(0,10);}
+function invoiceClientMode(){return document.getElementById("invoiceClientSelect")?.value||"riparalo";}
 function defaultInvoicePeriod(){
-  const now=new Date(), first=new Date(now.getFullYear(),now.getMonth(),1), last=new Date(now.getFullYear(),now.getMonth()+1,0);
+  const now=new Date(),first=new Date(now.getFullYear(),now.getMonth(),1),last=new Date(now.getFullYear(),now.getMonth()+1,0);
   const from=document.getElementById("invoiceFrom"),to=document.getElementById("invoiceTo"),date=document.getElementById("invoiceDate");
-  if(from&&!from.value)from.value=localDateISO(first); if(to&&!to.value)to.value=localDateISO(last); if(date&&!date.value)date.value=localDateISO(now);
+  if(from&&!from.value)from.value=localDateISO(first);if(to&&!to.value)to.value=localDateISO(last);if(date&&!date.value)date.value=localDateISO(now);
 }
 function loadIssuerSettings(){
-  try{const x=JSON.parse(localStorage.getItem("beparytech-invoice-issuer")||"{}");
-    const map={issuerName:x.name,issuerVat:x.vat,issuerTaxCode:x.taxCode,issuerAddress:x.address,issuerZip:x.zip,issuerCity:x.city,issuerProvince:x.province,issuerRegime:x.regime};
-    Object.entries(map).forEach(([id,v])=>{const el=document.getElementById(id);if(el&&v)el.value=v;});
-  }catch(_){}
+  try{const x=JSON.parse(localStorage.getItem("beparytech-invoice-issuer")||"{}");const map={issuerName:x.name,issuerVat:x.vat,issuerTaxCode:x.taxCode,issuerAddress:x.address,issuerZip:x.zip,issuerCity:x.city,issuerProvince:x.province,issuerRegime:x.regime};Object.entries(map).forEach(([id,v])=>{const el=document.getElementById(id);if(el&&v)el.value=v;});}catch(_){}
 }
-function readIssuer(){
-  const get=id=>String(document.getElementById(id)?.value||"").trim();
-  return {name:get("issuerName"),vat:get("issuerVat").replace(/^IT/i,"").replace(/\D/g,""),taxCode:get("issuerTaxCode").toUpperCase(),address:get("issuerAddress"),zip:get("issuerZip"),city:get("issuerCity"),province:get("issuerProvince").toUpperCase(),regime:get("issuerRegime")||"RF01"};
-}
-function validateIssuer(x){
-  if(!x.name||!x.vat||!x.address||!x.zip||!x.city||!x.province)return "Completa tutti i dati emittente obbligatori.";
-  if(!/^\d{11}$/.test(x.vat))return "La Partita IVA dell’emittente deve avere 11 cifre.";
-  if(!/^\d{5}$/.test(x.zip))return "Il CAP dell’emittente deve avere 5 cifre.";
-  if(!/^[A-Z]{2}$/.test(x.province))return "Inserisci la provincia con 2 lettere, ad esempio PC.";
-  return "";
-}
-function saveIssuerSettings(){
-  const msg=document.getElementById("issuerMsg"),x=readIssuer(),err=validateIssuer(x);if(msg){msg.className=`createUserMsg ${err?"error":"ok"}`;msg.textContent=err||"Dati emittente salvati su questo dispositivo.";}if(err)return false;
-  try{localStorage.setItem("beparytech-invoice-issuer",JSON.stringify(x));}catch(_){} return true;
+function readIssuer(){const get=id=>String(document.getElementById(id)?.value||"").trim();return {name:get("issuerName"),vat:get("issuerVat").replace(/^IT/i,"").replace(/\D/g,""),taxCode:get("issuerTaxCode").toUpperCase(),address:get("issuerAddress"),zip:get("issuerZip"),city:get("issuerCity"),province:get("issuerProvince").toUpperCase(),regime:get("issuerRegime")||"RF01"};}
+function validateIssuer(x){if(!x.name||!x.vat||!x.address||!x.zip||!x.city||!x.province)return "Completa tutti i dati emittente obbligatori.";if(!/^\d{11}$/.test(x.vat))return "La Partita IVA dell’emittente deve avere 11 cifre.";if(!/^\d{5}$/.test(x.zip))return "Il CAP dell’emittente deve avere 5 cifre.";if(!/^[A-Z]{2}$/.test(x.province))return "Inserisci la provincia con 2 lettere, ad esempio PC.";return "";}
+function saveIssuerSettings(){const msg=document.getElementById("issuerMsg"),x=readIssuer(),err=validateIssuer(x);if(msg){msg.className=`createUserMsg ${err?"error":"ok"}`;msg.textContent=err||"Dati emittente salvati su questo dispositivo.";}if(err)return false;try{localStorage.setItem("beparytech-invoice-issuer",JSON.stringify(x));}catch(_){}return true;}
+function readVrClient(){const get=id=>String(document.getElementById(id)?.value||"").trim();return {name:get("vrClientName")||"VR Trasporti",vat:get("vrClientVat").replace(/^IT/i,"").replace(/\D/g,""),taxCode:get("vrClientTaxCode").toUpperCase(),recipientCode:get("vrClientRecipient").toUpperCase(),address:get("vrClientAddress"),zip:get("vrClientZip"),city:get("vrClientCity"),province:get("vrClientProvince").toUpperCase(),country:"IT"};}
+function validateVrClient(x){if(!x.name||!x.vat||!x.recipientCode||!x.address||!x.zip||!x.city||!x.province)return "Completa i dati fiscali di VR Trasporti.";if(!/^\d{11}$/.test(x.vat))return "La Partita IVA di VR Trasporti deve avere 11 cifre.";if(!/^[A-Z0-9]{7}$/.test(x.recipientCode))return "Il codice destinatario deve avere 7 caratteri.";if(!/^\d{5}$/.test(x.zip))return "Il CAP deve avere 5 cifre.";if(!/^[A-Z]{2}$/.test(x.province))return "La provincia deve avere 2 lettere.";return "";}
+function saveVrClientSettings(){const x=readVrClient(),err=validateVrClient(x),msg=document.getElementById("vrClientMsg");if(msg){msg.className=`createUserMsg ${err?"error":"ok"}`;msg.textContent=err||"Dati VR Trasporti salvati su questo dispositivo.";}if(err)return false;try{localStorage.setItem("beparytech-invoice-vr-client",JSON.stringify(x));}catch(_){}updateInvoiceClientUi();return true;}
+function loadVrClientSettings(){try{const x=JSON.parse(localStorage.getItem("beparytech-invoice-vr-client")||"{}");const map={vrClientName:x.name,vrClientVat:x.vat,vrClientTaxCode:x.taxCode,vrClientRecipient:x.recipientCode,vrClientAddress:x.address,vrClientZip:x.zip,vrClientCity:x.city,vrClientProvince:x.province};Object.entries(map).forEach(([id,v])=>{const el=document.getElementById(id);if(el&&v)el.value=v;});}catch(_){} }
+function currentInvoiceClient(){return invoiceClientMode()==="vr"?readVrClient():RIPARALO_INVOICE_CLIENT;}
+function updateInvoiceClientUi(){
+  const vr=invoiceClientMode()==="vr",card=document.getElementById("vrInvoiceDataCard"),title=document.getElementById("invoiceClientTitle"),sub=document.getElementById("invoiceClientSubtitle"),prev=document.getElementById("invoicePreviewSubtitle"),hours=document.querySelector(".invoiceServiceBox");
+  if(card)card.hidden=!vr;if(title)title.textContent=vr?(readVrClient().name||"VR Trasporti"):RIPARALO_INVOICE_CLIENT.name;if(sub)sub.textContent=vr?"Riparazioni telefoni · fatturazione cumulativa":"Via Antonio Emmanueli, 7 · 29121 Piacenza (PC) · IT";if(prev)prev.textContent=vr?"Mostra le riparazioni VR Trasporti non ancora fatturate nel periodo selezionato.":"RPL e tutti i punti MELA vengono fatturati a Riparalo S.r.l.";if(hours)hours.hidden=vr;
+  ["invoiceIncludeStock","invoiceIncludeParts","invoiceIncludeHours"].forEach(id=>{const el=document.getElementById(id);if(el){el.disabled=vr;if(vr)el.checked=false;else if(id!=="invoiceIncludeHours"||el.checked===false)el.checked=true;}});const rep=document.getElementById("invoiceIncludeRepairs");if(rep){rep.disabled=false;rep.checked=true;}
+  invoiceAutomationLines=[];renderInvoicePreview();
 }
 function invoiceLineDate(v){return String(v||"").slice(0,10);}
-async function buildRiparaloInvoicePreview(){
-  if(!isAdmin())return;
-  const msg=document.getElementById("invoiceLoadMsg"),from=document.getElementById("invoiceFrom")?.value,to=document.getElementById("invoiceTo")?.value;
+async function buildBusinessInvoicePreview(){
+  if(!isAdmin())return;const msg=document.getElementById("invoiceLoadMsg"),from=document.getElementById("invoiceFrom")?.value,to=document.getElementById("invoiceTo")?.value,mode=invoiceClientMode();
   if(!from||!to||from>to){if(msg){msg.className="createUserMsg error";msg.textContent="Controlla il periodo: la data iniziale deve essere precedente a quella finale.";}return;}
-  if(msg){msg.className="createUserMsg";msg.textContent="Caricamento vendite e riparazioni…";}
+  if(msg){msg.className="createUserMsg";msg.textContent="Caricamento voci da fatturare…";}
   try{
-    const jobs=[];
-    const includeStock=document.getElementById("invoiceIncludeStock")?.checked;
-    const includeParts=document.getElementById("invoiceIncludeParts")?.checked;
-    const includeRepairs=document.getElementById("invoiceIncludeRepairs")?.checked;
-    jobs.push(includeStock?sb.from("beparytech_sales").select("id,customer,category,item_key,model,color,quantity,sold_at,is_archived,restored_to_inventory,delivered_at,delete_reason").gte("sold_at",from).lte("sold_at",to).limit(2000):Promise.resolve({data:[],error:null}));
-    jobs.push(includeParts?sb.from("beparytech_admin_device_sales").select("id,sold_at,store,device_name,sale_price,net_amount,vat_rate,vat_amount,note").gte("sold_at",from).lte("sold_at",to).limit(1000):Promise.resolve({data:[],error:null}));
-    jobs.push(includeRepairs?sb.from("beparytech_admin_repairs").select("id,repaired_at,store,device,repair_type,price_ex_vat,vat_rate,vat_amount,note").gte("repaired_at",from).lte("repaired_at",to).limit(1000):Promise.resolve({data:[],error:null}));
-    const [stockRes,partsRes,repairsRes]=await Promise.all(jobs); const firstErr=stockRes.error||partsRes.error||repairsRes.error;if(firstErr)throw firstErr;
     const lines=[];
-    (stockRes.data||[]).filter(r=>invoiceIsTargetStore(r.customer)&&saleCountsAsSold(r)).forEach(r=>{const unit=saleUnitPrice(r);if(unit==null)return;const qty=Math.max(1,Number(r.quantity||1));lines.push({date:invoiceLineDate(r.sold_at),store:r.customer,source:"Magazzino",description:`${r.category||"Ricambio"} ${r.model||""}${r.color?` · ${r.color}`:""}`.trim(),qty,unitNet:Number(unit),vatRate:22,ref:`MAG-${r.id}`});});
-    (partsRes.data||[]).filter(r=>invoiceIsTargetStore(r.store)).forEach(r=>{const net=Number(r.net_amount??r.sale_price??0);lines.push({date:invoiceLineDate(r.sold_at),store:r.store,source:"Vendita ricambio",description:r.device_name||"Ricambio elettronico",qty:1,unitNet:net,vatRate:Number(r.vat_rate??22),ref:`RIC-${r.id}`});});
-    (repairsRes.data||[]).filter(r=>invoiceIsTargetStore(r.store)).forEach(r=>{const note=String(r.note||"");const m=note.match(/Rif\. e-Share:\s*([^·]+)/i);lines.push({date:invoiceLineDate(r.repaired_at),store:r.store,source:"Riparazione",description:`Riparazione ${r.device||"dispositivo"} · ${r.repair_type||"lavorazione"}${m?` · Rif. e-Share ${m[1].trim()}`:""}`,qty:1,unitNet:Number(r.price_ex_vat||0),vatRate:Number(r.vat_rate??22),ref:`RIP-${r.id}`});});
-    lines.sort((a,b)=>a.date.localeCompare(b.date)||a.store.localeCompare(b.store,"it")); invoiceAutomationLines=lines; renderInvoicePreview();
-    if(msg){msg.className="createUserMsg ok";msg.textContent=lines.length?`${lines.length} righe trovate per Riparalo / MELA.`:"Nessuna voce trovata nel periodo selezionato.";}
+    if(mode==="vr"){
+      const {data,error}=await sb.from("beparytech_admin_repairs").select("id,repaired_at,client_name,store,device,repair_type,imei_serial,price_ex_vat,vat_rate,note,invoiced,repair_status").gte("repaired_at",from).lte("repaired_at",to).eq("client_name","VR Trasporti").eq("invoiced",false).order("repaired_at",{ascending:true}).limit(1000);if(error)throw error;
+      (data||[]).forEach(r=>lines.push({selected:true,date:invoiceLineDate(r.repaired_at),store:"VR Trasporti",source:"Riparazione",description:`${r.repair_type||"Riparazione"} · ${r.device||"dispositivo"}${r.imei_serial?` · IMEI/Seriale ${r.imei_serial}`:""}`,qty:1,unitNet:Number(r.price_ex_vat||0),vatRate:Number(r.vat_rate??22),ref:`RIP-${r.id}`,repairId:Number(r.id)}));
+    }else{
+      const includeStock=document.getElementById("invoiceIncludeStock")?.checked,includeParts=document.getElementById("invoiceIncludeParts")?.checked,includeRepairs=document.getElementById("invoiceIncludeRepairs")?.checked,includeHours=document.getElementById("invoiceIncludeHours")?.checked;
+      const jobs=[];jobs.push(includeStock?sb.from("beparytech_sales").select("id,customer,category,item_key,model,color,quantity,sold_at,is_archived,restored_to_inventory,delivered_at,delete_reason").gte("sold_at",from).lte("sold_at",to).limit(2000):Promise.resolve({data:[],error:null}));jobs.push(includeParts?sb.from("beparytech_admin_device_sales").select("id,sold_at,store,device_name,sale_price,net_amount,vat_rate,vat_amount,note").gte("sold_at",from).lte("sold_at",to).limit(1000):Promise.resolve({data:[],error:null}));jobs.push(includeRepairs?sb.from("beparytech_admin_repairs").select("id,repaired_at,client_name,store,device,repair_type,price_ex_vat,vat_rate,note,invoiced").gte("repaired_at",from).lte("repaired_at",to).limit(1000):Promise.resolve({data:[],error:null}));jobs.push(includeHours?sb.from("beparytech_work_hours").select("id,work_date,morning_in,morning_out,afternoon_in,afternoon_out,company,total_minutes_override,note").gte("work_date",from).lte("work_date",to).limit(1000):Promise.resolve({data:[],error:null}));jobs.push(includeHours?sb.from("beparytech_work_extras").select("id,work_date,description,minutes,amount,company,note").gte("work_date",from).lte("work_date",to).limit(1000):Promise.resolve({data:[],error:null}));
+      const [stockRes,partsRes,repairsRes,hoursRes,extrasRes]=await Promise.all(jobs),firstErr=stockRes.error||partsRes.error||repairsRes.error||hoursRes.error||extrasRes.error;if(firstErr)throw firstErr;
+      (stockRes.data||[]).filter(r=>invoiceIsTargetStore(r.customer)&&saleCountsAsSold(r)).forEach(r=>{const unit=saleUnitPrice(r);if(unit==null)return;lines.push({selected:true,date:invoiceLineDate(r.sold_at),store:r.customer,source:"Magazzino",description:`${r.category||"Ricambio"} ${noLogoName(r.model,r.category)}${r.color?` · ${r.color}`:""}`.trim(),qty:Math.max(1,Number(r.quantity||1)),unitNet:Number(unit),vatRate:22,ref:`MAG-${r.id}`});});
+      (partsRes.data||[]).filter(r=>invoiceIsTargetStore(r.store)).forEach(r=>lines.push({selected:true,date:invoiceLineDate(r.sold_at),store:r.store,source:"Vendita ricambio",description:r.device_name||"Ricambio elettronico",qty:1,unitNet:Number(r.net_amount??r.sale_price??0),vatRate:Number(r.vat_rate??22),ref:`RIC-${r.id}`}));
+      (repairsRes.data||[]).filter(r=>invoiceIsTargetStore(r.store)||r.client_name==="RIPARALO S.R.L.").forEach(r=>{const note=String(r.note||""),m=note.match(/Rif\. e-Share:\s*([^·]+)/i);lines.push({selected:true,date:invoiceLineDate(r.repaired_at),store:r.store||"RIPARALO S.R.L.",source:"Riparazione",description:`Riparazione ${r.device||"dispositivo"} · ${r.repair_type||"lavorazione"}${m?` · Rif. e-Share ${m[1].trim()}`:""}`,qty:1,unitNet:Number(r.price_ex_vat||0),vatRate:Number(r.vat_rate??22),ref:`RIP-${r.id}`,repairId:Number(r.id)});});
+      if(includeHours){const ripHours=(hoursRes.data||[]).filter(r=>companyBucket(r.company)==="riparalo"),ripExtras=(extrasRes.data||[]).filter(r=>companyBucket(r.company)==="riparalo"),normalMinutes=ripHours.reduce((a,r)=>a+workedMinutes(r),0),extraMinutes=ripExtras.reduce((a,r)=>a+Number(r.minutes||0),0),rate=Math.max(0,Number(document.getElementById("invoiceHourlyRate")?.value)||20),merge=document.getElementById("invoiceMergeHours")?.checked!==false,periodLabel=`${new Date(from+"T12:00:00").toLocaleDateString("it-IT")} - ${new Date(to+"T12:00:00").toLocaleDateString("it-IT")}`,pushHours=(mins,desc,src,ref)=>{if(mins>0)lines.push({selected:true,date:to,store:"RIPARALO S.R.L.",source:src,description:`${desc} · ${periodLabel}`,qty:Number((mins/60).toFixed(2)),unitNet:rate,vatRate:22,ref});};if(merge)pushHours(normalMinutes+extraMinutes,"Servizio di assistenza tecnica","Assistenza","ORE-RIPARALO");else{pushHours(normalMinutes,"Servizio di assistenza tecnica","Ore normali","ORE-NORMALI");pushHours(extraMinutes,"Servizio di assistenza tecnica · ore extra","Ore extra","ORE-EXTRA");}const info=document.getElementById("invoiceHoursInfo");if(info)info.textContent=`Riparalo: ${fmtMinutes(normalMinutes)} normali + ${fmtMinutes(extraMinutes)} extra = ${fmtMinutes(normalMinutes+extraMinutes)} · ${euroFmt.format(rate)}/ora + IVA`;}
+    }
+    lines.sort((a,b)=>a.date.localeCompare(b.date)||a.store.localeCompare(b.store,"it"));invoiceAutomationLines=lines;renderInvoicePreview();if(msg){msg.className="createUserMsg ok";msg.textContent=lines.length?`${lines.length} voci trovate per ${mode==="vr"?"VR Trasporti":"Riparalo / MELA"}.`:"Nessuna voce da fatturare nel periodo selezionato.";}
   }catch(e){invoiceAutomationLines=[];renderInvoicePreview();if(msg){msg.className="createUserMsg error";msg.textContent=e.message||"Impossibile creare l’anteprima.";}}
 }
+function selectedInvoiceLines(){return invoiceAutomationLines.filter(r=>r.selected!==false);}
 function renderInvoicePreview(){
-  const lines=invoiceAutomationLines,box=document.getElementById("invoiceLines"),sum=document.getElementById("invoiceSummary");
-  const net=lines.reduce((a,r)=>a+r.unitNet*r.qty,0),vat=lines.reduce((a,r)=>a+(r.unitNet*r.qty*r.vatRate/100),0),gross=net+vat;
-  if(sum)sum.innerHTML=`<div><span>Righe</span><strong>${lines.length}</strong></div><div><span>Imponibile</span><strong>${euroFmt.format(net)}</strong></div><div><span>IVA</span><strong>${euroFmt.format(vat)}</strong></div><div><span>Totale</span><strong>${euroFmt.format(gross)}</strong></div>`;
-  if(box)box.innerHTML=lines.length?lines.map((r,i)=>`<article class="invoiceLine"><div class="invoiceLineNo">${i+1}</div><div class="invoiceLineMain"><strong>${escapeHtml(r.description)}</strong><span>${escapeHtml(r.store)} · ${new Date(r.date+"T12:00:00").toLocaleDateString("it-IT")} · ${escapeHtml(r.source)}</span></div><div class="invoiceLineMoney"><strong>${euroFmt.format(r.unitNet*r.qty)}</strong><span>${r.qty>1?`${r.qty} × ${euroFmt.format(r.unitNet)} · `:""}IVA ${r.vatRate}%</span></div></article>`).join(""):'<div class="emptyState">Nessuna voce da fatturare.</div>';
-  const csv=document.getElementById("invoiceCsvBtn"),xml=document.getElementById("invoiceXmlBtn");if(csv)csv.disabled=!lines.length;if(xml)xml.disabled=!lines.length;
+  const lines=selectedInvoiceLines(),box=document.getElementById("invoiceLines"),sum=document.getElementById("invoiceSummary"),net=lines.reduce((a,r)=>a+r.unitNet*r.qty,0),vat=lines.reduce((a,r)=>a+(r.unitNet*r.qty*r.vatRate/100),0),gross=net+vat;if(sum)sum.innerHTML=`<div><span>Righe</span><strong>${lines.length}</strong></div><div><span>Imponibile</span><strong>${euroFmt.format(net)}</strong></div><div><span>IVA</span><strong>${euroFmt.format(vat)}</strong></div><div><span>Totale</span><strong>${euroFmt.format(gross)}</strong></div>`;
+  if(box)box.innerHTML=invoiceAutomationLines.length?invoiceAutomationLines.map((r,i)=>`<article class="invoiceLine ${r.selected===false?"invoiceLineExcluded":""}"><label class="invoiceLinePick"><input type="checkbox" class="invoiceLineCheck" data-index="${i}" ${r.selected===false?"":"checked"}><span></span></label><div class="invoiceLineNo">${i+1}</div><div class="invoiceLineMain"><strong>${escapeHtml(r.description)}</strong><span>${escapeHtml(r.store)} · ${new Date(r.date+"T12:00:00").toLocaleDateString("it-IT")} · ${escapeHtml(r.source)}</span></div><div class="invoiceLineMoney"><strong>${euroFmt.format(r.unitNet*r.qty)}</strong><span>${r.qty>1?`${r.qty} × ${euroFmt.format(r.unitNet)} · `:""}IVA ${r.vatRate}%</span></div></article>`).join(""):'<div class="emptyState">Nessuna voce da fatturare.</div>';
+  box?.querySelectorAll(".invoiceLineCheck").forEach(c=>c.addEventListener("change",()=>{const row=invoiceAutomationLines[Number(c.dataset.index)];if(row)row.selected=c.checked;renderInvoicePreview();}));const csv=document.getElementById("invoiceCsvBtn"),xml=document.getElementById("invoiceXmlBtn"),mark=document.getElementById("invoiceMarkPaidBtn");if(csv)csv.disabled=!lines.length;if(xml)xml.disabled=!lines.length;if(mark)mark.disabled=!lines.some(r=>r.repairId);
 }
 function invoiceDocumentBasics(){return {number:String(document.getElementById("invoiceNumber")?.value||"").trim(),date:document.getElementById("invoiceDate")?.value||""};}
-function downloadBlobText(name,text,type){const blob=new Blob([text],{type});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-function exportInvoiceCsv(){
-  if(!invoiceAutomationLines.length)return; const doc=invoiceDocumentBasics(); const head=["Data","Negozio interno","Tipo","Descrizione","Quantita","Prezzo unitario netto","IVA %","Imponibile riga","Riferimento"];
-  const rows=invoiceAutomationLines.map(r=>[r.date,r.store,r.source,r.description,r.qty,r.unitNet.toFixed(2),r.vatRate,(r.unitNet*r.qty).toFixed(2),r.ref]);
-  const text='\ufeff'+[head,...rows].map(row=>row.map(csvEsc).join(";")).join("\r\n");downloadBlobText(`Riparalo_${doc.number||"bozza"}_${doc.date||localDateISO()}.csv`,text,"text/csv;charset=utf-8");
-}
+function downloadBlobText(name,text,type){const blob=new Blob([text],{type}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+function exportInvoiceCsv(){const lines=selectedInvoiceLines();if(!lines.length)return;const doc=invoiceDocumentBasics(),head=["Data","Cliente/Sede","Tipo","Descrizione","Quantita","Prezzo unitario netto","IVA %","Imponibile riga","Riferimento"],rows=lines.map(r=>[r.date,r.store,r.source,r.description,r.qty,r.unitNet.toFixed(2),r.vatRate,(r.unitNet*r.qty).toFixed(2),r.ref]),text='\ufeff'+[head,...rows].map(row=>row.map(csvEsc).join(";")).join("\r\n"),name=invoiceClientMode()==="vr"?"VR_Trasporti":"Riparalo";downloadBlobText(`${name}_${doc.number||"bozza"}_${doc.date||localDateISO()}.csv`,text,"text/csv;charset=utf-8");}
 function buildFatturaPaXml(){
-  const issuer=readIssuer(),err=validateIssuer(issuer);if(err)throw new Error(err);const doc=invoiceDocumentBasics();if(!doc.number||!doc.date)throw new Error("Inserisci numero e data della fattura.");if(!invoiceAutomationLines.length)throw new Error("Non ci sono righe da fatturare.");
-  const totals=new Map();invoiceAutomationLines.forEach(r=>{const key=Number(r.vatRate||0).toFixed(2),net=r.unitNet*r.qty,vat=net*Number(r.vatRate||0)/100;const x=totals.get(key)||{net:0,vat:0,rate:Number(r.vatRate||0)};x.net+=net;x.vat+=vat;totals.set(key,x);});
-  const netTotal=[...totals.values()].reduce((a,x)=>a+x.net,0),vatTotal=[...totals.values()].reduce((a,x)=>a+x.vat,0),gross=netTotal+vatTotal;
-  const progressive=(Date.now().toString(36).slice(-5)+Math.random().toString(36).slice(2,4)).toUpperCase().slice(0,10);
-  const details=invoiceAutomationLines.map((r,i)=>`<DettaglioLinee><NumeroLinea>${i+1}</NumeroLinea><Descrizione>${xmlEsc(`${r.description} [${r.store}]`)}</Descrizione><Quantita>${Number(r.qty).toFixed(2)}</Quantita><PrezzoUnitario>${Number(r.unitNet).toFixed(2)}</PrezzoUnitario><PrezzoTotale>${(r.unitNet*r.qty).toFixed(2)}</PrezzoTotale><AliquotaIVA>${Number(r.vatRate).toFixed(2)}</AliquotaIVA></DettaglioLinee>`).join("");
-  const recap=[...totals.values()].map(x=>`<DatiRiepilogo><AliquotaIVA>${x.rate.toFixed(2)}</AliquotaIVA><ImponibileImporto>${x.net.toFixed(2)}</ImponibileImporto><Imposta>${x.vat.toFixed(2)}</Imposta><EsigibilitaIVA>I</EsigibilitaIVA></DatiRiepilogo>`).join("");
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<p:FatturaElettronica versione="FPR12" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:p="http://ivaservizi.agenziaentrate.gov.it/docs/xsd/fatture/v1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><FatturaElettronicaHeader><DatiTrasmissione><IdTrasmittente><IdPaese>IT</IdPaese><IdCodice>${xmlEsc(issuer.vat)}</IdCodice></IdTrasmittente><ProgressivoInvio>${progressive}</ProgressivoInvio><FormatoTrasmissione>FPR12</FormatoTrasmissione><CodiceDestinatario>${RIPARALO_INVOICE_CLIENT.recipientCode}</CodiceDestinatario></DatiTrasmissione><CedentePrestatore><DatiAnagrafici><IdFiscaleIVA><IdPaese>IT</IdPaese><IdCodice>${xmlEsc(issuer.vat)}</IdCodice></IdFiscaleIVA>${issuer.taxCode?`<CodiceFiscale>${xmlEsc(issuer.taxCode)}</CodiceFiscale>`:""}<Anagrafica><Denominazione>${xmlEsc(issuer.name)}</Denominazione></Anagrafica><RegimeFiscale>${xmlEsc(issuer.regime)}</RegimeFiscale></DatiAnagrafici><Sede><Indirizzo>${xmlEsc(issuer.address)}</Indirizzo><CAP>${xmlEsc(issuer.zip)}</CAP><Comune>${xmlEsc(issuer.city)}</Comune><Provincia>${xmlEsc(issuer.province)}</Provincia><Nazione>IT</Nazione></Sede></CedentePrestatore><CessionarioCommittente><DatiAnagrafici><IdFiscaleIVA><IdPaese>IT</IdPaese><IdCodice>${RIPARALO_INVOICE_CLIENT.vat}</IdCodice></IdFiscaleIVA><CodiceFiscale>${RIPARALO_INVOICE_CLIENT.taxCode}</CodiceFiscale><Anagrafica><Denominazione>${RIPARALO_INVOICE_CLIENT.name}</Denominazione></Anagrafica></DatiAnagrafici><Sede><Indirizzo>${RIPARALO_INVOICE_CLIENT.address}</Indirizzo><CAP>${RIPARALO_INVOICE_CLIENT.zip}</CAP><Comune>${RIPARALO_INVOICE_CLIENT.city}</Comune><Provincia>${RIPARALO_INVOICE_CLIENT.province}</Provincia><Nazione>IT</Nazione></Sede></CessionarioCommittente></FatturaElettronicaHeader><FatturaElettronicaBody><DatiGenerali><DatiGeneraliDocumento><TipoDocumento>TD01</TipoDocumento><Divisa>EUR</Divisa><Data>${xmlEsc(doc.date)}</Data><Numero>${xmlEsc(doc.number)}</Numero><ImportoTotaleDocumento>${gross.toFixed(2)}</ImportoTotaleDocumento></DatiGeneraliDocumento></DatiGenerali><DatiBeniServizi>${details}${recap}</DatiBeniServizi></FatturaElettronicaBody></p:FatturaElettronica>`;
+  const issuer=readIssuer(),issuerErr=validateIssuer(issuer);if(issuerErr)throw new Error(issuerErr);const client=currentInvoiceClient(),clientErr=invoiceClientMode()==="vr"?validateVrClient(client):"",doc=invoiceDocumentBasics(),lines=selectedInvoiceLines();if(clientErr)throw new Error(clientErr);if(!doc.number||!doc.date)throw new Error("Inserisci numero e data della fattura.");if(!lines.length)throw new Error("Non ci sono righe selezionate da fatturare.");
+  const totals=new Map();lines.forEach(r=>{const key=Number(r.vatRate||0).toFixed(2),net=r.unitNet*r.qty,vat=net*Number(r.vatRate||0)/100,x=totals.get(key)||{net:0,vat:0,rate:Number(r.vatRate||0)};x.net+=net;x.vat+=vat;totals.set(key,x);});const gross=[...totals.values()].reduce((a,x)=>a+x.net+x.vat,0),progressive=(Date.now().toString(36).slice(-5)+Math.random().toString(36).slice(2,4)).toUpperCase().slice(0,10),details=lines.map((r,i)=>`<DettaglioLinee><NumeroLinea>${i+1}</NumeroLinea><Descrizione>${xmlEsc(`${r.description} [${r.store}]`)}</Descrizione><Quantita>${Number(r.qty).toFixed(2)}</Quantita><PrezzoUnitario>${Number(r.unitNet).toFixed(2)}</PrezzoUnitario><PrezzoTotale>${(r.unitNet*r.qty).toFixed(2)}</PrezzoTotale><AliquotaIVA>${Number(r.vatRate).toFixed(2)}</AliquotaIVA></DettaglioLinee>`).join(""),recap=[...totals.values()].map(x=>`<DatiRiepilogo><AliquotaIVA>${x.rate.toFixed(2)}</AliquotaIVA><ImponibileImporto>${x.net.toFixed(2)}</ImponibileImporto><Imposta>${x.vat.toFixed(2)}</Imposta><EsigibilitaIVA>I</EsigibilitaIVA></DatiRiepilogo>`).join("");
+  return `<?xml version="1.0" encoding="UTF-8"?>\n<p:FatturaElettronica versione="FPR12" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:p="http://ivaservizi.agenziaentrate.gov.it/docs/xsd/fatture/v1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><FatturaElettronicaHeader><DatiTrasmissione><IdTrasmittente><IdPaese>IT</IdPaese><IdCodice>${xmlEsc(issuer.vat)}</IdCodice></IdTrasmittente><ProgressivoInvio>${progressive}</ProgressivoInvio><FormatoTrasmissione>FPR12</FormatoTrasmissione><CodiceDestinatario>${xmlEsc(client.recipientCode)}</CodiceDestinatario></DatiTrasmissione><CedentePrestatore><DatiAnagrafici><IdFiscaleIVA><IdPaese>IT</IdPaese><IdCodice>${xmlEsc(issuer.vat)}</IdCodice></IdFiscaleIVA>${issuer.taxCode?`<CodiceFiscale>${xmlEsc(issuer.taxCode)}</CodiceFiscale>`:""}<Anagrafica><Denominazione>${xmlEsc(issuer.name)}</Denominazione></Anagrafica><RegimeFiscale>${xmlEsc(issuer.regime)}</RegimeFiscale></DatiAnagrafici><Sede><Indirizzo>${xmlEsc(issuer.address)}</Indirizzo><CAP>${xmlEsc(issuer.zip)}</CAP><Comune>${xmlEsc(issuer.city)}</Comune><Provincia>${xmlEsc(issuer.province)}</Provincia><Nazione>IT</Nazione></Sede></CedentePrestatore><CessionarioCommittente><DatiAnagrafici><IdFiscaleIVA><IdPaese>IT</IdPaese><IdCodice>${xmlEsc(client.vat)}</IdCodice></IdFiscaleIVA>${client.taxCode?`<CodiceFiscale>${xmlEsc(client.taxCode)}</CodiceFiscale>`:""}<Anagrafica><Denominazione>${xmlEsc(client.name)}</Denominazione></Anagrafica></DatiAnagrafici><Sede><Indirizzo>${xmlEsc(client.address)}</Indirizzo><CAP>${xmlEsc(client.zip)}</CAP><Comune>${xmlEsc(client.city)}</Comune><Provincia>${xmlEsc(client.province)}</Provincia><Nazione>IT</Nazione></Sede></CessionarioCommittente></FatturaElettronicaHeader><FatturaElettronicaBody><DatiGenerali><DatiGeneraliDocumento><TipoDocumento>TD01</TipoDocumento><Divisa>EUR</Divisa><Data>${xmlEsc(doc.date)}</Data><Numero>${xmlEsc(doc.number)}</Numero><ImportoTotaleDocumento>${gross.toFixed(2)}</ImportoTotaleDocumento></DatiGeneraliDocumento></DatiGenerali><DatiBeniServizi>${details}${recap}</DatiBeniServizi></FatturaElettronicaBody></p:FatturaElettronica>`;
 }
-function exportInvoiceXml(){try{if(!saveIssuerSettings())return;const doc=invoiceDocumentBasics(),xml=buildFatturaPaXml();const safeNum=(doc.number||"fattura").replace(/[^A-Za-z0-9_-]+/g,"_");downloadBlobText(`IT${readIssuer().vat}_${safeNum}.xml`,xml,"application/xml;charset=utf-8");const msg=document.getElementById("invoiceLoadMsg");if(msg){msg.className="createUserMsg ok";msg.textContent="XML generato. Aprilo o caricalo su Aruba e controlla l’anteprima prima dell’invio.";}}catch(e){const msg=document.getElementById("invoiceLoadMsg");if(msg){msg.className="createUserMsg error";msg.textContent=e.message||"Errore generazione XML.";}}}
-function bindInvoiceAutomation(){
-  const panel=document.getElementById("adminInvoicesPanel");if(!panel||panel.dataset.bound==="1")return;panel.dataset.bound="1";defaultInvoicePeriod();loadIssuerSettings();
-  document.getElementById("saveIssuerBtn")?.addEventListener("click",saveIssuerSettings);document.getElementById("invoiceRefreshBtn")?.addEventListener("click",buildRiparaloInvoicePreview);document.getElementById("invoiceCsvBtn")?.addEventListener("click",exportInvoiceCsv);document.getElementById("invoiceXmlBtn")?.addEventListener("click",exportInvoiceXml);
-}
+function exportInvoiceXml(){try{if(!saveIssuerSettings())return;if(invoiceClientMode()==="vr"&&!saveVrClientSettings())return;const doc=invoiceDocumentBasics(),xml=buildFatturaPaXml(),safeNum=(doc.number||"fattura").replace(/[^A-Za-z0-9_-]+/g,"_");downloadBlobText(`IT${readIssuer().vat}_${safeNum}.xml`,xml,"application/xml;charset=utf-8");const msg=document.getElementById("invoiceLoadMsg");if(msg){msg.className="createUserMsg ok";msg.textContent="XML generato. Dopo averlo controllato/caricato su Aruba, puoi segnare le riparazioni selezionate come fatturate.";}}catch(e){const msg=document.getElementById("invoiceLoadMsg");if(msg){msg.className="createUserMsg error";msg.textContent=e.message||"Errore generazione XML.";}}}
+async function markSelectedRepairsInvoiced(){const ids=selectedInvoiceLines().filter(r=>r.repairId).map(r=>r.repairId),doc=invoiceDocumentBasics(),msg=document.getElementById("invoiceLoadMsg");if(!ids.length)return;if(!doc.number){if(msg){msg.className="createUserMsg error";msg.textContent="Inserisci il numero fattura prima di segnare le riparazioni come fatturate.";}return;}if(!confirm(`Segnare ${ids.length} riparazioni come fatturate con riferimento ${doc.number}?`))return;try{const ctx=await btGetWorkspaceOwnerId();const {error}=await sb.from("beparytech_admin_repairs").update({invoiced:true,invoice_ref:doc.number}).in("id",ids).eq("workspace_owner_id",ctx.owner);if(error)throw error;if(msg){msg.className="createUserMsg ok";msg.textContent="Riparazioni segnate come fatturate.";}await buildBusinessInvoicePreview();await loadAdminRepairs();}catch(e){if(msg){msg.className="createUserMsg error";msg.textContent=e.message||"Impossibile aggiornare le riparazioni.";}}}
+function bindInvoiceAutomation(){const panel=document.getElementById("adminInvoicesPanel");if(!panel||panel.dataset.bound==="1")return;panel.dataset.bound="1";defaultInvoicePeriod();loadIssuerSettings();loadVrClientSettings();updateInvoiceClientUi();document.getElementById("invoiceClientSelect")?.addEventListener("change",updateInvoiceClientUi);document.getElementById("saveVrClientBtn")?.addEventListener("click",saveVrClientSettings);document.getElementById("saveIssuerBtn")?.addEventListener("click",saveIssuerSettings);document.getElementById("invoiceRefreshBtn")?.addEventListener("click",buildBusinessInvoicePreview);document.getElementById("invoiceCsvBtn")?.addEventListener("click",exportInvoiceCsv);document.getElementById("invoiceXmlBtn")?.addEventListener("click",exportInvoiceXml);document.getElementById("invoiceMarkPaidBtn")?.addEventListener("click",markSelectedRepairsInvoiced);}
 document.addEventListener("DOMContentLoaded",bindInvoiceAutomation);
 
 // ===== v53: pannelli Orari chiusi + navigazione contestuale responsive =====
@@ -1854,6 +1865,7 @@ function updateSmartNavigation(){
  let pl='Cerca', pi='⌕', hl='Cronologia', hi='≋';
  if(currentCategory==='Orari'){pl='Orario';pi='◷';hl='Extra';hi='＋'}
  else if(currentCategory==='VenditeAdmin'){pl='Vendita';pi='−1';hl='Riparazioni';hi='⌁'}
+ else if(currentCategory==='Fatturazione'){pl='Fattura';pi='🧾';hl='Vendite';hi='€'}
  else if(currentCategory==='Vendite'){pl='Vendite';pi='✓';hl='Cronologia';hi='≋'}
  else if(currentCategory==='Utenti'){pl='Nuovo utente';pi='＋';hl='Gestisci';hi='♙'}
  else if(String(currentCategory).startsWith('custom:')){pl='Cerca';pi='⌕';hl='Cronologia';hi='≋'}
@@ -1862,7 +1874,7 @@ function updateSmartNavigation(){
 document.addEventListener('DOMContentLoaded',()=>{
  bindHourAccordions(); const nav=document.getElementById('mobileBottomNav'), back=document.getElementById('smartBackBtn');
  back?.addEventListener('click',smartBack);
- nav?.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.smartAction;if(a==='home')setCategory('Dashboard');else if(a==='scanner')openScanner();else if(a==='menu')openMainMenu();else if(currentCategory==='Orari'&&a==='primary')document.querySelector('#hoursForm .hourCardToggle')?.click();else if(currentCategory==='Orari'&&a==='history')document.querySelector('#extraForm .hourCardToggle')?.click();else if(currentCategory==='VenditeAdmin'&&a==='primary')document.querySelector('[data-work-tab="sales"]')?.click();else if(currentCategory==='VenditeAdmin'&&a==='history')document.querySelector('[data-work-tab="repairs"]')?.click();else if(a==='history')setCategory('Cronologia');else document.getElementById('globalSearch')?.focus();});
+ nav?.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.smartAction;if(a==='home')setCategory('Dashboard');else if(a==='scanner')openScanner();else if(a==='menu')openMainMenu();else if(currentCategory==='Orari'&&a==='primary')document.querySelector('#hoursForm .hourCardToggle')?.click();else if(currentCategory==='Orari'&&a==='history')document.querySelector('#extraForm .hourCardToggle')?.click();else if(currentCategory==='VenditeAdmin'&&a==='primary')document.querySelector('[data-work-tab="sales"]')?.click();else if(currentCategory==='VenditeAdmin'&&a==='history')document.querySelector('[data-work-tab="repairs"]')?.click();else if(currentCategory==='Fatturazione'&&a==='primary')document.querySelector('[data-work-tab="invoices"]')?.click();else if(currentCategory==='Fatturazione'&&a==='history')setCategory('VenditeAdmin');else if(a==='history')setCategory('Cronologia');else document.getElementById('globalSearch')?.focus();});
  let sx=0,sy=0,st=0;document.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;sx=e.touches[0].clientX;sy=e.touches[0].clientY;st=Date.now()},{passive:true});document.addEventListener('touchend',e=>{if(!e.changedTouches?.length||sx>35)return;const dx=e.changedTouches[0].clientX-sx,dy=Math.abs(e.changedTouches[0].clientY-sy);if(dx>85&&dy<70&&Date.now()-st<700)smartBack()},{passive:true});
  updateSmartNavigation();
 });

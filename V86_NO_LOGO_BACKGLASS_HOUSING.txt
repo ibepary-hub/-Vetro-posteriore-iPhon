@@ -1,0 +1,9 @@
+BEPARYTECH MAGAZZINO v86 - NO LOGO
+
+- Aggiunta dicitura "NO LOGO" al nome commerciale di tutti gli articoli BackGlass.
+- Aggiunta dicitura "NO LOGO" al nome commerciale di tutti gli articoli Housing.
+- Applicata anche alle vendite gia registrate nella visualizzazione Vendute e Archivio.
+- Applicata alle note/stampe DYMO e alle note esportate.
+- Applicata alle descrizioni delle righe magazzino nella fatturazione Aruba/CSV/XML.
+- Le chiavi tecniche interne di stock non sono state rinominate, per non compromettere giacenze, prezzi, rientri o storico.
+- Protezione contro duplicazione: se un nome contiene gia "NO LOGO", la dicitura non viene aggiunta una seconda volta.

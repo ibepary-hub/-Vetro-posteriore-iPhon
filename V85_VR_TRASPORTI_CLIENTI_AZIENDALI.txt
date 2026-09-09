@@ -1,0 +1,15 @@
+BEPARYTECH MAGAZZINO v85 — VR TRASPORTI / CLIENTI AZIENDALI
+
+- Riparazioni: aggiunto cliente RIPARALO S.R.L., VR Trasporti o cliente personalizzato.
+- VR Trasporti seleziona automaticamente la sede omonima.
+- Interventi rapidi: Cambio display, Cambio batteria, Cambio connettore, Riparazione scheda madre, Altro.
+- Nuovi campi: IMEI/seriale, costo ricambio Admin, stato, fatturato.
+- Stati: Da riparare, In lavorazione, Riparato, Consegnato.
+- Fatturazione: selettore cliente Riparalo / VR Trasporti.
+- VR Trasporti: dati fiscali memorizzabili localmente una volta sola.
+- Anteprima VR: importa solo riparazioni non ancora fatturate nel periodo scelto.
+- Ogni riga fattura può essere selezionata/deselezionata.
+- CSV e XML Aruba generati usando solo le righe selezionate.
+- Pulsante per segnare le riparazioni selezionate come fatturate e salvare il numero fattura.
+- Le riparazioni già fatturate non rientrano nelle successive anteprime VR.
+- Riparalo / MELA mantiene il flusso precedente con magazzino, ricambi, riparazioni e ore assistenza.

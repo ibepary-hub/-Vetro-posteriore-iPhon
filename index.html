@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.json?v=74">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=82">
+  <link rel="stylesheet" href="style.css?v=83">
 
 
 
@@ -31,6 +31,7 @@
       <button id="bestekCatalogMenuItem" class="menuItem adminOnly" type="button" data-category="CatalogoBestek" hidden><span class="menuIcon">BK</span><span><strong>Catalogo Bestek</strong><small>Codici e accessori verificati</small></span></button>
       <button id="catalogMenuItem" class="menuItem adminOnly" type="button" data-category="GestioneMagazzino" hidden><span class="menuIcon">＋</span><span><strong>Gestione magazzino</strong><small>Sezioni e prodotti</small></span></button>
       <button id="deviceSalesMenuItem" class="menuItem adminOnly" type="button" data-category="VenditeAdmin" hidden><span class="menuIcon">€</span><span><strong>Vendite ricambi</strong><small>Prezzi, IVA e riferimenti acquisto</small></span></button>
+      <button id="invoicesMenuItem" class="menuItem adminOnly" type="button" data-category="Fatturazione" hidden><span class="menuIcon">🧾</span><span><strong>Fatturazione</strong><small>Riparalo / MELA · XML Aruba</small></span></button>
       <button id="hoursMenuItem" class="menuItem adminOnly" type="button" data-category="Orari" hidden><span class="menuIcon">◷</span><span><strong>Orari</strong><small>Ore lavorate ed extra</small></span></button>
       <button id="zeroStockMenuItem" class="menuItem adminOnly" type="button" data-category="ScorteZero" hidden><span class="menuIcon">0</span><span><strong>Scorte a zero</strong><small>BackGlass e Housing separati</small></span></button>
       <button id="backupMenuItem" class="menuItem adminOnly" type="button" data-category="Backup" hidden><span class="menuIcon">⇩</span><span><strong>Backup</strong><small>Esporta dati</small></span></button>
@@ -238,17 +239,22 @@
       <div class="deviceSaleCardHead"><div><strong>Nuova riparazione</strong><small>Prezzo inserito escluso IVA</small></div></div>
       <div class="deviceSaleGrid">
         <label><span>Data riparazione *</span><input id="adminRepairDate" type="date" required></label>
-        <label><span>Negozio *</span><select id="adminRepairStore" required><option value="">Seleziona negozio…</option>
-<option>RPL Piacenza</option><option>RPL Manerbio</option>
+        <label><span>Cliente *</span><select id="adminRepairClient" required><option value="">Seleziona cliente…</option><option value="RIPARALO S.R.L.">RIPARALO S.R.L.</option><option value="VR Trasporti">VR Trasporti</option><option value="ALTRO">Altro cliente</option></select></label>
+        <label><span>Sede / Negozio</span><select id="adminRepairStore"><option value="">Nessuna / sede cliente</option>
+<option>VR Trasporti</option><option>RPL Piacenza</option><option>RPL Manerbio</option>
 <option>MELA Piacenza</option><option>MELA Lime Store</option><option>MELA Repubblica</option><option>MELA Emilia Est</option>
 <option>DP Udine</option><option>DP Majano</option><option>DP Tolmezzo</option><option>DP Cividale</option><option>DP Codroipo</option><option>DP Colugna</option>
 <option>E-POL</option></select></label>
+        <label class="wide"><span>Cliente personalizzato</span><input id="adminRepairCustomClient" maxlength="160" placeholder="Usa solo se hai scelto Altro cliente" disabled></label>
         <label class="wide"><span>Dispositivo *</span><input id="adminRepairDevice" maxlength="160" placeholder="es. iPhone 15 Pro, S21 Ultra 5G..." required></label>
-        <label class="wide"><span>Tipo di riparazione *</span><input id="adminRepairType" maxlength="240" placeholder="es. Reballing CPU, riparazione scheda madre..." required></label>
-        <label class="wide"><span>Riferimento e-Share *</span><input id="adminRepairEShareRef" maxlength="120" placeholder="es. 8107" required></label>
+        <label><span>Tipo di riparazione *</span><input id="adminRepairType" list="adminRepairTypeOptions" maxlength="240" placeholder="Seleziona o scrivi l’intervento" required><datalist id="adminRepairTypeOptions"><option value="Cambio display"><option value="Cambio batteria"><option value="Cambio connettore"><option value="Riparazione scheda madre"><option value="Altro"></datalist></label>
+        <label><span>IMEI / Seriale</span><input id="adminRepairImei" maxlength="120" placeholder="Facoltativo"></label>
+        <label><span>Stato</span><select id="adminRepairStatus"><option>Da riparare</option><option>In lavorazione</option><option selected>Riparato</option><option>Consegnato</option></select></label>
+        <label class="wide"><span>Riferimento e-Share</span><input id="adminRepairEShareRef" maxlength="120" placeholder="Facoltativo"></label>
+        <label><span>Costo ricambio (solo Admin)</span><div class="moneyInput"><span>€</span><input id="adminRepairPartCost" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></div></label>
         <label><span>Prezzo escluso IVA *</span><div class="moneyInput"><span>€</span><input id="adminRepairPrice" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00" required></div></label>
         <label><span>IVA %</span><input id="adminRepairVatRate" type="number" min="0" max="100" step="0.01" value="22" inputmode="decimal"></label>
-        <label class="wide"><span>Nota</span><textarea id="adminRepairNote" maxlength="1000" rows="3" placeholder="es. Riferimento e-share: 8107"></textarea></label>
+        <label><span>Fatturato</span><select id="adminRepairInvoiced"><option value="false" selected>No</option><option value="true">Sì</option></select></label><label class="wide"><span>Nota</span><textarea id="adminRepairNote" maxlength="1000" rows="3" placeholder="Dettagli intervento, ricambio usato, difetto riscontrato…"></textarea></label>
       </div>
       <div class="vatPreview">
         <div><span>Imponibile</span><strong id="adminRepairNet">€ 0,00</strong></div>
@@ -271,13 +277,28 @@
 
   <div id="adminInvoicesPanel" class="adminWorkPanel invoicePanel" data-work-panel="invoices" hidden>
     <div class="adminPanelHeader">
-      <div><strong>Fatturazione Riparalo S.r.l.</strong><small>Raggruppa automaticamente RPL e MELA e prepara il file XML da caricare su Aruba.</small></div>
+      <div><strong>Fatturazione clienti aziendali</strong><small>Riparalo / MELA e VR Trasporti · anteprima, CSV e XML Aruba.</small></div>
     </div>
 
-    <div class="invoiceClientCard">
-      <div><span class="invoiceEyebrow">CLIENTE PREIMPOSTATO</span><h3>RIPARALO S.R.L.</h3><p>Via Antonio Emmanueli, 7 · 29121 Piacenza (PC) · IT</p></div>
-      <div class="invoiceClientMeta"><span>P.IVA <b>IT01787740339</b></span><span>C.F. <b>01787740339</b></span><span>Codice destinatario <b>KRRH6B9</b></span></div>
+    <div class="invoiceClientCard businessInvoiceClientCard">
+      <div><span class="invoiceEyebrow">CLIENTE DA FATTURARE</span><h3 id="invoiceClientTitle">RIPARALO S.R.L.</h3><p id="invoiceClientSubtitle">Via Antonio Emmanueli, 7 · 29121 Piacenza (PC) · IT</p></div>
+      <label class="invoiceClientSelect"><span>Cliente</span><select id="invoiceClientSelect"><option value="riparalo">RIPARALO S.R.L.</option><option value="vr">VR Trasporti</option></select></label>
     </div>
+    <section id="vrInvoiceDataCard" class="deviceSaleCard adminUniformCard vrInvoiceDataCard" hidden>
+      <div class="deviceSaleCardHead"><div><strong>Dati fiscali VR Trasporti</strong><small>Inseriscili una volta: vengono salvati su questo dispositivo.</small></div></div>
+      <div class="deviceSaleGrid">
+        <label class="wide"><span>Ragione sociale *</span><input id="vrClientName" maxlength="120" value="VR Trasporti"></label>
+        <label><span>Partita IVA *</span><input id="vrClientVat" maxlength="13" placeholder="IT01234567890"></label>
+        <label><span>Codice fiscale</span><input id="vrClientTaxCode" maxlength="16"></label>
+        <label><span>Codice destinatario *</span><input id="vrClientRecipient" maxlength="7" placeholder="XXXXXXX"></label>
+        <label class="wide"><span>Indirizzo *</span><input id="vrClientAddress" maxlength="120"></label>
+        <label><span>CAP *</span><input id="vrClientZip" maxlength="5"></label>
+        <label><span>Comune *</span><input id="vrClientCity" maxlength="80"></label>
+        <label><span>Provincia *</span><input id="vrClientProvince" maxlength="2" placeholder="PC"></label>
+      </div>
+      <button id="saveVrClientBtn" class="secondaryAction animatedBtn" type="button">Salva dati VR Trasporti</button>
+      <div id="vrClientMsg" class="createUserMsg" aria-live="polite"></div>
+    </section>
 
     <div class="invoiceGrid">
       <section class="deviceSaleCard adminUniformCard">
@@ -291,7 +312,14 @@
         <div class="invoiceChecks">
           <label><input id="invoiceIncludeStock" type="checkbox" checked><span>Vendite magazzino a RPL / MELA</span></label>
           <label><input id="invoiceIncludeParts" type="checkbox" checked><span>Vendite ricambi admin</span></label>
-          <label><input id="invoiceIncludeRepairs" type="checkbox" checked><span>Riparazioni dispositivi</span></label>
+          <label><input id="invoiceIncludeRepairs" type="checkbox" checked><span>Riparazioni dispositivi non ancora fatturate</span></label>
+          <label><input id="invoiceIncludeHours" type="checkbox" checked><span>Servizio di assistenza · ore Riparalo + extra Riparalo</span></label>
+        </div>
+        <div class="invoiceServiceBox">
+          <div><strong>Servizio di assistenza tecnica</strong><small>Importa automaticamente le ore normali e le ore extra indicate come Riparalo.</small></div>
+          <label><span>Tariffa oraria € + IVA</span><input id="invoiceHourlyRate" type="number" min="0" step="0.01" value="20.00"></label>
+          <label class="invoiceMergeHours"><input id="invoiceMergeHours" type="checkbox" checked><span>Raggruppa ore normali + extra in una sola riga fattura</span></label>
+          <div id="invoiceHoursInfo" class="invoiceHoursInfo">Le ore verranno lette dalla sezione Orari in base al periodo selezionato.</div>
         </div>
         <button id="invoiceRefreshBtn" class="primaryAction animatedBtn" type="button">Aggiorna anteprima</button>
         <div id="invoiceLoadMsg" class="createUserMsg" aria-live="polite"></div>
@@ -315,12 +343,13 @@
     </div>
 
     <section class="deviceSaleCard adminUniformCard invoicePreviewCard">
-      <div class="deviceSaleCardHead"><div><strong>3. Anteprima fattura</strong><small>RPL e tutti i punti MELA vengono fatturati allo stesso cliente: Riparalo S.r.l.</small></div></div>
+      <div class="deviceSaleCardHead"><div><strong>3. Anteprima fattura</strong><small id="invoicePreviewSubtitle">RPL e tutti i punti MELA vengono fatturati a Riparalo S.r.l.</small></div></div>
       <div id="invoiceSummary" class="deviceSalesSummary"><div><span>Righe</span><strong>0</strong></div><div><span>Imponibile</span><strong>€ 0,00</strong></div><div><span>IVA</span><strong>€ 0,00</strong></div><div><span>Totale</span><strong>€ 0,00</strong></div></div>
       <div id="invoiceLines" class="invoiceLines"><div class="emptyState">Scegli il periodo e premi “Aggiorna anteprima”.</div></div>
       <div class="invoiceActions">
         <button id="invoiceCsvBtn" class="secondaryAction animatedBtn" type="button" disabled>Esporta CSV riepilogo</button>
         <button id="invoiceXmlBtn" class="primaryAction animatedBtn" type="button" disabled>Genera XML per Aruba</button>
+        <button id="invoiceMarkPaidBtn" class="secondaryAction animatedBtn" type="button" disabled>Segna riparazioni come fatturate</button>
       </div>
       <p class="invoiceHint">Il file XML viene generato nel browser e non contiene password Aruba. Prima dell’invio controlla sempre numero, data, imponibile e IVA nell’anteprima di Aruba.</p>
     </section>
@@ -565,7 +594,7 @@
  <button type="button" data-smart-action="menu"><b>☰</b><span>Menu</span></button>
 </nav>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
-<script src="app.js?v=82"></script>
+<script src="app.js?v=83"></script>
 
 
 
