@@ -10,10 +10,10 @@
   <meta name="apple-mobile-web-app-title" content="BeparyTech Manager">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
   <title>BeparyTech Manager</title>
-  <link rel="manifest" href="manifest.json?v=94">
+  <link rel="manifest" href="manifest.json?v=96">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=94">
+  <link rel="stylesheet" href="style.css?v=96">
 
 
 
@@ -53,6 +53,7 @@
         <button id="hoursMenuItem" class="menuItem adminOnly" type="button" data-category="Orari"><span class="menuIcon">◷</span><span><strong>Orari</strong><small>Ore lavorate ed extra</small></span></button>
         <button id="backupMenuItem" class="menuItem adminOnly" type="button" data-category="Backup"><span class="menuIcon">⇩</span><span><strong>Backup</strong><small>Esporta dati</small></span></button>
         <button id="usersMenuItem" class="menuItem adminOnly" type="button" data-category="Utenti"><span class="menuIcon">♙</span><span><strong>Utenti</strong><small>Accessi e password</small></span></button>
+        <button id="securityAccessMenuItem" class="menuItem adminOnly" type="button" data-category="SicurezzaAccessi"><span class="menuIcon">◉</span><span><strong>Sicurezza accessi</strong><small>Login, dispositivi e provenienza</small></span></button>
         <button id="settingsMenuItem" class="menuItem adminOnly" type="button" data-category="Impostazioni"><span class="menuIcon">⚙</span><span><strong>Impostazioni</strong><small>DYMO e preferenze gestionale</small></span></button>
       </div>
     </nav>
@@ -354,7 +355,14 @@
         <div class="repairHistoryTools"><input id="adminRepairSearch" type="search" placeholder="Cerca pratica, cliente, IMEI…"><button id="refreshAdminRepairsBtn" class="miniBtn" type="button">Aggiorna</button></div>
       </div>
       <div id="adminRepairsSummary" class="deviceSalesSummary"></div>
-      <div id="adminRepairsList"><div class="emptyState">Nessuna riparazione caricata</div></div>
+      <section class="repairPracticeBucket quickPracticeBucket">
+        <div class="repairBucketHead"><div><strong>⚡ Accettazioni rapide</strong><small>Pratiche salvate velocemente e ancora da completare</small></div><span id="adminQuickRepairsCount" class="practicePill">0</span></div>
+        <div id="adminQuickRepairsList"><div class="emptyState">Nessuna accettazione rapida da completare</div></div>
+      </section>
+      <section class="repairPracticeBucket fullPracticeBucket">
+        <div class="repairBucketHead"><div><strong>🔧 Riparazioni</strong><small>Pratiche complete, in lavorazione, pronte e consegnate</small></div><span id="adminFullRepairsCount" class="practicePill">0</span></div>
+        <div id="adminRepairsList"><div class="emptyState">Nessuna riparazione caricata</div></div>
+      </section>
     </div>
   </div>
 
@@ -464,6 +472,17 @@
 
 
   <div class="settingsInfoCard"><strong>Come funziona</strong><span>Nelle pratiche usa “Stampa DYMO”. Il gestionale applicherà automaticamente il formato scelto qui e, se attivo, inserirà anche il QR della pratica.</span></div>
+</section>
+
+<section id="securityAccessView" class="catalogView securityAccessView" hidden>
+  <div class="adminHero"><div><span class="usersKicker">SICUREZZA</span><h2>Accessi al gestionale</h2><p>Controlla chi ha effettuato l’accesso, quando, da quale dispositivo e da quale zona approssimativa.</p></div><span class="adminBadge">ADMIN</span></div>
+  <section class="deviceSaleCard adminUniformCard accessSecurityCard">
+    <div class="deviceSaleCardHead"><div><strong>◉ Cronologia login</strong><small>IP e posizione sono rilevati lato server. La posizione è indicativa e può variare con VPN o rete mobile.</small></div><button id="refreshLoginEventsBtn" class="miniBtn" type="button">Aggiorna</button></div>
+    <div id="loginAlertStatus" class="loginAlertStatus"><strong>Registro accessi attivo</strong><span>Ogni accesso riuscito viene registrato automaticamente e può essere consultato solo dagli amministratori.</span></div>
+    <div id="loginEventsSummary" class="deviceSalesSummary"></div>
+    <div id="loginEventsList"><div class="emptyState">Caricamento accessi…</div></div>
+  </section>
+  <div class="settingsInfoCard"><strong>Privacy</strong><span>La posizione deriva dall’indirizzo IP e non usa il GPS. Gli utenti del gestionale devono essere informati che gli accessi vengono registrati per finalità di sicurezza.</span></div>
 </section>
 
 <section id="hoursView" class="hoursView" hidden>
@@ -706,7 +725,7 @@
  <button type="button" data-smart-action="menu"><b>☰</b><span>Menu</span></button>
 </nav>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
-<script src="app.js?v=94"></script>
+<script src="app.js?v=96"></script>
 
 
 

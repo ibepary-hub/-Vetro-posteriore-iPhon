@@ -1,0 +1,8 @@
+BeparyTech Manager v96
+
+- Rimossa completamente la funzione di notifica email login.
+- Ogni login riuscito continua a essere registrato lato server.
+- La cronologia e visibile esclusivamente agli utenti Admin.
+- Dati mostrati: utente, data/ora, IP, dispositivo, browser, sistema operativo e posizione IP approssimativa.
+- Edge Function beparytech-login-alert aggiornata alla versione 2 senza Resend o altri servizi email.
+- Le Accettazioni rapide restano separate dalle Riparazioni complete nella sezione Pratiche.

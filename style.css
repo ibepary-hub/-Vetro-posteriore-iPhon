@@ -2043,3 +2043,14 @@ body[data-theme="light"] .dashboardMiniChart{color:#17364f}
   .quickRepairActions{position:relative;z-index:1;}
   .quickRepairGrid select,.quickRepairGrid input{font-size:16px;}
 }
+
+
+/* ===== v95 · pratiche separate + sicurezza accessi ===== */
+.repairPracticeBucket{display:grid;gap:12px;margin-top:18px;padding-top:18px;border-top:1px solid var(--line)}
+.repairBucketHead{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 2px}.repairBucketHead>div{display:grid;gap:3px}.repairBucketHead strong{font-size:15px}.repairBucketHead small{color:var(--muted);font-size:12px}.quickPracticeBucket{border-top:0;margin-top:12px;padding-top:0}.quickRepairRow{border-color:rgba(16,185,129,.28)!important;background:linear-gradient(135deg,rgba(16,185,129,.055),transparent 46%)!important}
+.securityAccessView{display:grid;gap:16px}.securityAccessView[hidden]{display:none!important}.accessSecurityCard{display:grid;gap:14px}.loginAlertStatus{display:grid;gap:4px;padding:13px 14px;border:1px solid rgba(245,158,11,.24);border-radius:14px;background:rgba(245,158,11,.07)}.loginAlertStatus.configured{border-color:rgba(16,185,129,.28);background:rgba(16,185,129,.07)}.loginAlertStatus strong{font-size:13px}.loginAlertStatus span{font-size:12px;color:var(--muted)}
+#loginEventsList{display:grid;gap:10px}.loginEventRow{display:grid;gap:9px;padding:14px;border:1px solid var(--line);border-radius:15px;background:rgba(9,30,47,.42)}.loginEventMain{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.loginEventMain>div{display:grid;gap:3px}.loginEventMain strong{font-size:14px}.loginEventMain span{font-size:11px;color:var(--muted)}.loginEventMeta{display:flex;gap:8px;flex-wrap:wrap}.loginEventMeta>span{padding:6px 8px;border-radius:9px;background:rgba(96,165,250,.08);font-size:11px;color:var(--muted)}.loginMailBadge{display:inline-flex!important;align-items:center;padding:5px 8px;border-radius:999px;font-size:10px!important;font-weight:900!important;white-space:nowrap}.loginMailBadge.sent{background:rgba(16,185,129,.12);color:#34d399!important}.loginMailBadge.failed{background:rgba(239,68,68,.12);color:#fb7185!important}.loginMailBadge.off{background:rgba(245,158,11,.12);color:#fbbf24!important}.loginMailBadge.pending{background:rgba(59,130,246,.12);color:#60a5fa!important}
+@media(max-width:600px){.repairBucketHead{align-items:flex-start}.loginEventMain{display:grid}.loginEventMeta{display:grid;grid-template-columns:1fr}.loginEventMeta>span{overflow-wrap:anywhere}.repairPracticeBucket{margin-top:14px;padding-top:14px}}
+
+/* ===== v96 · registro accessi solo Admin, senza email ===== */
+.loginAccessBadge{display:inline-flex;align-items:center;padding:5px 8px;border-radius:999px;font-size:10px;font-weight:900;white-space:nowrap;background:rgba(16,185,129,.12);color:#34d399}.loginAlertStatus{margin-top:12px}

@@ -353,7 +353,7 @@ document.getElementById("loginBtn").onclick=async()=>{
   authMsg.textContent="";
   const email=document.getElementById("email").value.trim(), password=document.getElementById("password").value;
   const {data,error}=await sb.auth.signInWithPassword({email,password});
-  if(error) authMsg.textContent=error.message; else showAuth(data.user);
+  if(error) authMsg.textContent=error.message; else { await showAuth(data.user); recordLoginEventV95().catch(()=>{}); }
 };
 
 document.getElementById("forgotPasswordBtn").onclick=async()=>{
@@ -1726,7 +1726,7 @@ function bindAdminRepairs(){
     resetAdminRepairEditor(); await loadAdminRepairs();
    }catch(e){if(msg){msg.className="createUserMsg error";msg.textContent=e.message||"Errore salvataggio";}}
  });
- const rs=document.getElementById("adminRepairSearch"); if(rs&&rs.dataset.bound!=="1"){rs.dataset.bound="1";rs.addEventListener("input",()=>{const q=rs.value.trim().toLowerCase();document.querySelectorAll("#adminRepairsList .businessRepairRow").forEach(row=>{row.hidden=q&&!row.textContent.toLowerCase().includes(q);});});}
+ const rs=document.getElementById("adminRepairSearch"); if(rs&&rs.dataset.bound!=="1"){rs.dataset.bound="1";rs.addEventListener("input",()=>{const q=rs.value.trim().toLowerCase();document.querySelectorAll("#adminRepairsList .businessRepairRow, #adminQuickRepairsList .businessRepairRow").forEach(row=>{row.hidden=q&&!row.textContent.toLowerCase().includes(q);});});}
  updateAdminRepairVatPreview();
 }
 
@@ -2164,3 +2164,79 @@ document.getElementById("openFullRepairBtn")?.addEventListener("click",()=>setCa
 
 document.addEventListener("DOMContentLoaded",()=>{bindQuickRepairV92();bindRepairLabelSettingsV92();});
 setInterval(()=>{if(currentCategory==="RiparazioniAdmin"){bindQuickRepairV92();bindRepairLabelSettingsV92();}},1500);
+
+
+/* ===== v95 · pratiche separate + audit login ===== */
+function repairRowHtmlV95(r, quick=false){
+  return `<article class="deviceAdminSaleRow businessRepairRow ${quick?'quickRepairRow':''}"><div class="deviceAdminSaleTop"><div>${r.practice_code?`<span class="practiceCodeBadge">${escapeHtml(r.practice_code)}</span>`:""}<strong>${escapeHtml(r.device||"Dispositivo")}</strong><span>${escapeHtml(r.repair_type||"Intervento")} · ${escapeHtml(r.client_name||r.store||"Cliente")} · ${r.repaired_at?new Date(r.repaired_at+"T12:00:00").toLocaleDateString("it-IT"):""}</span><div class="repairBadges"><span class="repairStatusBadge">${escapeHtml(r.repair_status||"Da completare")}</span><span class="repairInvoiceBadge ${r.invoiced?"done":"pending"}">${r.invoiced?"Fatturato":"Da fatturare"}</span></div>${r.imei_serial?`<small>IMEI/Seriale: ${escapeHtml(r.imei_serial)}</small>`:""}${r.reported_issue?`<small>Difetto: ${escapeHtml(r.reported_issue)}</small>`:""}<div class="repairBadges">${r.quote_status?`<span class="quoteBadge">${escapeHtml(r.quote_status)}</span>`:""}${r.warranty_until?`<span class="warrantyBadge">Garanzia fino al ${new Date(r.warranty_until+"T12:00:00").toLocaleDateString("it-IT")}</span>`:""}</div>${r.note?`<small>${escapeHtml(r.note)}</small>`:""}</div><div class="deviceAdminSalePrice"><strong>${euroFmt.format(Number(r.total_inc_vat||0))}</strong><span>IVA ${Number(r.vat_rate||0).toLocaleString("it-IT")}% · ${euroFmt.format(Number(r.vat_amount||0))}</span></div></div><div class="deviceAdminSaleMeta"><span>Imponibile ${euroFmt.format(Number(r.price_ex_vat||0))}</span>${r.part_cost!=null?`<span class="adminCostMeta">Costo ricambio ${euroFmt.format(Number(r.part_cost||0))}</span>`:""}${r.store?`<span>Sede: ${escapeHtml(r.store)}</span>`:""}${Array.isArray(r.photo_paths)&&r.photo_paths.length?`<span class="photoCountBadge">📷 ${r.photo_paths.length} foto</span>`:""}${r.signature_data?`<span class="photoCountBadge">✍️ Firmata</span>`:""}</div><div class="deviceAdminSaleActions repairRowActions">${Array.isArray(r.photo_paths)&&r.photo_paths.length?`<button class="rowAction viewAdminRepairPhotos" data-id="${r.id}" type="button">Foto (${r.photo_paths.length})</button>`:""}${quick?`<button class="rowAction completeAdminRepairV95" data-id="${r.id}" type="button">Completa pratica</button>`:""}<button class="rowAction printRepairDymo" data-id="${r.id}" type="button">Stampa DYMO</button><button class="rowAction receiptBtn receiptAdminRepair" data-id="${r.id}" type="button">Ricevuta PDF + QR</button><button class="rowAction editAdminRepairV95" data-id="${r.id}" type="button">Modifica</button><button class="rowAction delete deleteAdminRepair" data-id="${r.id}" type="button">Elimina</button></div></article>`;
+}
+function bindRepairRowsV95(root){
+  if(!root)return;
+  root.querySelectorAll(".viewAdminRepairPhotos").forEach(b=>b.onclick=()=>showAdminRepairPhotos(Number(b.dataset.id)));
+  root.querySelectorAll(".completeAdminRepairV95").forEach(b=>b.onclick=()=>openAdminRepairEditorV95(Number(b.dataset.id),true));
+  root.querySelectorAll(".printRepairDymo").forEach(b=>b.onclick=()=>printRepairDymoV92(Number(b.dataset.id)));
+  root.querySelectorAll(".receiptAdminRepair").forEach(b=>b.onclick=()=>generateAdminRepairReceipt(Number(b.dataset.id)));
+  root.querySelectorAll(".editAdminRepairV95").forEach(b=>b.onclick=()=>openAdminRepairEditorV95(Number(b.dataset.id),false));
+  root.querySelectorAll(".deleteAdminRepair").forEach(b=>b.onclick=()=>deleteAdminRepair(Number(b.dataset.id)));
+}
+function openAdminRepairEditorV95(id, completing=false){
+  setCategory("AccettazioneCompleta");
+  setTimeout(()=>{
+    startAdminRepairEdit(id);
+    const msg=document.getElementById("adminRepairMsg");
+    if(msg&&completing){msg.className="createUserMsg";msg.textContent="Completa i dati mancanti e salva: resterà la stessa pratica.";}
+  },100);
+}
+async function loadAdminRepairsV95(){
+  const fullList=document.getElementById("adminRepairsList"),quickList=document.getElementById("adminQuickRepairsList"); if(!fullList||!quickList)return;
+  fullList.innerHTML='<div class="emptyState">Caricamento…</div>';quickList.innerHTML='<div class="emptyState">Caricamento…</div>';
+  try{
+    const ctx=await btGetWorkspaceOwnerId();
+    const {data,error}=await sb.from("beparytech_admin_repairs").select("*").eq("workspace_owner_id",ctx.owner).order("repaired_at",{ascending:false}).order("id",{ascending:false}).limit(300);
+    if(error)throw error;
+    const rows=data||[];adminRepairRows=rows;
+    const quick=rows.filter(r=>r.repair_status==="Da completare"),full=rows.filter(r=>r.repair_status!=="Da completare");
+    const net=rows.reduce((x,r)=>x+Number(r.price_ex_vat||0),0),vat=rows.reduce((x,r)=>x+Number(r.vat_amount||0),0),total=rows.reduce((x,r)=>x+Number(r.total_inc_vat||0),0);
+    const sum=document.getElementById("adminRepairsSummary");if(sum)sum.innerHTML=`<div><span>Accettazioni rapide</span><strong>${quick.length}</strong></div><div><span>Riparazioni</span><strong>${full.length}</strong></div><div><span>Da fatturare</span><strong>${rows.filter(r=>!r.invoiced).length}</strong></div><div><span>Totale</span><strong>${euroFmt.format(total)}</strong></div>`;
+    const qc=document.getElementById("adminQuickRepairsCount"),fc=document.getElementById("adminFullRepairsCount");if(qc)qc.textContent=String(quick.length);if(fc)fc.textContent=String(full.length);
+    quickList.innerHTML=quick.length?quick.map(r=>repairRowHtmlV95(r,true)).join(""):'<div class="emptyState">Nessuna accettazione rapida da completare</div>';
+    fullList.innerHTML=full.length?full.map(r=>repairRowHtmlV95(r,false)).join(""):'<div class="emptyState">Nessuna riparazione completa registrata</div>';
+    bindRepairRowsV95(quickList);bindRepairRowsV95(fullList);
+    const q=document.getElementById("adminRepairSearch")?.value.trim().toLowerCase()||"";if(q)document.getElementById("adminRepairSearch")?.dispatchEvent(new Event("input",{bubbles:true}));
+  }catch(e){const msg=`<div class="emptyState">${escapeHtml(e.message||"Errore caricamento")}</div>`;fullList.innerHTML=msg;quickList.innerHTML=msg;}
+}
+loadAdminRepairs=loadAdminRepairsV95;
+
+async function recordLoginEventV95(){
+  try{
+    const {data,error}=await sb.functions.invoke("beparytech-login-alert",{method:"POST",body:{action:"record",user_agent:navigator.userAgent||""}});
+    if(error)console.warn("Login audit non disponibile",error.message||error);
+    return data;
+  }catch(e){console.warn("Login audit non disponibile",e);}
+}
+function fmtLoginPlaceV95(e){return [e.city,e.region,e.country].filter(Boolean).join(", ")||"Posizione non disponibile";}
+async function loadLoginEventsV95(){
+  const list=document.getElementById("loginEventsList"),sum=document.getElementById("loginEventsSummary"),status=document.getElementById("loginAlertStatus");if(!list||!isAdmin())return;
+  list.innerHTML='<div class="emptyState">Caricamento accessi…</div>';
+  try{
+    const {data,error}=await sb.functions.invoke("beparytech-login-alert",{method:"POST",body:{action:"list",limit:75}});if(error||data?.error)throw new Error(data?.error||error?.message||"Errore caricamento accessi");
+    const rows=data?.events||[];
+    if(sum)sum.innerHTML=`<div><span>Accessi mostrati</span><strong>${rows.length}</strong></div><div><span>Utenti distinti</span><strong>${new Set(rows.map(r=>r.user_id)).size}</strong></div><div><span>Ultimo utente</span><strong>${rows[0]?escapeHtml(rows[0].username||rows[0].email||"Utente"):"—"}</strong></div><div><span>Ultimo accesso</span><strong>${rows[0]?new Date(rows[0].logged_in_at).toLocaleString("it-IT",{dateStyle:"short",timeStyle:"short"}):"—"}</strong></div>`;
+    if(status){status.classList.remove("configured");status.innerHTML='<strong>Registro accessi attivo</strong><span>Ogni login riuscito viene registrato automaticamente. Questa cronologia è visibile solo agli amministratori.</span>';}
+    list.innerHTML=rows.length?rows.map(e=>`<article class="loginEventRow"><div class="loginEventMain"><div><strong>${escapeHtml(e.username||e.email||"Utente")}</strong><span>${new Date(e.logged_in_at).toLocaleString("it-IT")}</span></div><span class="loginAccessBadge">Accesso riuscito</span></div><div class="loginEventMeta"><span>📍 ${escapeHtml(fmtLoginPlaceV95(e))}</span><span>IP ${escapeHtml(e.ip_address||"non disponibile")}</span><span>${escapeHtml(e.device||"Dispositivo")} · ${escapeHtml(e.os||"")} · ${escapeHtml(e.browser||"")}</span></div></article>`).join(""):'<div class="emptyState">Nessun accesso registrato</div>';
+  }catch(e){list.innerHTML=`<div class="emptyState">${escapeHtml(e.message||"Errore caricamento")}</div>`;}
+}
+document.getElementById("refreshLoginEventsBtn")?.addEventListener("click",loadLoginEventsV95);
+const v95PreviousSetCategory=setCategory;
+setCategory=function(category,fromBack=false){
+  const sec=document.getElementById("securityAccessView");
+  if(category==="SicurezzaAccessi"){
+    if(!isAdmin())return;
+    v95PreviousSetCategory("Dashboard",fromBack);currentCategory="SicurezzaAccessi";
+    const dash=document.getElementById("dashboardView");if(dash)dash.hidden=true;const settings=document.getElementById("settingsView");if(settings)settings.hidden=true;if(sec)sec.hidden=false;
+    document.getElementById("categoryName").textContent="Sicurezza accessi";document.getElementById("categoryDescription").textContent="Area privata Admin · registro login, dispositivi, IP e provenienza approssimativa";
+    document.querySelectorAll(".menuItem[data-category]").forEach(b=>b.classList.toggle("active",b.dataset.category==="SicurezzaAccessi"));closeMainMenu();updateSmartNavigation();loadLoginEventsV95();return;
+  }
+  if(sec)sec.hidden=true;
+  v95PreviousSetCategory(category,fromBack);
+};
