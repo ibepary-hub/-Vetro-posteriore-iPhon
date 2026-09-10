@@ -2054,3 +2054,8 @@ body[data-theme="light"] .dashboardMiniChart{color:#17364f}
 
 /* ===== v96 · registro accessi solo Admin, senza email ===== */
 .loginAccessBadge{display:inline-flex;align-items:center;padding:5px 8px;border-radius:999px;font-size:10px;font-weight:900;white-space:nowrap;background:rgba(16,185,129,.12);color:#34d399}.loginAlertStatus{margin-top:12px}
+
+/* v97 · DYMO direct print bridge */
+.dymoDirectPanel{margin-top:14px;padding:14px;border:1px solid var(--line,#2a2a2d);border-radius:16px;display:grid;grid-template-columns:minmax(220px,1fr) minmax(220px,1fr) auto;gap:12px;align-items:end;background:rgba(255,255,255,.025)}
+.dymoDirectPanel>div{display:flex;flex-direction:column;gap:4px;align-self:center}.dymoDirectPanel>div strong{font-size:14px}.dymoDirectPanel>div span{font-size:12px;opacity:.72}.dymoDirectPanel label{display:flex;flex-direction:column;gap:6px;font-size:12px}.dymoDirectPanel select{min-height:42px}.dymoDirectPanel .dymoDirectToggle{grid-column:1/-1;display:flex;flex-direction:row;align-items:center;gap:8px}.dymoDirectPanel .dymoDirectToggle input{width:auto}.dymoStatusOk{color:#4fd18b!important}.dymoStatusErr{color:#ff7b7b!important}.dymoStatusWait{color:#e6bf64!important}
+@media(max-width:760px){.dymoDirectPanel{grid-template-columns:1fr}.dymoDirectPanel .dymoDirectToggle{grid-column:auto}}

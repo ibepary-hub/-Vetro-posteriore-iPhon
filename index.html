@@ -4,16 +4,16 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; frame-src 'none'; child-src 'none'; manifest-src 'self'; font-src 'self'; script-src 'self' https://cdn.jsdelivr.net; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; img-src 'self' data: blob:; media-src 'self' blob:; worker-src 'self' blob:; connect-src 'self' https://kqdcbrpykaboabjglwxu.supabase.co wss://kqdcbrpykaboabjglwxu.supabase.co; upgrade-insecure-requests;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'self'; frame-src 'none'; child-src 'none'; manifest-src 'self'; font-src 'self'; script-src 'self' https://cdn.jsdelivr.net; script-src-attr 'none'; style-src 'self'; style-src-attr 'none'; img-src 'self' data: blob:; media-src 'self' blob:; worker-src 'self' blob:; connect-src 'self' https://kqdcbrpykaboabjglwxu.supabase.co wss://kqdcbrpykaboabjglwxu.supabase.co https://localhost:* https://127.0.0.1:*; upgrade-insecure-requests;">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="BeparyTech Manager">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
   <title>BeparyTech Manager</title>
-  <link rel="manifest" href="manifest.json?v=96">
+  <link rel="manifest" href="manifest.json?v=97">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=96">
+  <link rel="stylesheet" href="style.css?v=97">
 
 
 
@@ -467,11 +467,17 @@
         <label><span>Altezza mm</span><input id="repairLabelHeight" type="number" min="10" max="200" step="1" value="57"></label>
         <label class="labelQrToggle"><span>Contenuto</span><label class="inlineCheck"><input id="repairLabelIncludeQr" type="checkbox" checked> QR pratica</label></label>
       </div>
-      <div class="labelConfigHint">La stampa usa le dimensioni reali in millimetri. Nella finestra di stampa seleziona scala 100% / dimensioni effettive e nessun margine.</div>
+      <div class="dymoDirectPanel">
+        <div><strong>Stampa diretta DYMO</strong><span id="dymoDirectStatus">Verifica servizio DYMO…</span></div>
+        <label><span>Stampante</span><select id="dymoPrinterSelect"><option value="">Rileva stampante…</option></select></label>
+        <button id="dymoDetectBtn" class="secondaryAction" type="button">Rileva DYMO</button>
+        <label class="inlineCheck dymoDirectToggle"><input id="dymoDirectEnabled" type="checkbox" checked> Stampa diretta senza finestra del browser</label>
+      </div>
+      <div class="labelConfigHint">Con DYMO Connect installato sul PC, il gestionale invia l’etichetta direttamente alla LabelWriter e non apre più la finestra di stampa del browser.</div>
   </section>
 
 
-  <div class="settingsInfoCard"><strong>Come funziona</strong><span>Nelle pratiche usa “Stampa DYMO”. Il gestionale applicherà automaticamente il formato scelto qui e, se attivo, inserirà anche il QR della pratica.</span></div>
+  <div class="settingsInfoCard"><strong>Come funziona</strong><span>Premi “Stampa DYMO”: il gestionale usa la stampante DYMO salvata su questo PC e il formato scelto qui. Se il servizio DYMO non è attivo, viene mostrato un avviso invece di aprire la stampa generica del browser.</span></div>
 </section>
 
 <section id="securityAccessView" class="catalogView securityAccessView" hidden>
@@ -725,7 +731,7 @@
  <button type="button" data-smart-action="menu"><b>☰</b><span>Menu</span></button>
 </nav>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
-<script src="app.js?v=96"></script>
+<script src="app.js?v=97"></script>
 
 
 

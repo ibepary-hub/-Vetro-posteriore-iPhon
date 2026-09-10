@@ -803,13 +803,18 @@ function prepareDymoLabel(s){
   else if(score>90) fit="compact";
   label.dataset.fit=fit;
 }
-function printSaleNote(id){
+async function printSaleNote(id){
   const s=saleById(id); if(!s)return;
-  prepareDymoLabel(s);
-  document.body.classList.add("printingDymo");
-  const cleanup=()=>document.body.classList.remove("printingDymo");
-  window.addEventListener("afterprint",cleanup,{once:true});
-  setTimeout(()=>{window.print();setTimeout(cleanup,1200);},50);
+  try{
+    await btDymoDirectPrint({
+      title:saleDisplayName(s)||"Vendita",
+      meta:[s?.color,s?.customer].filter(Boolean).join(" · "),
+      note:saleNoteText(s)||"Nessuna nota",
+      qrText:""
+    });
+  }catch(err){
+    alert(err?.message||"Impossibile stampare sulla DYMO.");
+  }
 }
 function safeFilePart(v){return String(v||"nota").normalize("NFKD").replace(/[^a-zA-Z0-9_-]+/g,"_").replace(/^_+|_+$/g,"").slice(0,60)||"nota";}
 function exportSaleNote(id){
@@ -2112,10 +2117,18 @@ function bindRepairLabelSettingsV92(){
   const sync=()=>{if(preset.value!=="custom"&&REPAIR_LABEL_PRESETS[preset.value]){[w.value,h.value]=REPAIR_LABEL_PRESETS[preset.value];}saveRepairLabelSettingsV92();};preset.addEventListener("change",sync);w.addEventListener("input",()=>{preset.value="custom";saveRepairLabelSettingsV92();});h.addEventListener("input",()=>{preset.value="custom";saveRepairLabelSettingsV92();});qr.addEventListener("change",saveRepairLabelSettingsV92);saveRepairLabelSettingsV92();
 }
 async function printRepairDymoV92(id){
-  const r=adminRepairRows.find(x=>Number(x.id)===Number(id));if(!r)return;const st=getRepairLabelSettingsV92(),label=document.getElementById("repairDymoPrintLabel");if(!label)return;
-  label.style.setProperty("--repair-label-w",`${st.w}mm`);label.style.setProperty("--repair-label-h",`${st.h}mm`);document.getElementById("repairDymoCode").textContent=r.practice_code||`RIP-${r.id}`;document.getElementById("repairDymoClient").textContent=r.client_name||r.store||"Cliente";document.getElementById("repairDymoDevice").textContent=r.device||"Dispositivo";document.getElementById("repairDymoWork").textContent=r.repair_type||"Riparazione";
-  const q=document.getElementById("repairDymoQr");q.innerHTML="";if(st.qr){try{new QRCode(q,{text:`${location.origin}${location.pathname}?practice=${encodeURIComponent(r.practice_code||r.id)}`,width:120,height:120,correctLevel:QRCode.CorrectLevel?.M});}catch(_){q.hidden=true;}}q.hidden=!st.qr;
-  let ps=document.getElementById("repairDymoPageStyle");if(!ps){ps=document.createElement("style");ps.id="repairDymoPageStyle";document.head.appendChild(ps);}ps.textContent=`@page{size:${st.w}mm ${st.h}mm;margin:0}`;document.body.classList.add("printingRepairDymo");const cleanup=()=>document.body.classList.remove("printingRepairDymo");window.addEventListener("afterprint",cleanup,{once:true});setTimeout(()=>{window.print();setTimeout(cleanup,1200);},80);
+  const r=adminRepairRows.find(x=>Number(x.id)===Number(id));if(!r)return;
+  const st=getRepairLabelSettingsV92();
+  try{
+    await btDymoDirectPrint({
+      title:r.practice_code||`RIP-${r.id}`,
+      meta:r.client_name||r.store||"Cliente",
+      note:[r.device||"Dispositivo",r.repair_type||"Riparazione"].filter(Boolean).join(" · "),
+      qrText:st.qr?`${location.origin}${location.pathname}?practice=${encodeURIComponent(r.practice_code||r.id)}`:""
+    });
+  }catch(err){
+    alert(err?.message||"Impossibile stampare sulla DYMO.");
+  }
 }
 
 
@@ -2240,3 +2253,56 @@ setCategory=function(category,fromBack=false){
   if(sec)sec.hidden=true;
   v95PreviousSetCategory(category,fromBack);
 };
+
+
+/* ===== v97 · DYMO direct print (no browser print dialog) ===== */
+const BT_DYMO_KEY="bt-dymo-direct-v97";
+let btDymoEndpoint="";
+function btXmlEscape(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&apos;"}[c]));}
+function btGetDymoConfig(){try{return {...{enabled:true,printer:""},...JSON.parse(localStorage.getItem(BT_DYMO_KEY)||"{}")};}catch(_){return {enabled:true,printer:""};}}
+function btSaveDymoConfig(patch={}){const v={...btGetDymoConfig(),...patch};localStorage.setItem(BT_DYMO_KEY,JSON.stringify(v));return v;}
+function btSetDymoStatus(text,kind="") {const el=document.getElementById("dymoDirectStatus");if(!el)return;el.textContent=text;el.className=kind?`dymoStatus${kind}`:"";}
+async function btFetchTimeout(url,opts={},ms=1200){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);try{return await fetch(url,{...opts,signal:c.signal,cache:"no-store"});}finally{clearTimeout(t);}}
+async function btFindDymoService(force=false){
+  if(btDymoEndpoint&&!force)return btDymoEndpoint;
+  btDymoEndpoint="";btSetDymoStatus("Ricerca DYMO Connect…","Wait");
+  const hosts=["localhost","127.0.0.1"],ports=[41951,41952,41953,41954,41955,41956,41957,41958,41959,41960];
+  for(const host of hosts){for(const port of ports){const base=`https://${host}:${port}/DYMO/DLS/Printing`;try{const r=await btFetchTimeout(`${base}/StatusConnected`,{},700);const txt=(await r.text()).trim().toLowerCase();if(r.ok&&txt.includes("true")){btDymoEndpoint=base;btSetDymoStatus(`DYMO Connect attivo · porta ${port}`,"Ok");return base;}}catch(_){}}}
+  btSetDymoStatus("DYMO Connect non rilevato su questo PC","Err");throw new Error("DYMO Connect non è attivo. Installa/apri DYMO Connect e lascia attivo il servizio locale, poi premi ‘Rileva DYMO’. Il gestionale non userà più la finestra di stampa del browser.");
+}
+function btParseDymoPrinters(xml){
+  try{const doc=new DOMParser().parseFromString(xml,"application/xml");const out=[];doc.querySelectorAll("LabelWriterPrinter,TapePrinter").forEach(n=>{const name=n.querySelector("Name")?.textContent?.trim();if(name&&!out.includes(name))out.push(name);});if(out.length)return out;doc.querySelectorAll("Name").forEach(n=>{const name=n.textContent?.trim();if(name&&!out.includes(name))out.push(name);});return out;}catch(_){return [];}
+}
+async function btDetectDymoPrinters(force=true){
+  const sel=document.getElementById("dymoPrinterSelect");if(sel)sel.innerHTML='<option value="">Ricerca…</option>';
+  try{const base=await btFindDymoService(force);const r=await btFetchTimeout(`${base}/GetPrinters`,{},1800);if(!r.ok)throw new Error("Servizio DYMO raggiunto ma elenco stampanti non disponibile.");const printers=btParseDymoPrinters(await r.text());if(!printers.length)throw new Error("Nessuna stampante DYMO rilevata. Controlla che la LabelWriter sia accesa e installata in Windows.");const saved=btGetDymoConfig().printer;const chosen=printers.includes(saved)?saved:(printers.find(x=>/labelwriter/i.test(x))||printers[0]);if(sel){sel.innerHTML=printers.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");sel.value=chosen;}btSaveDymoConfig({printer:chosen});btSetDymoStatus(`Pronta · ${chosen}`,"Ok");return printers;}catch(err){if(sel)sel.innerHTML='<option value="">DYMO non disponibile</option>';btSetDymoStatus(err.message||"DYMO non disponibile","Err");throw err;}
+}
+function btDymoPaper(st){
+  const key=st?.preset||"57x32";
+  const map={"32x57":{w:57,h:32,name:"11354 Multi-Purpose"},"57x32":{w:57,h:32,name:"11354 Multi-Purpose"},"25x54":{w:54,h:25,name:"11352 Return Address"},"36x89":{w:89,h:36,name:"99012 Large Address"},"19x51":{w:51,h:19,name:"11355 Multi-Purpose"},"54x101":{w:101,h:54,name:"99014 Shipping"}};
+  if(map[key])return map[key];const w=Math.max(Number(st?.w)||57,Number(st?.h)||32),h=Math.min(Number(st?.w)||57,Number(st?.h)||32);return {w,h,name:"Custom"};
+}
+function btDymoLabelXml({title,meta,note,qrText}){
+  const st=getRepairLabelSettingsV92(),paper=btDymoPaper(st),tw=56.6929134,W=Math.round(paper.w*tw),H=Math.round(paper.h*tw),m=85;
+  const hasQr=!!qrText,qr=Math.min(Math.round(H-m*2),Math.round(W*.32)),textX=m,textW=Math.max(700,W-m*2-(hasQr?qr+70:0)),qrX=W-m-qr;
+  const t=btXmlEscape(title),me=btXmlEscape(meta),no=btXmlEscape(note),q=btXmlEscape(qrText);
+  const textObj=(name,text,y,h,size,bold)=>`<ObjectInfo><TextObject><Name>${name}</Name><ForeColor Alpha="255" Red="0" Green="0" Blue="0"/><BackColor Alpha="0" Red="255" Green="255" Blue="255"/><LinkedObjectName></LinkedObjectName><Rotation>Rotation0</Rotation><IsMirrored>False</IsMirrored><IsVariable>False</IsVariable><HorizontalAlignment>Left</HorizontalAlignment><VerticalAlignment>Middle</VerticalAlignment><TextFitMode>ShrinkToFit</TextFitMode><UseFullFontHeight>True</UseFullFontHeight><Verticalized>False</Verticalized><StyledText><Element><String>${text}</String><Attributes><Font Family="Arial" Size="${size}" Bold="${bold?'True':'False'}" Italic="False" Underline="False" Strikeout="False"/><ForeColor Alpha="255" Red="0" Green="0" Blue="0"/></Attributes></Element></StyledText></TextObject><Bounds X="${textX}" Y="${y}" Width="${textW}" Height="${h}"/></ObjectInfo>`;
+  let objs=textObj("TITLE",t,m,430,11,true)+textObj("META",me,m+420,330,8,false)+textObj("NOTE",no,m+745,Math.max(360,H-m-(m+745)),8,false);
+  if(hasQr)objs+=`<ObjectInfo><BarcodeObject><Name>QRCODE</Name><ForeColor Alpha="255" Red="0" Green="0" Blue="0"/><BackColor Alpha="255" Red="255" Green="255" Blue="255"/><LinkedObjectName></LinkedObjectName><Rotation>Rotation0</Rotation><IsMirrored>False</IsMirrored><IsVariable>False</IsVariable><Text>${q}</Text><Type>QRCode</Type><Size>Large</Size><TextPosition>None</TextPosition><TextFont Family="Arial" Size="8" Bold="False" Italic="False" Underline="False" Strikeout="False"/><CheckSumFont Family="Arial" Size="8" Bold="False" Italic="False" Underline="False" Strikeout="False"/><TextEmbedding>None</TextEmbedding><ECLevel>0</ECLevel><HorizontalAlignment>Center</HorizontalAlignment><QuietZonesPadding Left="0" Top="0" Right="0" Bottom="0"/></BarcodeObject><Bounds X="${qrX}" Y="${m}" Width="${qr}" Height="${qr}"/></ObjectInfo>`;
+  return `<?xml version="1.0" encoding="utf-8"?><DieCutLabel Version="8.0" Units="twips"><PaperOrientation>Landscape</PaperOrientation><Id>Address</Id><PaperName>${btXmlEscape(paper.name)}</PaperName><DrawCommands/><ObjectInfo></ObjectInfo>${objs}</DieCutLabel>`;
+}
+async function btDymoDirectPrint(data){
+  const cfg=btGetDymoConfig();if(!cfg.enabled)throw new Error("La stampa diretta DYMO è disattivata nelle Impostazioni.");
+  const base=await btFindDymoService(false);let printer=cfg.printer;
+  if(!printer){const printers=await btDetectDymoPrinters(false);printer=btGetDymoConfig().printer||printers[0];}
+  if(!printer)throw new Error("Nessuna stampante DYMO selezionata.");
+  const body=new URLSearchParams({printerName:printer,printParamsXml:"",labelXml:btDymoLabelXml(data),labelSetXml:""});
+  const r=await btFetchTimeout(`${base}/PrintLabel`,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},body:body.toString()},7000);
+  const txt=await r.text();if(!r.ok)throw new Error(`Errore DYMO: ${txt||r.status}`);btSetDymoStatus(`Stampata su ${printer}`,"Ok");return true;
+}
+function bindDymoDirectV97(){
+  const btn=document.getElementById("dymoDetectBtn"),sel=document.getElementById("dymoPrinterSelect"),enabled=document.getElementById("dymoDirectEnabled");if(!btn||btn.dataset.bound==="1")return;btn.dataset.bound="1";const cfg=btGetDymoConfig();if(enabled)enabled.checked=cfg.enabled!==false;
+  btn.addEventListener("click",()=>btDetectDymoPrinters(true).catch(()=>{}));sel?.addEventListener("change",()=>btSaveDymoConfig({printer:sel.value}));enabled?.addEventListener("change",()=>btSaveDymoConfig({enabled:enabled.checked}));
+  setTimeout(()=>btDetectDymoPrinters(false).catch(()=>{}),450);
+}
+document.addEventListener("DOMContentLoaded",bindDymoDirectV97);setTimeout(bindDymoDirectV97,800);

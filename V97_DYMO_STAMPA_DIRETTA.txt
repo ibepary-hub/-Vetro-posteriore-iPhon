@@ -1,0 +1,14 @@
+V97 - STAMPA DIRETTA DYMO (VERSIONE DEFINITIVA)
+
+- Rimossa la dipendenza da window.print() per i pulsanti Stampa DYMO.
+- La stampa passa direttamente al DYMO Label Web Service locale di DYMO Connect.
+- Nessuna finestra di stampa del browser quando DYMO Connect è attivo.
+- Rilevamento automatico DYMO LabelWriter sulle porte locali del servizio.
+- Selezione e memoria della stampante in Impostazioni > Etichette DYMO.
+- Formato etichetta applicato dal gestionale; 57x32 / 32x57 viene inviato come supporto fisico 57x32.
+- QR pratica inviato come QR nativo DYMO.
+- Se DYMO Connect non è attivo, viene mostrato un messaggio chiaro e NON viene aperta la finestra di stampa generica.
+- CSP aggiornata per consentire solo il collegamento locale HTTPS a localhost/127.0.0.1 necessario per DYMO.
+
+Requisito del PC:
+DYMO Connect deve essere installato e il relativo Web Service locale deve essere attivo. Il browser, per ragioni di sicurezza, non può pilotare silenziosamente una stampante USB senza un servizio locale autorizzato.
