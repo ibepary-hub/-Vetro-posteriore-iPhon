@@ -1,0 +1,9 @@
+V102 - DYMO LANDSCAPE AUTOFIT + QR
+- Etichetta 57 x 32 mm forzata in orizzontale (Landscape).
+- QR code sempre presente sulla destra quando la pratica dispone del QR.
+- QR ridimensionato a circa 15 mm per lasciare più spazio al testo senza perdere leggibilità.
+- Titolo, cliente/sede e descrizione si ridimensionano automaticamente in base alla lunghezza.
+- Testi lunghi vanno su più righe quando serve.
+- Nessun "..." e nessun taglio volontario del contenuto.
+- ShrinkToFit DYMO resta attivo come protezione finale.
+- Mantiene rilevamento automatico di qualsiasi DYMO collegata sulle porte 41951-41960.

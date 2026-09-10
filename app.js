@@ -2398,13 +2398,65 @@ function btDymoPaper(st){
   const map={"32x57":{w:57,h:32,name:"11354 Multi-Purpose"},"57x32":{w:57,h:32,name:"11354 Multi-Purpose"},"25x54":{w:54,h:25,name:"11352 Return Address"},"36x89":{w:89,h:36,name:"99012 Large Address"},"19x51":{w:51,h:19,name:"11355 Multi-Purpose"},"54x101":{w:101,h:54,name:"99014 Shipping"}};
   if(map[key])return map[key];const w=Math.max(Number(st?.w)||57,Number(st?.h)||32),h=Math.min(Number(st?.w)||57,Number(st?.h)||32);return {w,h,name:"Custom"};
 }
+function btFitDymoText(value,maxWidthTwips,maxHeightTwips,{maxSize=11,minSize=5,maxLines=2}={}){
+  const raw=String(value??"").replace(/\s+/g," ").trim();
+  if(!raw)return {text:"",size:maxSize,lines:1};
+  // Stima prudente della larghezza Arial: ~0,56 em per carattere medio.
+  // 1 pt = 20 twips. Cerchiamo prima il font più grande possibile e poi
+  // spezziamo solo su spazi, così il testo non viene mai troncato con "...".
+  const widthAt=(text,size)=>text.length*size*20*0.56;
+  const lineHeight=(size)=>size*20*1.25;
+  const wrap=(size)=>{
+    const words=raw.split(" ");
+    const lines=[]; let cur="";
+    for(const word of words){
+      const trial=cur?`${cur} ${word}`:word;
+      if(!cur || widthAt(trial,size)<=maxWidthTwips)cur=trial;
+      else{lines.push(cur);cur=word;}
+    }
+    if(cur)lines.push(cur);
+    return lines;
+  };
+  for(let size=maxSize;size>=minSize;size-=0.25){
+    const lines=wrap(size);
+    if(lines.length<=maxLines && lines.length*lineHeight(size)<=maxHeightTwips){
+      return {text:lines.join("\n"),size:Number(size.toFixed(2)),lines:lines.length};
+    }
+  }
+  // Caso estremo: usa il minimo e consenti più righe purché rientrino in altezza.
+  // DYMO mantiene anche ShrinkToFit come ulteriore protezione finale.
+  const size=minSize;
+  let lines=wrap(size);
+  const allowed=Math.max(1,Math.floor(maxHeightTwips/lineHeight(size)));
+  if(lines.length>allowed){
+    // Nessun taglio: distribuisce tutto il testo nelle righe disponibili e
+    // lascia a DYMO l'ultimo restringimento con ShrinkToFit.
+    const charsPer=Math.max(1,Math.ceil(raw.length/allowed));
+    lines=[]; let rest=raw;
+    for(let i=0;i<allowed-1;i++){
+      let cut=Math.min(charsPer,rest.length);
+      const sp=rest.lastIndexOf(" ",cut);
+      if(sp>0)cut=sp;
+      lines.push(rest.slice(0,cut).trim());
+      rest=rest.slice(cut).trim();
+    }
+    if(rest)lines.push(rest);
+  }
+  return {text:lines.join("\n"),size,lines:lines.length};
+}
 function btDymoLabelXml({title,meta,note,qrText}){
-  const st=getRepairLabelSettingsV92(),paper=btDymoPaper(st),tw=56.6929134,W=Math.round(paper.w*tw),H=Math.round(paper.h*tw),m=85;
-  const hasQr=!!qrText,qr=Math.min(Math.round(H-m*2),Math.round(W*.32)),textX=m,textW=Math.max(700,W-m*2-(hasQr?qr+70:0)),qrX=W-m-qr;
-  const t=btXmlEscape(title),me=btXmlEscape(meta),no=btXmlEscape(note),q=btXmlEscape(qrText);
-  const textObj=(name,text,y,h,size,bold)=>`<ObjectInfo><TextObject><Name>${name}</Name><ForeColor Alpha="255" Red="0" Green="0" Blue="0"/><BackColor Alpha="0" Red="255" Green="255" Blue="255"/><LinkedObjectName></LinkedObjectName><Rotation>Rotation0</Rotation><IsMirrored>False</IsMirrored><IsVariable>False</IsVariable><HorizontalAlignment>Left</HorizontalAlignment><VerticalAlignment>Middle</VerticalAlignment><TextFitMode>ShrinkToFit</TextFitMode><UseFullFontHeight>True</UseFullFontHeight><Verticalized>False</Verticalized><StyledText><Element><String>${text}</String><Attributes><Font Family="Arial" Size="${size}" Bold="${bold?'True':'False'}" Italic="False" Underline="False" Strikeout="False"/><ForeColor Alpha="255" Red="0" Green="0" Blue="0"/></Attributes></Element></StyledText></TextObject><Bounds X="${textX}" Y="${y}" Width="${textW}" Height="${h}"/></ObjectInfo>`;
-  let objs=textObj("TITLE",t,m,430,11,true)+textObj("META",me,m+420,330,8,false)+textObj("NOTE",no,m+745,Math.max(360,H-m-(m+745)),8,false);
-  if(hasQr)objs+=`<ObjectInfo><BarcodeObject><Name>QRCODE</Name><ForeColor Alpha="255" Red="0" Green="0" Blue="0"/><BackColor Alpha="255" Red="255" Green="255" Blue="255"/><LinkedObjectName></LinkedObjectName><Rotation>Rotation0</Rotation><IsMirrored>False</IsMirrored><IsVariable>False</IsVariable><Text>${q}</Text><Type>QRCode</Type><Size>Large</Size><TextPosition>None</TextPosition><TextFont Family="Arial" Size="8" Bold="False" Italic="False" Underline="False" Strikeout="False"/><CheckSumFont Family="Arial" Size="8" Bold="False" Italic="False" Underline="False" Strikeout="False"/><TextEmbedding>None</TextEmbedding><ECLevel>0</ECLevel><HorizontalAlignment>Center</HorizontalAlignment><QuietZonesPadding Left="0" Top="0" Right="0" Bottom="0"/></BarcodeObject><Bounds X="${qrX}" Y="${m}" Width="${qr}" Height="${qr}"/></ObjectInfo>`;
+  const st=getRepairLabelSettingsV92(),paper=btDymoPaper(st),tw=56.6929134,W=Math.round(paper.w*tw),H=Math.round(paper.h*tw),m=70;
+  const hasQr=!!qrText;
+  // QR circa 15 mm: resta ben leggibile ma lascia più larghezza al testo.
+  const qr=Math.min(Math.round(15*tw),H-m*2),textX=m,textW=Math.max(760,W-m*2-(hasQr?qr+55:0)),qrX=W-m-qr;
+  const titleBox={y:m,h:430},metaBox={y:m+405,h:360},noteBox={y:m+740,h:Math.max(520,H-m-(m+740))};
+  const fitTitle=btFitDymoText(title,textW,titleBox.h,{maxSize:11.5,minSize:5.5,maxLines:2});
+  const fitMeta=btFitDymoText(meta,textW,metaBox.h,{maxSize:9.5,minSize:5,maxLines:2});
+  const fitNote=btFitDymoText(note,textW,noteBox.h,{maxSize:9,minSize:4.5,maxLines:3});
+  const q=btXmlEscape(qrText);
+  const textObj=(name,text,y,h,size,bold)=>`<ObjectInfo><TextObject><Name>${name}</Name><ForeColor Alpha="255" Red="0" Green="0" Blue="0"/><BackColor Alpha="0" Red="255" Green="255" Blue="255"/><LinkedObjectName></LinkedObjectName><Rotation>Rotation0</Rotation><IsMirrored>False</IsMirrored><IsVariable>False</IsVariable><HorizontalAlignment>Left</HorizontalAlignment><VerticalAlignment>Middle</VerticalAlignment><TextFitMode>ShrinkToFit</TextFitMode><UseFullFontHeight>True</UseFullFontHeight><Verticalized>False</Verticalized><StyledText><Element><String>${btXmlEscape(text)}</String><Attributes><Font Family="Arial" Size="${size}" Bold="${bold?'True':'False'}" Italic="False" Underline="False" Strikeout="False"/><ForeColor Alpha="255" Red="0" Green="0" Blue="0"/></Attributes></Element></StyledText></TextObject><Bounds X="${textX}" Y="${y}" Width="${textW}" Height="${h}"/></ObjectInfo>`;
+  let objs=textObj("TITLE",fitTitle.text,titleBox.y,titleBox.h,fitTitle.size,true)+textObj("META",fitMeta.text,metaBox.y,metaBox.h,fitMeta.size,false)+textObj("NOTE",fitNote.text,noteBox.y,noteBox.h,fitNote.size,false);
+  if(hasQr)objs+=`<ObjectInfo><BarcodeObject><Name>QRCODE</Name><ForeColor Alpha="255" Red="0" Green="0" Blue="0"/><BackColor Alpha="255" Red="255" Green="255" Blue="255"/><LinkedObjectName></LinkedObjectName><Rotation>Rotation0</Rotation><IsMirrored>False</IsMirrored><IsVariable>False</IsVariable><Text>${q}</Text><Type>QRCode</Type><Size>Large</Size><TextPosition>None</TextPosition><TextFont Family="Arial" Size="8" Bold="False" Italic="False" Underline="False" Strikeout="False"/><CheckSumFont Family="Arial" Size="8" Bold="False" Italic="False" Underline="False" Strikeout="False"/><TextEmbedding>None</TextEmbedding><ECLevel>0</ECLevel><HorizontalAlignment>Center</HorizontalAlignment><QuietZonesPadding Left="0" Top="0" Right="0" Bottom="0"/></BarcodeObject><Bounds X="${qrX}" Y="${Math.round((H-qr)/2)}" Width="${qr}" Height="${qr}"/></ObjectInfo>`;
   return `<?xml version="1.0" encoding="utf-8"?><DieCutLabel Version="8.0" Units="twips"><PaperOrientation>Landscape</PaperOrientation><Id>Address</Id><PaperName>${btXmlEscape(paper.name)}</PaperName><DrawCommands/>${objs}</DieCutLabel>`;
 }
 async function btDymoDirectPrint(data){
