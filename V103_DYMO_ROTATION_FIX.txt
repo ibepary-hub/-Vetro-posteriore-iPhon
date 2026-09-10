@@ -1,0 +1,1 @@
+V103: correzione rotazione fisica DYMO 57x32. PaperOrientation Portrait con canvas 57x32: testo lungo parallelo al lato 57 mm; QR a destra; autofit invariato. Cache app.js v103.
