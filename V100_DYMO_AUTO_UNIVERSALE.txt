@@ -1,0 +1,8 @@
+BeparyTech Manager v100 - DYMO AUTO UNIVERSALE
+- Rilevamento automatico DYMO Connect su localhost/127.0.0.1 porte 41951-41960.
+- Riconosce automaticamente qualsiasi stampante DYMO esposta da GetPrinters, non solo LabelWriter 450.
+- Supporta nodi LabelWriterPrinter, TapePrinter e in generale qualunque tipo *Printer restituito da DYMO Connect.
+- Usa prioritariamente una stampante con IsConnected=True.
+- Se si scollega una DYMO e se ne collega un'altra, al momento della stampa rileva il cambio e usa automaticamente quella collegata.
+- Mantiene la stampa diretta senza finestra di stampa del browser.
+- Mantiene la correzione printerName con spazi codificati come %20.

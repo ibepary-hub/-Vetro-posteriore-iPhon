@@ -1,0 +1,6 @@
+BeparyTech Manager v99 - DYMO PrinterName Fix
+
+Correzione definitiva errore Printer not found:
+- printerName inviato con spazi codificati come %20 anziche +.
+- mantiene rilevamento automatico DYMO sulle porte 41951-41960.
+- mantiene selezione automatica LabelWriter 450 e stampa diretta senza dialogo Chrome.
