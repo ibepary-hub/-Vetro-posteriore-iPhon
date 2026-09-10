@@ -1,0 +1,9 @@
+BeparyTech Manager v98 - DYMO AUTO
+
+- Rilevamento automatico DYMO Connect su localhost/127.0.0.1.
+- Priorità porta 41951, fallback automatico 41952-41960.
+- Memorizza endpoint funzionante sul PC.
+- Parser GetPrinters compatibile con XML puro, JSON/XML serializzato, namespace ed entità HTML.
+- Preferenza automatica DYMO LabelWriter 450.
+- Se la porta o la stampante cambia, al primo errore rifà il rilevamento e ritenta una volta.
+- Stampa diretta: non usa la finestra di stampa del browser.

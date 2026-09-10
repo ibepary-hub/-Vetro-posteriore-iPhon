@@ -2255,27 +2255,120 @@ setCategory=function(category,fromBack=false){
 };
 
 
-/* ===== v97 · DYMO direct print (no browser print dialog) ===== */
-const BT_DYMO_KEY="bt-dymo-direct-v97";
+/* ===== v98 · DYMO direct print · rilevamento automatico servizio/stampante ===== */
+const BT_DYMO_KEY="bt-dymo-direct-v98";
 let btDymoEndpoint="";
 function btXmlEscape(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&apos;"}[c]));}
-function btGetDymoConfig(){try{return {...{enabled:true,printer:""},...JSON.parse(localStorage.getItem(BT_DYMO_KEY)||"{}")};}catch(_){return {enabled:true,printer:""};}}
+function btGetDymoConfig(){
+  try{
+    const old=JSON.parse(localStorage.getItem("bt-dymo-direct-v97")||"{}");
+    const cur=JSON.parse(localStorage.getItem(BT_DYMO_KEY)||"{}");
+    return {...{enabled:true,printer:"",endpoint:""},...old,...cur};
+  }catch(_){return {enabled:true,printer:"",endpoint:""};}
+}
 function btSaveDymoConfig(patch={}){const v={...btGetDymoConfig(),...patch};localStorage.setItem(BT_DYMO_KEY,JSON.stringify(v));return v;}
 function btSetDymoStatus(text,kind="") {const el=document.getElementById("dymoDirectStatus");if(!el)return;el.textContent=text;el.className=kind?`dymoStatus${kind}`:"";}
-async function btFetchTimeout(url,opts={},ms=1200){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);try{return await fetch(url,{...opts,signal:c.signal,cache:"no-store"});}finally{clearTimeout(t);}}
+async function btFetchTimeout(url,opts={},ms=2000){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);try{return await fetch(url,{...opts,signal:c.signal,cache:"no-store"});}finally{clearTimeout(t);}}
+function btDymoBase(host,port){return `https://${host}:${port}/DYMO/DLS/Printing`;}
+async function btProbeDymoBase(base,ms=1500){
+  try{
+    const r=await btFetchTimeout(`${base}/StatusConnected`,{},ms);
+    const txt=(await r.text()).trim().replace(/^"|"$/g,"").toLowerCase();
+    return r.ok && (txt==="true" || txt.includes("true"));
+  }catch(_){return false;}
+}
 async function btFindDymoService(force=false){
   if(btDymoEndpoint&&!force)return btDymoEndpoint;
-  btDymoEndpoint="";btSetDymoStatus("Ricerca DYMO Connect…","Wait");
-  const hosts=["localhost","127.0.0.1"],ports=[41951,41952,41953,41954,41955,41956,41957,41958,41959,41960];
-  for(const host of hosts){for(const port of ports){const base=`https://${host}:${port}/DYMO/DLS/Printing`;try{const r=await btFetchTimeout(`${base}/StatusConnected`,{},700);const txt=(await r.text()).trim().toLowerCase();if(r.ok&&txt.includes("true")){btDymoEndpoint=base;btSetDymoStatus(`DYMO Connect attivo · porta ${port}`,"Ok");return base;}}catch(_){}}}
-  btSetDymoStatus("DYMO Connect non rilevato su questo PC","Err");throw new Error("DYMO Connect non è attivo. Installa/apri DYMO Connect e lascia attivo il servizio locale, poi premi ‘Rileva DYMO’. Il gestionale non userà più la finestra di stampa del browser.");
+  btDymoEndpoint="";btSetDymoStatus("Ricerca automatica DYMO…","Wait");
+  const cfg=btGetDymoConfig();
+  // Prima prova l'endpoint già trovato su questo PC; poi 41951, quindi l'intervallo ufficiale 41952-41960.
+  const candidates=[];
+  if(cfg.endpoint)candidates.push(cfg.endpoint);
+  for(const host of ["localhost","127.0.0.1"]){
+    candidates.push(btDymoBase(host,41951));
+    for(let port=41952;port<=41960;port++)candidates.push(btDymoBase(host,port));
+  }
+  const unique=[...new Set(candidates)];
+  for(const base of unique){
+    if(await btProbeDymoBase(base, base.includes(":41951/")?1800:900)){
+      btDymoEndpoint=base;
+      const m=base.match(/:(4195\d)\//),port=m?m[1]:"";
+      btSaveDymoConfig({endpoint:base});
+      btSetDymoStatus(`DYMO Connect rilevato automaticamente${port?` · porta ${port}`:""}`,"Ok");
+      return base;
+    }
+  }
+  btSetDymoStatus("DYMO Connect non rilevato","Err");
+  throw new Error("Servizio DYMO non raggiungibile. Su questo PC deve rispondere 'true' a StatusConnected.");
 }
-function btParseDymoPrinters(xml){
-  try{const doc=new DOMParser().parseFromString(xml,"application/xml");const out=[];doc.querySelectorAll("LabelWriterPrinter,TapePrinter").forEach(n=>{const name=n.querySelector("Name")?.textContent?.trim();if(name&&!out.includes(name))out.push(name);});if(out.length)return out;doc.querySelectorAll("Name").forEach(n=>{const name=n.textContent?.trim();if(name&&!out.includes(name))out.push(name);});return out;}catch(_){return [];}
+function btDecodeXmlEntities(s){
+  const el=document.createElement("textarea");el.innerHTML=s;return el.value;
+}
+function btNormalizeDymoPayload(raw){
+  let s=String(raw??"").trim();
+  // DYMO Connect può restituire XML puro oppure una stringa XML serializzata in JSON.
+  for(let i=0;i<2;i++){
+    if((s.startsWith('"')&&s.endsWith('"'))||(s.startsWith("'")&&s.endsWith("'"))){
+      try{const j=JSON.parse(s);if(typeof j==="string"){s=j.trim();continue;}}catch(_){s=s.slice(1,-1);}
+    }
+    break;
+  }
+  if(s.includes("&lt;")&&!s.includes("<LabelWriterPrinter"))s=btDecodeXmlEntities(s);
+  s=s.replace(/^\uFEFF/,"").replace(/\\r\\n/g,"\n").replace(/\\n/g,"\n").replace(/\\\"/g,'"');
+  return s;
+}
+function btParseDymoPrinters(raw){
+  const xml=btNormalizeDymoPayload(raw),out=[];
+  const add=n=>{n=String(n||"").trim();if(n&&!out.includes(n))out.push(n);};
+  try{
+    const doc=new DOMParser().parseFromString(xml,"application/xml");
+    // Namespace-safe: usa localName anziché dipendere dai selector XML.
+    [...doc.getElementsByTagName("*")].forEach(node=>{
+      if(node.localName==="LabelWriterPrinter"||node.localName==="TapePrinter"){
+        const name=[...node.getElementsByTagName("*")].find(x=>x.localName==="Name")?.textContent;add(name);
+      }
+    });
+    if(!out.length)[...doc.getElementsByTagName("*")].filter(x=>x.localName==="Name").forEach(x=>add(x.textContent));
+  }catch(_){}
+  // Fallback per payload XML/JSON non standard.
+  if(!out.length){
+    for(const m of xml.matchAll(/<(?:\w+:)?Name\b[^>]*>(?:<!\[CDATA\[)?([\s\S]*?)(?:\]\]>)?<\/(?:\w+:)?Name>/gi))add(btDecodeXmlEntities(m[1].replace(/<[^>]+>/g,"")));
+  }
+  // Ultimo fallback: estrai direttamente eventuali nomi DYMO visibili nella risposta.
+  if(!out.length){
+    for(const m of xml.matchAll(/DYMO\s+(?:LabelWriter|LabelManager|LabelWriter Wireless)[^<"\\\r\n]*/gi))add(m[0]);
+  }
+  return out;
+}
+async function btGetDymoPrintersFromBase(base){
+  const r=await btFetchTimeout(`${base}/GetPrinters`,{},3500);
+  if(!r.ok)throw new Error(`GetPrinters non disponibile (${r.status}).`);
+  const raw=await r.text();
+  return {printers:btParseDymoPrinters(raw),raw};
 }
 async function btDetectDymoPrinters(force=true){
-  const sel=document.getElementById("dymoPrinterSelect");if(sel)sel.innerHTML='<option value="">Ricerca…</option>';
-  try{const base=await btFindDymoService(force);const r=await btFetchTimeout(`${base}/GetPrinters`,{},1800);if(!r.ok)throw new Error("Servizio DYMO raggiunto ma elenco stampanti non disponibile.");const printers=btParseDymoPrinters(await r.text());if(!printers.length)throw new Error("Nessuna stampante DYMO rilevata. Controlla che la LabelWriter sia accesa e installata in Windows.");const saved=btGetDymoConfig().printer;const chosen=printers.includes(saved)?saved:(printers.find(x=>/labelwriter/i.test(x))||printers[0]);if(sel){sel.innerHTML=printers.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");sel.value=chosen;}btSaveDymoConfig({printer:chosen});btSetDymoStatus(`Pronta · ${chosen}`,"Ok");return printers;}catch(err){if(sel)sel.innerHTML='<option value="">DYMO non disponibile</option>';btSetDymoStatus(err.message||"DYMO non disponibile","Err");throw err;}
+  const sel=document.getElementById("dymoPrinterSelect");if(sel)sel.innerHTML='<option value="">Ricerca automatica…</option>';
+  try{
+    let base=await btFindDymoService(force),result=await btGetDymoPrintersFromBase(base);
+    // Se il servizio risponde ma il primo endpoint non elenca stampanti, rifai una scansione completa una volta.
+    if(!result.printers.length){
+      btDymoEndpoint="";
+      const savedEndpoint=btGetDymoConfig().endpoint;
+      btSaveDymoConfig({endpoint:""});
+      base=await btFindDymoService(true);
+      result=await btGetDymoPrintersFromBase(base);
+      if(!result.printers.length&&savedEndpoint)btSaveDymoConfig({endpoint:savedEndpoint});
+    }
+    const printers=result.printers;
+    if(!printers.length)throw new Error("DYMO Connect è attivo, ma GetPrinters non ha restituito il nome della stampante.");
+    const cfg=btGetDymoConfig(),saved=cfg.printer;
+    const chosen=printers.includes(saved)?saved:(printers.find(x=>/labelwriter\s*450/i.test(x))||printers.find(x=>/labelwriter/i.test(x))||printers[0]);
+    if(sel){sel.innerHTML=printers.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");sel.value=chosen;}
+    btSaveDymoConfig({printer:chosen,endpoint:base});
+    const pm=base.match(/:(4195\d)\//),port=pm?pm[1]:"";
+    btSetDymoStatus(`Pronta · ${chosen}${port?` · porta ${port}`:""}`,"Ok");
+    return printers;
+  }catch(err){if(sel)sel.innerHTML='<option value="">DYMO non disponibile</option>';btSetDymoStatus(err.message||"DYMO non disponibile","Err");throw err;}
 }
 function btDymoPaper(st){
   const key=st?.preset||"57x32";
@@ -2292,17 +2385,29 @@ function btDymoLabelXml({title,meta,note,qrText}){
   return `<?xml version="1.0" encoding="utf-8"?><DieCutLabel Version="8.0" Units="twips"><PaperOrientation>Landscape</PaperOrientation><Id>Address</Id><PaperName>${btXmlEscape(paper.name)}</PaperName><DrawCommands/><ObjectInfo></ObjectInfo>${objs}</DieCutLabel>`;
 }
 async function btDymoDirectPrint(data){
-  const cfg=btGetDymoConfig();if(!cfg.enabled)throw new Error("La stampa diretta DYMO è disattivata nelle Impostazioni.");
-  const base=await btFindDymoService(false);let printer=cfg.printer;
-  if(!printer){const printers=await btDetectDymoPrinters(false);printer=btGetDymoConfig().printer||printers[0];}
+  let cfg=btGetDymoConfig();if(!cfg.enabled)throw new Error("La stampa diretta DYMO è disattivata nelle Impostazioni.");
+  let base=await btFindDymoService(false),printer=cfg.printer;
+  if(!printer){const printers=await btDetectDymoPrinters(false);cfg=btGetDymoConfig();base=btDymoEndpoint||cfg.endpoint||base;printer=cfg.printer||printers[0];}
   if(!printer)throw new Error("Nessuna stampante DYMO selezionata.");
-  const body=new URLSearchParams({printerName:printer,printParamsXml:"",labelXml:btDymoLabelXml(data),labelSetXml:""});
-  const r=await btFetchTimeout(`${base}/PrintLabel`,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},body:body.toString()},7000);
-  const txt=await r.text();if(!r.ok)throw new Error(`Errore DYMO: ${txt||r.status}`);btSetDymoStatus(`Stampata su ${printer}`,"Ok");return true;
+  const send=async()=>{
+    const body=new URLSearchParams({printerName:printer,printParamsXml:"",labelXml:btDymoLabelXml(data),labelSetXml:""});
+    const r=await btFetchTimeout(`${base}/PrintLabel`,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},body:body.toString()},9000);
+    const txt=await r.text();if(!r.ok)throw new Error(`Errore DYMO: ${txt||r.status}`);return txt;
+  };
+  try{await send();}
+  catch(firstErr){
+    // Autoriparazione: se porta/stampante è cambiata, rileva di nuovo e ritenta una volta.
+    btDymoEndpoint="";await btDetectDymoPrinters(true);cfg=btGetDymoConfig();base=btDymoEndpoint||cfg.endpoint;printer=cfg.printer;
+    if(!base||!printer)throw firstErr;await send();
+  }
+  btSetDymoStatus(`Stampata direttamente · ${printer}`,"Ok");return true;
 }
-function bindDymoDirectV97(){
-  const btn=document.getElementById("dymoDetectBtn"),sel=document.getElementById("dymoPrinterSelect"),enabled=document.getElementById("dymoDirectEnabled");if(!btn||btn.dataset.bound==="1")return;btn.dataset.bound="1";const cfg=btGetDymoConfig();if(enabled)enabled.checked=cfg.enabled!==false;
-  btn.addEventListener("click",()=>btDetectDymoPrinters(true).catch(()=>{}));sel?.addEventListener("change",()=>btSaveDymoConfig({printer:sel.value}));enabled?.addEventListener("change",()=>btSaveDymoConfig({enabled:enabled.checked}));
-  setTimeout(()=>btDetectDymoPrinters(false).catch(()=>{}),450);
+function bindDymoDirectV98(){
+  const btn=document.getElementById("dymoDetectBtn"),sel=document.getElementById("dymoPrinterSelect"),enabled=document.getElementById("dymoDirectEnabled");
+  if(btn&&btn.dataset.bound!=="1"){btn.dataset.bound="1";btn.addEventListener("click",()=>btDetectDymoPrinters(true).catch(()=>{}));}
+  if(sel&&sel.dataset.bound!=="1"){sel.dataset.bound="1";sel.addEventListener("change",()=>btSaveDymoConfig({printer:sel.value}));}
+  if(enabled&&enabled.dataset.bound!=="1"){enabled.dataset.bound="1";enabled.checked=btGetDymoConfig().enabled!==false;enabled.addEventListener("change",()=>btSaveDymoConfig({enabled:enabled.checked}));}
+  // Rilevamento automatico anche senza entrare nelle Impostazioni.
+  if(!btDymoEndpoint)setTimeout(()=>btFindDymoService(false).then(()=>btDetectDymoPrinters(false)).catch(()=>{}),500);
 }
-document.addEventListener("DOMContentLoaded",bindDymoDirectV97);setTimeout(bindDymoDirectV97,800);
+document.addEventListener("DOMContentLoaded",bindDymoDirectV98);setTimeout(bindDymoDirectV98,900);
