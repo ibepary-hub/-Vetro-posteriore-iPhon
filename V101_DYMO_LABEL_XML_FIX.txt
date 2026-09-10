@@ -1,0 +1,5 @@
+V101 - DYMO LABEL XML FIX
+- Rimossa la voce <ObjectInfo></ObjectInfo> vuota che rendeva il modello etichetta non valido per DYMO Connect.
+- Ogni ObjectInfo ora contiene realmente un TextObject o BarcodeObject, come richiesto dallo schema DYMO.
+- Mantiene rilevamento automatico qualsiasi DYMO collegata e porte 41951-41960.
+- Mantiene stampa diretta senza finestra browser.
