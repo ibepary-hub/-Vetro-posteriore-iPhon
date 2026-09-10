@@ -2444,19 +2444,24 @@ function btFitDymoText(value,maxWidthTwips,maxHeightTwips,{maxSize=11,minSize=5,
   }
   return {text:lines.join("\n"),size,lines:lines.length};
 }
-function btDymoLabelXml({title,meta,note,qrText}){
+async function btDymoLabelXml({title,meta,note,qrText}){
   const st=getRepairLabelSettingsV92(),paper=btDymoPaper(st),tw=56.6929134,W=Math.round(paper.w*tw),H=Math.round(paper.h*tw),m=70;
   const hasQr=!!qrText;
-  // QR circa 15 mm: resta ben leggibile ma lascia più larghezza al testo.
-  const qr=Math.min(Math.round(15*tw),H-m*2),textX=m,textW=Math.max(760,W-m*2-(hasQr?qr+55:0)),qrX=W-m-qr;
-  const titleBox={y:m,h:430},metaBox={y:m+405,h:360},noteBox={y:m+740,h:Math.max(520,H-m-(m+740))};
-  const fitTitle=btFitDymoText(title,textW,titleBox.h,{maxSize:11.5,minSize:5.5,maxLines:2});
-  const fitMeta=btFitDymoText(meta,textW,metaBox.h,{maxSize:9.5,minSize:5,maxLines:2});
-  const fitNote=btFitDymoText(note,textW,noteBox.h,{maxSize:9,minSize:4.5,maxLines:3});
-  const q=btXmlEscape(qrText);
+  // QR reale come immagine PNG: più affidabile del BarcodeObject QRCode del Web Service DYMO.
+  // 16 mm sulla destra, testo sulla sinistra con autofit per non sovrapporsi mai.
+  const qr=Math.min(Math.round(16*tw),H-m*2),textX=m,textW=Math.max(700,W-m*2-(hasQr?qr+70:0)),qrX=W-m-qr;
+  const titleBox={y:m,h:400},metaBox={y:m+385,h:335},noteBox={y:m+700,h:Math.max(500,H-m-(m+700))};
+  const fitTitle=btFitDymoText(title,textW,titleBox.h,{maxSize:10.5,minSize:4.8,maxLines:2});
+  const fitMeta=btFitDymoText(meta,textW,metaBox.h,{maxSize:8.8,minSize:4.5,maxLines:2});
+  const fitNote=btFitDymoText(note,textW,noteBox.h,{maxSize:8.3,minSize:4.2,maxLines:3});
   const textObj=(name,text,y,h,size,bold)=>`<ObjectInfo><TextObject><Name>${name}</Name><ForeColor Alpha="255" Red="0" Green="0" Blue="0"/><BackColor Alpha="0" Red="255" Green="255" Blue="255"/><LinkedObjectName></LinkedObjectName><Rotation>Rotation0</Rotation><IsMirrored>False</IsMirrored><IsVariable>False</IsVariable><HorizontalAlignment>Left</HorizontalAlignment><VerticalAlignment>Middle</VerticalAlignment><TextFitMode>ShrinkToFit</TextFitMode><UseFullFontHeight>True</UseFullFontHeight><Verticalized>False</Verticalized><StyledText><Element><String>${btXmlEscape(text)}</String><Attributes><Font Family="Arial" Size="${size}" Bold="${bold?'True':'False'}" Italic="False" Underline="False" Strikeout="False"/><ForeColor Alpha="255" Red="0" Green="0" Blue="0"/></Attributes></Element></StyledText></TextObject><Bounds X="${textX}" Y="${y}" Width="${textW}" Height="${h}"/></ObjectInfo>`;
   let objs=textObj("TITLE",fitTitle.text,titleBox.y,titleBox.h,fitTitle.size,true)+textObj("META",fitMeta.text,metaBox.y,metaBox.h,fitMeta.size,false)+textObj("NOTE",fitNote.text,noteBox.y,noteBox.h,fitNote.size,false);
-  if(hasQr)objs+=`<ObjectInfo><BarcodeObject><Name>QRCODE</Name><ForeColor Alpha="255" Red="0" Green="0" Blue="0"/><BackColor Alpha="255" Red="255" Green="255" Blue="255"/><LinkedObjectName></LinkedObjectName><Rotation>Rotation0</Rotation><IsMirrored>False</IsMirrored><IsVariable>False</IsVariable><Text>${q}</Text><Type>QRCode</Type><Size>Large</Size><TextPosition>None</TextPosition><TextFont Family="Arial" Size="8" Bold="False" Italic="False" Underline="False" Strikeout="False"/><CheckSumFont Family="Arial" Size="8" Bold="False" Italic="False" Underline="False" Strikeout="False"/><TextEmbedding>None</TextEmbedding><ECLevel>0</ECLevel><HorizontalAlignment>Center</HorizontalAlignment><QuietZonesPadding Left="0" Top="0" Right="0" Bottom="0"/></BarcodeObject><Bounds X="${qrX}" Y="${Math.round((H-qr)/2)}" Width="${qr}" Height="${qr}"/></ObjectInfo>`;
+  if(hasQr){
+    const qrDataUrl=await btMakeQrDataUrl(String(qrText),360);
+    const qrBase64=String(qrDataUrl).replace(/^data:image\/[^;]+;base64,/i,"");
+    if(!qrBase64) throw new Error("QR code non generato.");
+    objs+=`<ObjectInfo><ImageObject><Name>QRCODE</Name><ForeColor Alpha="255" Red="0" Green="0" Blue="0"/><BackColor Alpha="255" Red="255" Green="255" Blue="255"/><LinkedObjectName></LinkedObjectName><Rotation>Rotation0</Rotation><IsMirrored>False</IsMirrored><IsVariable>False</IsVariable><Image>${qrBase64}</Image><ScaleMode>Uniform</ScaleMode><BorderWidth>0</BorderWidth><BorderColor Alpha="255" Red="0" Green="0" Blue="0"/></ImageObject><Bounds X="${qrX}" Y="${Math.round((H-qr)/2)}" Width="${qr}" Height="${qr}"/></ObjectInfo>`;
+  }
   return `<?xml version="1.0" encoding="utf-8"?><DieCutLabel Version="8.0" Units="twips"><PaperOrientation>Portrait</PaperOrientation><Id>Address</Id><PaperName>${btXmlEscape(paper.name)}</PaperName><DrawCommands/>${objs}</DieCutLabel>`;
 }
 async function btDymoDirectPrint(data){
@@ -2485,7 +2490,7 @@ async function btDymoDirectPrint(data){
     // "DYMO+LabelWriter+450+(Copia+3)" e quindi "Printer not found".
     // Usiamo encodeURIComponent, che invia gli spazi come %20.
     const formEncode=o=>Object.entries(o).map(([k,v])=>`${encodeURIComponent(k)}=${encodeURIComponent(String(v??""))}`).join("&");
-    const body=formEncode({printerName:printer,printParamsXml:"",labelXml:btDymoLabelXml(data),labelSetXml:""});
+    const body=formEncode({printerName:printer,printParamsXml:"",labelXml:await btDymoLabelXml(data),labelSetXml:""});
     const r=await btFetchTimeout(`${base}/PrintLabel`,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},body},9000);
     const txt=await r.text();if(!r.ok)throw new Error(`Errore DYMO: ${txt||r.status}`);return txt;
   };

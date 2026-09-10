@@ -1,0 +1,7 @@
+V104 - DYMO QR IMAGE + AUTOFIT
+- QR code generato come PNG e inserito come ImageObject DYMO, evitando il BarcodeObject QR che sulla LabelWriter 450 mostrava errore/placeholder.
+- QR presente anche sulle pratiche create da Accettazione rapida, usando lo stesso deep-link pratica.
+- Nessuna scritta “Accettazione rapida” sull’etichetta.
+- Layout 57x32 orizzontale: testo a sinistra, QR a destra.
+- Font ridotto automaticamente e multilinea per lasciare spazio al QR senza tagli.
+- Mantiene rilevamento automatico DYMO e porte 41951-41960.
