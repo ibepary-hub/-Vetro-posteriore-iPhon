@@ -2460,7 +2460,7 @@ async function btDymoLabelXml({title,meta,note,qrText}){
     const qrDataUrl=await btMakeQrDataUrl(String(qrText),360);
     const qrBase64=String(qrDataUrl).replace(/^data:image\/[^;]+;base64,/i,"");
     if(!qrBase64) throw new Error("QR code non generato.");
-    objs+=`<ObjectInfo><ImageObject><Name>QRCODE</Name><ForeColor Alpha="255" Red="0" Green="0" Blue="0"/><BackColor Alpha="255" Red="255" Green="255" Blue="255"/><LinkedObjectName></LinkedObjectName><Rotation>Rotation0</Rotation><IsMirrored>False</IsMirrored><IsVariable>False</IsVariable><Image>${qrBase64}</Image><ScaleMode>Uniform</ScaleMode><BorderWidth>0</BorderWidth><BorderColor Alpha="255" Red="0" Green="0" Blue="0"/></ImageObject><Bounds X="${qrX}" Y="${Math.round((H-qr)/2)}" Width="${qr}" Height="${qr}"/></ObjectInfo>`;
+    objs+=`<ObjectInfo><ImageObject><Name>QRCODE</Name><ForeColor Alpha="255" Red="0" Green="0" Blue="0"/><BackColor Alpha="255" Red="255" Green="255" Blue="255"/><LinkedObjectName></LinkedObjectName><Rotation>Rotation0</Rotation><IsMirrored>False</IsMirrored><IsVariable>False</IsVariable><Image>${qrBase64}</Image><ScaleMode>Uniform</ScaleMode><BorderWidth>0</BorderWidth><BorderColor Alpha="255" Red="0" Green="0" Blue="0"/><HorizontalAlignment>Center</HorizontalAlignment><VerticalAlignment>Center</VerticalAlignment></ImageObject><Bounds X="${qrX}" Y="${Math.round((H-qr)/2)}" Width="${qr}" Height="${qr}"/></ObjectInfo>`;
   }
   return `<?xml version="1.0" encoding="utf-8"?><DieCutLabel Version="8.0" Units="twips"><PaperOrientation>Portrait</PaperOrientation><Id>Address</Id><PaperName>${btXmlEscape(paper.name)}</PaperName><DrawCommands/>${objs}</DieCutLabel>`;
 }

@@ -1,0 +1,7 @@
+BeparyTech Manager v105 - DYMO ImageObject schema fix
+
+- Corretto XML ImageObject DYMO: aggiunti HorizontalAlignment e VerticalAlignment richiesti dallo schema Version 8.0.
+- Mantiene QR PNG reale sulla destra.
+- Mantiene formato 57x32 mm orizzontale e AutoFit del testo.
+- Mantiene rilevamento automatico di qualsiasi DYMO sulle porte 41951-41960.
+- Nessuna scritta Accettazione rapida sull'etichetta.
