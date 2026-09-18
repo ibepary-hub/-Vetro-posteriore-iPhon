@@ -39,7 +39,7 @@
         <button class="menuItem" type="button" data-category="Vendite"><span class="menuIcon">✓</span><span><strong>Uscite magazzino</strong><small>Scarichi, note e rientri</small></span></button>
         <button id="bestekCatalogMenuItem" class="menuItem adminOnly" type="button" data-category="CatalogoBestek" hidden><span class="menuIcon">BK</span><span><strong>Catalogo Bestek</strong><small>Codici e accessori verificati</small></span></button>
         <button id="catalogMenuItem" class="menuItem adminOnly" type="button" data-category="GestioneMagazzino" hidden><span class="menuIcon">＋</span><span><strong>Gestione magazzino</strong><small>Sezioni e prodotti</small></span></button>
-        <button id="zeroStockMenuItem" class="menuItem adminOnly" type="button" data-category="ScorteZero" hidden><span class="menuIcon">0</span><span><strong>Scorte a zero</strong><small>BackGlass e Housing separati</small></span></button>
+        <button id="zeroStockMenuItem" class="menuItem adminOnly" type="button" data-category="ScorteZero" hidden><span class="menuIcon">0</span><span><strong>Scorte a zero</strong><small>BackGlass, Housing e Ricambi</small></span></button>
       </div>
 
       <div id="salesMenuGroup" class="menuGroup adminOnly" hidden>
@@ -204,14 +204,14 @@
       <div id="bestekCatalogList" class="bestekCatalogList"></div>
     </section>
     <section id="zeroStockView" class="catalogView zeroStockView" hidden>
-      <div class="adminHero"><div><span class="usersKicker">SCORTE A ZERO</span><h2>Articoli esauriti</h2><p>BackGlass e Housing sono separati. Puoi controllare ed esportare solo gli articoli con quantità 0.</p></div><span class="adminBadge">ADMIN</span></div>
+      <div class="adminHero"><div><span class="usersKicker">SCORTE A ZERO</span><h2>Articoli esauriti</h2><p>Mostra automaticamente BackGlass, Housing, Ricambi e altre sezioni con quantità 0.</p></div><span class="adminBadge">ADMIN</span></div>
       <div class="zeroStockSummary">
         <div class="zeroStockStat"><span>BackGlass a 0</span><strong id="zeroBackglassCount">0</strong></div>
-        <div class="zeroStockStat"><span>Housing a 0</span><strong id="zeroHousingCount">0</strong></div>
+        <div class="zeroStockStat"><span>Housing a 0</span><strong id="zeroHousingCount">0</strong></div><div class="zeroStockStat"><span>Ricambi a 0</span><strong id="zeroCustomCount">0</strong></div>
       </div>
       <div class="zeroStockGrid">
         <section class="zeroStockPanel"><div class="zeroStockHead"><div><strong>BackGlass</strong><small>Vetri posteriori con giacenza zero</small></div><button id="exportZeroBackglass" class="miniBtn animatedBtn" type="button">Esporta CSV</button></div><div id="zeroBackglassList" class="zeroStockList"></div></section>
-        <section class="zeroStockPanel"><div class="zeroStockHead"><div><strong>Housing</strong><small>Scocche complete con giacenza zero</small></div><button id="exportZeroHousing" class="miniBtn animatedBtn" type="button">Esporta CSV</button></div><div id="zeroHousingList" class="zeroStockList"></div></section>
+        <section class="zeroStockPanel"><div class="zeroStockHead"><div><strong>Housing</strong><small>Scocche complete con giacenza zero</small></div><button id="exportZeroHousing" class="miniBtn animatedBtn" type="button">Esporta CSV</button></div><div id="zeroHousingList" class="zeroStockList"></div></section><section class="zeroStockPanel"><div class="zeroStockHead"><div><strong>Ricambi / altre sezioni</strong><small>Prodotti personalizzati con giacenza zero</small></div><button id="exportZeroCustom" class="miniBtn animatedBtn" type="button">Esporta CSV</button></div><div id="zeroCustomList" class="zeroStockList"></div></section>
       </div>
     </section>
     <section id="backupView" class="catalogView" hidden><div class="adminHero"><div><span class="usersKicker">BACKUP</span><h2>Esporta i dati</h2><p>Scarica una copia del magazzino e della cronologia.</p></div><span class="adminBadge">ADMIN</span></div><div class="backupGrid"><button id="exportInventoryCsv" class="catalogCard backupAction" type="button"><strong>CSV Magazzino</strong><span>Prodotti, sezioni e quantità</span></button><button id="exportRequestsCsv" class="catalogCard backupAction" type="button"><strong>CSV Da ordinare</strong><span>Tutte le richieste</span></button><button id="exportFullBackup" class="catalogCard backupAction" type="button"><strong>Backup JSON completo</strong><span>Magazzino, richieste, vendite e cronologia</span></button></div></section>
@@ -585,6 +585,7 @@
     <div class="saleDialog" role="dialog" aria-modal="true" aria-labelledby="saleTitle">
       <div class="saleDialogHead"><div><span class="saleKicker">SCARICO MAGAZZINO</span><h2 id="saleTitle">Scarica 1 dalla giacenza</h2></div><button id="cancelSaleX" class="closeBtn" type="button" aria-label="Chiudi">×</button></div>
       <div id="saleItemLabel" class="saleItemLabel"></div>
+      <div id="saleQuantityBox" class="saleQuantityBox" hidden><div><span class="fieldLabel">Quantità da scaricare</span><small id="saleAvailableQty">Disponibili: 0</small></div><div class="saleQtyStepper"><button id="saleQtyMinus" type="button">−</button><input id="saleQuantity" type="number" inputmode="numeric" min="1" value="1"><button id="saleQtyPlus" type="button">+</button></div></div>
       <div class="operatorGrid operatorCodeOnly">
         <label><span class="fieldLabel">Codice operatore *</span><input id="saleOperatorPassword" class="modalInput" type="password" inputmode="numeric" maxlength="12" autocomplete="off" placeholder="Inserisci il codice operatore"></label>
         <div class="operatorResolved"><span>Nome operatore</span><strong id="saleOperatorResolvedName">Automatico dal codice</strong></div>

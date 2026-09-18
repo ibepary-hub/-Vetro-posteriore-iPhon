@@ -584,7 +584,8 @@ document.getElementById("createUserForm").addEventListener("submit",async e=>{
 document.getElementById("refreshUsersBtn").onclick=loadUsers;
 async function openSaleModal(model,color,qty){
   if(qty<=0) return;
-  pendingSale={model,color,category:currentCategory,itemKey:keyFor(model,color)};
+  pendingSale={model,color,category:currentCategory,itemKey:keyFor(model,color),quantity:1};
+  document.getElementById("saleQuantityBox").hidden=true;
   selectedCustomer=null;
   await loadAccountOperators();
   populateSaleOperatorControl();
@@ -624,10 +625,10 @@ document.getElementById("confirmSaleBtn").onclick=async()=>{
     p_note:(()=>{const r=document.getElementById("saleEShareRef").value.trim();const n=document.getElementById("saleNote").value.trim();return [r?`Rif. e-Share: ${r}`:"",n].filter(Boolean).join(" · ")||null;})()
   };
   const result=p.kind==="custom"
-    ? await sb.rpc("record_beparytech_product_sale",{p_product_id:p.productId,...commonOperator})
+    ? await sb.rpc("record_beparytech_product_sale_v107",{p_product_id:p.productId,p_quantity:Number(p.quantity||1),...commonOperator})
     : await sb.rpc("record_beparytech_sale",{p_category:p.category,p_item_key:p.itemKey,p_model:p.model,p_color:p.color,...commonOperator});
   const {data,error}=result;
-  btn.textContent="Conferma −1";
+  btn.textContent=p.kind==="custom"?`Conferma −${Number(p.quantity||1)}`:"Conferma −1";
   if(error){
     document.getElementById("saleError").textContent=error.message || "Impossibile registrare la vendita.";
     btn.disabled=false; return;
@@ -640,7 +641,8 @@ document.getElementById("confirmSaleBtn").onclick=async()=>{
     stock[p.itemKey]=Number(data);
     closeSaleModal(); render();
   }
-  document.getElementById("cloudStatus").textContent="☁︎ Scarico −1 salvato";
+  document.getElementById("cloudStatus").textContent=`☁︎ Scarico −${Number(p.quantity||1)} salvato`;
+  if(isAdmin() && currentCategory==="ScorteZero") renderZeroStock();
 };
 
 async function loadSales(){
@@ -1044,7 +1046,7 @@ function renderCustomSection(){
       const customPriceHtml=salePriceBadgeHtml(customKey,`${p.name} · ${p.variant||""}`,customCategory,p.name)+costBadgeHtml(customKey);
       card.innerHTML=`<div class="customProductTop"><div class="productVisual"><img class="productModelImage" src="${escapeHtml(imageForModel(p.name))}" alt="${escapeHtml(p.name)}" data-product-image="${escapeHtml(p.image_path||"")}"><span>${escapeHtml(p.name).charAt(0).toUpperCase()}</span></div><div class="customProductInfo"><strong>${escapeHtml(p.variant||p.name)}</strong><span>${escapeHtml(p.variant? p.name : (section?.name||""))}</span>${p.sku||p.barcode?`<small>${escapeHtml(p.sku||p.barcode)}</small>`:""}<b class="status ${cls}">${status}</b></div></div>${customPriceHtml}<div class="customProductBottom"><div class="customQty"><small>Giacenza</small><strong>${q}</strong></div><div class="customActions"><button class="minus customMinus animatedBtn" type="button" title="Scarica 1 dalla giacenza" ${q<=0?"disabled":""}>−1 Scarica</button>${isAdmin()?'<button class="plus customPlus animatedBtn" type="button">+1</button><button class="edit customPhoto animatedBtn" type="button" title="Aggiungi o cambia immagine">📷</button><button class="edit customEdit animatedBtn" type="button" title="Modifica prodotto">✎</button>':""}</div></div>`;
       const modelImg=card.querySelector(".productModelImage");modelImg.onerror=()=>{modelImg.hidden=true;modelImg.nextElementSibling.hidden=false};modelImg.onload=()=>{modelImg.nextElementSibling.hidden=true};
-      if(p.image_path){sb.storage.from("repair-intake").createSignedUrl(p.image_path,3600).then(({data})=>{if(data?.signedUrl)modelImg.src=data.signedUrl;});}
+      if(p.image_path){sb.storage.from("repair-intake").createSignedUrl(p.image_path,3600).then(({data})=>{if(data?.signedUrl)modelImg.src=data.signedUrl+`&v=${Date.now()}`;});}
       card.querySelector(".customMinus").onclick=()=>openCustomSaleModal(p,section);
       const plus=card.querySelector(".customPlus"); if(plus)plus.onclick=()=>updateCustomProductQty(p,q+1);
       const photo=card.querySelector(".customPhoto");if(photo)photo.onclick=()=>chooseCustomProductImage(p);const edit=card.querySelector(".customEdit");if(edit)edit.onclick=()=>editCustomProduct(p);const priceNode=card.querySelector(".salePriceAdmin");if(priceNode)wireSalePriceBadge(priceNode,customKey,`${p.name} · ${p.variant||""}`,customCategory,p.name);const costNode=card.querySelector(".adminCostBadge");if(costNode)wireCostBadge(costNode,customKey,`${p.name} · ${p.variant||""}`);
@@ -1096,7 +1098,8 @@ function updateCustomStats(items){
 }
 async function openCustomSaleModal(product,section){
   if(Number(product.quantity)<=0)return;
-  pendingSale={kind:"custom",productId:product.id,model:product.name,color:product.variant||"—",category:section?.name||"Prodotti",itemKey:`PRODUCT||${product.id}`};
+  pendingSale={kind:"custom",productId:product.id,model:product.name,color:product.variant||"—",category:section?.name||"Prodotti",itemKey:`PRODUCT||${product.id}`,quantity:1,maxQuantity:Number(product.quantity)};
+  const qtyBox=document.getElementById("saleQuantityBox"),qtyInput=document.getElementById("saleQuantity"); qtyBox.hidden=false; qtyInput.value="1"; qtyInput.max=String(Number(product.quantity)); document.getElementById("saleAvailableQty").textContent=`Disponibili: ${Number(product.quantity)}`; document.getElementById("saleTitle").textContent="Scarica dalla giacenza"; document.getElementById("confirmSaleBtn").textContent="Conferma −1";
   selectedCustomer=null;
   await loadAccountOperators();
   populateSaleOperatorControl();
@@ -1118,7 +1121,7 @@ async function uploadCustomProductImage(product,file){
   const {error}=await sb.from("beparytech_products").update({image_path:path,updated_at:new Date().toISOString()}).eq("id",product.id);
   if(error){await sb.storage.from("repair-intake").remove([path]);alert(error.message);return;}
   if(old)await sb.storage.from("repair-intake").remove([old]);
-  product.image_path=path;await loadCustomCatalog();renderCustomSection();document.getElementById("cloudStatus").textContent="☁︎ Salvato";
+  product.image_path=path; const {data:signed}=await sb.storage.from("repair-intake").createSignedUrl(path,3600); const visible=document.querySelector(`img[data-product-image]`); await loadCustomCatalog();renderCustomSection();document.getElementById("cloudStatus").textContent="☁︎ Foto aggiornata";
 }
 function chooseCustomProductImage(product){
   if(!isAdmin())return;
@@ -1355,11 +1358,14 @@ function zeroStockRows(category){
 function renderZeroStock(){
   if(!isAdmin())return;
   const bg=zeroStockRows("BackGlass"),hs=zeroStockRows("Housing");
+  const custom=customProducts.filter(p=>p.active!==false&&Number(p.quantity)===0).map(p=>{const sec=customSections.find(s=>Number(s.id)===Number(p.section_id));return {model:p.name,color:p.variant||"—",section:sec?.name||"Ricambi"}}).sort((a,b)=>String(a.section+a.model+a.color).localeCompare(String(b.section+b.model+b.color),"it",{numeric:true,sensitivity:"base"}));
   document.getElementById("zeroBackglassCount").textContent=bg.length;
   document.getElementById("zeroHousingCount").textContent=hs.length;
-  const render=(rows,kind)=>rows.length?rows.map(x=>`<div class="zeroStockRow"><span><strong>${escapeHtml(x.model)}</strong><small>${escapeHtml(x.color)} · ${kind}</small></span><b class="zeroStockBadge">0</b></div>`).join(""):'<div class="emptyState">Nessun articolo a quantità 0.</div>';
+  document.getElementById("zeroCustomCount").textContent=custom.length;
+  const render=(rows,kind)=>rows.length?rows.map(x=>`<div class="zeroStockRow"><span><strong>${escapeHtml(x.model)}</strong><small>${escapeHtml(x.color)} · ${escapeHtml(x.section||kind)}</small></span><b class="zeroStockBadge">0</b></div>`).join(""):'<div class="emptyState">Nessun articolo a quantità 0.</div>';
   document.getElementById("zeroBackglassList").innerHTML=render(bg,"BackGlass");
   document.getElementById("zeroHousingList").innerHTML=render(hs,"Housing");
+  document.getElementById("zeroCustomList").innerHTML=render(custom,"Ricambi");
 }
 function exportZeroStock(category){
   const rows=zeroStockRows(category);
@@ -1368,34 +1374,24 @@ function exportZeroStock(category){
 }
 document.getElementById("exportZeroBackglass")?.addEventListener("click",()=>exportZeroStock("BackGlass"));
 document.getElementById("exportZeroHousing")?.addEventListener("click",()=>exportZeroStock("Housing"));
+document.getElementById("exportZeroCustom")?.addEventListener("click",()=>{const rows=customProducts.filter(p=>p.active!==false&&Number(p.quantity)===0).map(p=>{const sec=customSections.find(s=>Number(s.id)===Number(p.section_id));return [sec?.name||"Ricambi",p.name,p.variant||"",0]});downloadText(`BeparyTech_Ricambi_quantita_0_${new Date().toISOString().slice(0,10)}.csv`,[["Sezione","Prodotto","Variante","Quantità"],...rows].map(r=>r.map(csvEscape).join(",")).join("\n"),"text/csv;charset=utf-8")});
 
-// ===== v55: pull-to-refresh sui dispositivi touch =====
+
+// v107: quantità multipla per prodotti custom
 (function(){
-  let startY=0,pull=0,tracking=false,refreshing=false;
-  const threshold=78;
+ const input=document.getElementById("saleQuantity"),minus=document.getElementById("saleQtyMinus"),plus=document.getElementById("saleQtyPlus");
+ function sync(v){if(!pendingSale?.kind||pendingSale.kind!=="custom")return;const max=Math.max(1,Number(pendingSale.maxQuantity||1));v=Math.max(1,Math.min(max,Math.floor(Number(v)||1)));input.value=String(v);pendingSale.quantity=v;document.getElementById("confirmSaleBtn").textContent=`Conferma −${v}`;}
+ minus?.addEventListener("click",()=>sync(Number(input.value)-1)); plus?.addEventListener("click",()=>sync(Number(input.value)+1)); input?.addEventListener("input",()=>sync(input.value)); input?.addEventListener("change",()=>sync(input.value));
+})();
+
+// ===== v107: pull-to-refresh VERO =====
+(function(){
+  let startY=0,pull=0,tracking=false; const threshold=78;
   const indicator=()=>document.getElementById("pullRefreshIndicator");
-  function paint(){const el=indicator();if(!el)return;el.classList.toggle("show",pull>8||refreshing);el.classList.toggle("ready",pull>=threshold&&!refreshing);el.style.transform=`translate(-50%, ${Math.min(68,Math.max(-60,pull-54))}px)`;el.querySelector("b").textContent=refreshing?"Aggiornamento…":pull>=threshold?"Rilascia per aggiornare":"Tira giù per aggiornare";}
-  async function refreshCurrent(){
-    if(refreshing)return;refreshing=true;const el=indicator();el?.classList.add("refreshing");paint();
-    try{
-      await loadStock();
-      if(typeof loadCustomCatalog==="function") await loadCustomCatalog();
-      if(currentCategory==="Dashboard") await loadDashboard();
-      else if(currentCategory==="Cronologia") await loadAudit();
-      else if(currentCategory==="Vendite") await loadSales();
-      else if(currentCategory==="ScorteZero") renderZeroStock();
-      else if(currentCategory==="Orari") await loadHours();
-      else if(currentCategory==="VenditeAdmin") await loadDeviceSales();
-      else if(currentCategory==="Fatturazione") { try{ bindInvoiceAutomation(); }catch(_){} }
-      else if(String(currentCategory).startsWith("custom:")) renderCustomSection();
-      else if(currentCategory==="BackGlass"||currentCategory==="Housing") render();
-      const cs=document.getElementById("cloudStatus");if(cs)cs.textContent="☁︎ Aggiornato";
-    }catch(e){console.error("Pull refresh",e)}
-    finally{setTimeout(()=>{refreshing=false;pull=0;const x=indicator();x?.classList.remove("refreshing","ready","show");if(x)x.style.transform="translate(-50%,-160%)"},350)}
-  }
-  document.addEventListener("touchstart",e=>{if(refreshing||e.touches.length!==1||window.scrollY>1)return;startY=e.touches[0].clientY;pull=0;tracking=true},{passive:true});
-  document.addEventListener("touchmove",e=>{if(!tracking||refreshing)return;const d=e.touches[0].clientY-startY;if(d<=0){pull=0;paint();return;}pull=Math.min(120,d*.55);paint()},{passive:true});
-  document.addEventListener("touchend",()=>{if(!tracking)return;tracking=false;if(pull>=threshold)refreshCurrent();else{pull=0;const el=indicator();el?.classList.remove("show","ready");if(el)el.style.transform="translate(-50%,-160%)"}},{passive:true});
+  function paint(){const el=indicator();if(!el)return;el.classList.toggle("show",pull>8);el.classList.toggle("ready",pull>=threshold);el.style.transform=`translate(-50%, ${Math.min(68,Math.max(-60,pull-54))}px)`;el.querySelector("b").textContent=pull>=threshold?"Rilascia per ricaricare":"Tira giù per aggiornare";}
+  document.addEventListener("touchstart",e=>{if(e.touches.length!==1||window.scrollY>1)return;startY=e.touches[0].clientY;pull=0;tracking=true},{passive:true});
+  document.addEventListener("touchmove",e=>{if(!tracking)return;const d=e.touches[0].clientY-startY;if(d<=0){pull=0;paint();return;}pull=Math.min(120,d*.55);paint()},{passive:true});
+  document.addEventListener("touchend",()=>{if(!tracking)return;tracking=false;if(pull>=threshold){const el=indicator();if(el){el.classList.add("refreshing");el.querySelector("b").textContent="Ricaricamento…";} setTimeout(()=>window.location.reload(),120);}else{pull=0;const el=indicator();el?.classList.remove("show","ready");if(el)el.style.transform="translate(-50%,-160%)";}},{passive:true});
 })();
 
 // v28 - Orari privati Admin

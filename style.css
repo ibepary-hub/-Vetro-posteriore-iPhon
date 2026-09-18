@@ -2062,3 +2062,7 @@ body[data-theme="light"] .dashboardMiniChart{color:#17364f}
 
 .adminProductPhotoField small{font-size:11px;color:var(--muted,#888)}
 .customPhoto{min-width:42px}
+
+/* v107: scarico multiplo */
+.saleQuantityBox{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:14px 0;padding:12px 14px;border:1px solid rgba(180,145,73,.35);border-radius:14px;background:rgba(255,255,255,.035)}
+.saleQuantityBox>div:first-child{display:flex;flex-direction:column;gap:3px}.saleQuantityBox small{opacity:.7}.saleQtyStepper{display:flex;align-items:center;gap:7px}.saleQtyStepper button{width:38px;height:38px;border:1px solid rgba(180,145,73,.45);border-radius:11px;background:#242424;color:#fff;font-size:22px;font-weight:800}.saleQtyStepper input{width:58px;height:38px;text-align:center;border-radius:10px;border:1px solid rgba(180,145,73,.4);background:#111;color:#fff;font-size:18px;font-weight:800}body[data-theme="light"] .saleQtyStepper input{background:#fff;color:#111}body[data-theme="light"] .saleQtyStepper button{background:#f1f1f1;color:#111}
