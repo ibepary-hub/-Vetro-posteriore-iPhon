@@ -1007,7 +1007,7 @@ async function loadCustomCatalog(){
   if(!isAdmin()) sectionQuery=sectionQuery.eq("active",true);
   const [{data:sections,error:sErr},{data:products,error:pErr}]=await Promise.all([
     sectionQuery,
-    sb.from("beparytech_products").select("id,section_id,name,variant,quantity,low_stock_threshold,active,sku,barcode,sort_order,created_at,updated_at").eq("active",true).order("sort_order").order("created_at")
+    sb.from("beparytech_products").select("id,section_id,name,variant,quantity,low_stock_threshold,active,sku,barcode,image_path,sort_order,created_at,updated_at").eq("active",true).order("sort_order").order("created_at")
   ]);
   if(sErr||pErr){console.error(sErr||pErr);return;}
   customSections=sections||[]; customProducts=products||[];
@@ -1042,11 +1042,12 @@ function renderCustomSection(){
       const customKey=customCostKey(p.id);
       const customCategory=String(section?.name||"");
       const customPriceHtml=salePriceBadgeHtml(customKey,`${p.name} · ${p.variant||""}`,customCategory,p.name)+costBadgeHtml(customKey);
-      card.innerHTML=`<div class="customProductTop"><div class="productVisual"><img class="productModelImage" src="${escapeHtml(imageForModel(p.name))}" alt="${escapeHtml(p.name)}"><span>${escapeHtml(p.name).charAt(0).toUpperCase()}</span></div><div class="customProductInfo"><strong>${escapeHtml(p.variant||p.name)}</strong><span>${escapeHtml(p.variant? p.name : (section?.name||""))}</span>${p.sku||p.barcode?`<small>${escapeHtml(p.sku||p.barcode)}</small>`:""}<b class="status ${cls}">${status}</b></div></div>${customPriceHtml}<div class="customProductBottom"><div class="customQty"><small>Giacenza</small><strong>${q}</strong></div><div class="customActions"><button class="minus customMinus animatedBtn" type="button" title="Scarica 1 dalla giacenza" ${q<=0?"disabled":""}>−1 Scarica</button>${isAdmin()?'<button class="plus customPlus animatedBtn" type="button">+1</button><button class="edit customEdit animatedBtn" type="button" title="Modifica prodotto">✎</button>':""}</div></div>`;
+      card.innerHTML=`<div class="customProductTop"><div class="productVisual"><img class="productModelImage" src="${escapeHtml(imageForModel(p.name))}" alt="${escapeHtml(p.name)}" data-product-image="${escapeHtml(p.image_path||"")}"><span>${escapeHtml(p.name).charAt(0).toUpperCase()}</span></div><div class="customProductInfo"><strong>${escapeHtml(p.variant||p.name)}</strong><span>${escapeHtml(p.variant? p.name : (section?.name||""))}</span>${p.sku||p.barcode?`<small>${escapeHtml(p.sku||p.barcode)}</small>`:""}<b class="status ${cls}">${status}</b></div></div>${customPriceHtml}<div class="customProductBottom"><div class="customQty"><small>Giacenza</small><strong>${q}</strong></div><div class="customActions"><button class="minus customMinus animatedBtn" type="button" title="Scarica 1 dalla giacenza" ${q<=0?"disabled":""}>−1 Scarica</button>${isAdmin()?'<button class="plus customPlus animatedBtn" type="button">+1</button><button class="edit customPhoto animatedBtn" type="button" title="Aggiungi o cambia immagine">📷</button><button class="edit customEdit animatedBtn" type="button" title="Modifica prodotto">✎</button>':""}</div></div>`;
       const modelImg=card.querySelector(".productModelImage");modelImg.onerror=()=>{modelImg.hidden=true;modelImg.nextElementSibling.hidden=false};modelImg.onload=()=>{modelImg.nextElementSibling.hidden=true};
+      if(p.image_path){sb.storage.from("repair-intake").createSignedUrl(p.image_path,3600).then(({data})=>{if(data?.signedUrl)modelImg.src=data.signedUrl;});}
       card.querySelector(".customMinus").onclick=()=>openCustomSaleModal(p,section);
       const plus=card.querySelector(".customPlus"); if(plus)plus.onclick=()=>updateCustomProductQty(p,q+1);
-      const edit=card.querySelector(".customEdit");if(edit)edit.onclick=()=>editCustomProduct(p);const priceNode=card.querySelector(".salePriceAdmin");if(priceNode)wireSalePriceBadge(priceNode,customKey,`${p.name} · ${p.variant||""}`,customCategory,p.name);const costNode=card.querySelector(".adminCostBadge");if(costNode)wireCostBadge(costNode,customKey,`${p.name} · ${p.variant||""}`);
+      const photo=card.querySelector(".customPhoto");if(photo)photo.onclick=()=>chooseCustomProductImage(p);const edit=card.querySelector(".customEdit");if(edit)edit.onclick=()=>editCustomProduct(p);const priceNode=card.querySelector(".salePriceAdmin");if(priceNode)wireSalePriceBadge(priceNode,customKey,`${p.name} · ${p.variant||""}`,customCategory,p.name);const costNode=card.querySelector(".adminCostBadge");if(costNode)wireCostBadge(costNode,customKey,`${p.name} · ${p.variant||""}`);
       bodyGrid.appendChild(card);
     });
     const header=group.querySelector(".customModelHeader");
@@ -1104,6 +1105,26 @@ async function openCustomSaleModal(product,section){
   document.getElementById("saleItemLabel").innerHTML=`<strong>${escapeHtml(product.name)}</strong><span>${escapeHtml(product.variant||section?.name||"")}</span>`;
   document.getElementById("saleCustomerSelect").value="";document.getElementById("confirmSaleBtn").disabled=true;document.getElementById("saleError").textContent="";document.getElementById("saleModal").hidden=false;
 }
+async function uploadCustomProductImage(product,file){
+  if(!isAdmin()||!file)return;
+  if(!/^image\/(jpeg|png|webp)$/.test(file.type)){alert("Formato non valido. Usa JPG, PNG o WEBP.");return;}
+  if(file.size>5*1024*1024){alert("L’immagine supera 5 MB.");return;}
+  const ext=(file.name.split(".").pop()||"jpg").toLowerCase();
+  const path=`${workspaceOwnerId}/products/${product.id}/${Date.now()}.${ext}`;
+  document.getElementById("cloudStatus").textContent="☁︎ Caricamento foto…";
+  const {error:upErr}=await sb.storage.from("repair-intake").upload(path,file,{cacheControl:"3600",upsert:false,contentType:file.type});
+  if(upErr){alert(upErr.message);document.getElementById("cloudStatus").textContent="Errore cloud";return;}
+  const old=product.image_path;
+  const {error}=await sb.from("beparytech_products").update({image_path:path,updated_at:new Date().toISOString()}).eq("id",product.id);
+  if(error){await sb.storage.from("repair-intake").remove([path]);alert(error.message);return;}
+  if(old)await sb.storage.from("repair-intake").remove([old]);
+  product.image_path=path;await loadCustomCatalog();renderCustomSection();document.getElementById("cloudStatus").textContent="☁︎ Salvato";
+}
+function chooseCustomProductImage(product){
+  if(!isAdmin())return;
+  const input=document.createElement("input");input.type="file";input.accept="image/jpeg,image/png,image/webp";
+  input.onchange=()=>{const f=input.files?.[0];if(f)uploadCustomProductImage(product,f);};input.click();
+}
 async function editCustomProduct(product){
   if(!isAdmin())return;
   const name=prompt("Nome prodotto",product.name);if(!name||!name.trim())return;
@@ -1155,8 +1176,10 @@ document.getElementById("createProductForm").addEventListener("submit",async e=>
   e.preventDefault();if(!isAdmin())return;
   const msg=document.getElementById("productFormMsg"),sectionId=Number(document.getElementById("productSection").value),name=document.getElementById("productName").value.trim(),variant=document.getElementById("productVariant").value.trim(),sku=document.getElementById("productSku").value.trim(),barcode=document.getElementById("productBarcode").value.trim(),quantity=Math.max(0,Number(document.getElementById("productQuantity").value)||0),low=Math.max(0,Number(document.getElementById("productLowStock").value)||2);
   msg.textContent="";msg.className="createUserMsg";
-  const {error}=await sb.from("beparytech_products").insert({workspace_owner_id:workspaceOwnerId,section_id:sectionId,name,variant,sku:sku||null,barcode:barcode||null,quantity,low_stock_threshold:low,created_by:currentUser.id});
+  const imageFile=document.getElementById("productImage")?.files?.[0]||null;
+  const {data:created,error}=await sb.from("beparytech_products").insert({workspace_owner_id:workspaceOwnerId,section_id:sectionId,name,variant,sku:sku||null,barcode:barcode||null,quantity,low_stock_threshold:low,created_by:currentUser.id}).select("id,image_path").single();
   if(error){msg.textContent=error.message;msg.className="createUserMsg error";return;}
+  if(imageFile){await uploadCustomProductImage(created,imageFile);}
   e.target.reset();document.getElementById("productQuantity").value=0;document.getElementById("productLowStock").value=2;msg.textContent="Prodotto aggiunto.";msg.className="createUserMsg ok";await loadCustomCatalog();
 });
 document.getElementById("refreshCatalogBtn").onclick=loadCustomCatalog;
