@@ -1037,6 +1037,13 @@ function renderCustomSection(){
     const total=products.reduce((sum,p)=>sum+Number(p.quantity||0),0);
     const group=document.createElement("section");group.className="customModelGroup closed";group.dataset.model=model;
     group.innerHTML=`<button class="customModelHeader" type="button" aria-expanded="false"><div class="customModelHeaderMain"><img class="customModelThumb" src="${escapeHtml(imageForModel(model))}" alt="${escapeHtml(model)}"><div><strong>${escapeHtml(model)}</strong><small>${products.length} varianti · ${total} pezzi</small></div></div><span class="chevron">⌄</span></button><div class="customModelBody"><div class="customProductGrid"></div></div>`;
+    const groupThumb=group.querySelector(".customModelThumb");
+    const groupPhoto=products.find(x=>x.image_path);
+    if(groupPhoto?.image_path){
+      sb.storage.from("repair-intake").createSignedUrl(groupPhoto.image_path,3600).then(({data,error})=>{
+        if(!error&&data?.signedUrl){groupThumb.src=data.signedUrl+(data.signedUrl.includes("?")?"&":"?")+`v=${Date.now()}`;}
+      });
+    }
     const bodyGrid=group.querySelector(".customProductGrid");
     products.sort((a,b)=>String(a.variant||"").localeCompare(String(b.variant||""),"it",{numeric:true,sensitivity:"base"})).forEach(p=>{
       const q=Number(p.quantity||0),[status,cls]=customStatus(q,Number(p.low_stock_threshold||2));
@@ -1046,7 +1053,7 @@ function renderCustomSection(){
       const customPriceHtml=salePriceBadgeHtml(customKey,`${p.name} · ${p.variant||""}`,customCategory,p.name)+costBadgeHtml(customKey);
       card.innerHTML=`<div class="customProductTop"><div class="productVisual"><img class="productModelImage" src="${escapeHtml(imageForModel(p.name))}" alt="${escapeHtml(p.name)}" data-product-image="${escapeHtml(p.image_path||"")}"><span>${escapeHtml(p.name).charAt(0).toUpperCase()}</span></div><div class="customProductInfo"><strong>${escapeHtml(p.variant||p.name)}</strong><span>${escapeHtml(p.variant? p.name : (section?.name||""))}</span>${p.sku||p.barcode?`<small>${escapeHtml(p.sku||p.barcode)}</small>`:""}<b class="status ${cls}">${status}</b></div></div>${customPriceHtml}<div class="customProductBottom"><div class="customQty"><small>Giacenza</small><strong>${q}</strong></div><div class="customActions"><button class="minus customMinus animatedBtn" type="button" title="Scarica 1 dalla giacenza" ${q<=0?"disabled":""}>−1 Scarica</button>${isAdmin()?'<button class="plus customPlus animatedBtn" type="button">+1</button><button class="edit customPhoto animatedBtn" type="button" title="Aggiungi o cambia immagine">📷</button><button class="edit customEdit animatedBtn" type="button" title="Modifica prodotto">✎</button>':""}</div></div>`;
       const modelImg=card.querySelector(".productModelImage");modelImg.onerror=()=>{modelImg.hidden=true;modelImg.nextElementSibling.hidden=false};modelImg.onload=()=>{modelImg.nextElementSibling.hidden=true};
-      if(p.image_path){sb.storage.from("repair-intake").createSignedUrl(p.image_path,3600).then(({data})=>{if(data?.signedUrl)modelImg.src=data.signedUrl+`&v=${Date.now()}`;});}
+      if(p.image_path){sb.storage.from("repair-intake").createSignedUrl(p.image_path,3600).then(({data})=>{if(data?.signedUrl)modelImg.src=data.signedUrl+(data.signedUrl.includes("?")?"&":"?")+`v=${Date.now()}`;});}
       card.querySelector(".customMinus").onclick=()=>openCustomSaleModal(p,section);
       const plus=card.querySelector(".customPlus"); if(plus)plus.onclick=()=>updateCustomProductQty(p,q+1);
       const photo=card.querySelector(".customPhoto");if(photo)photo.onclick=()=>chooseCustomProductImage(p);const edit=card.querySelector(".customEdit");if(edit)edit.onclick=()=>editCustomProduct(p);const priceNode=card.querySelector(".salePriceAdmin");if(priceNode)wireSalePriceBadge(priceNode,customKey,`${p.name} · ${p.variant||""}`,customCategory,p.name);const costNode=card.querySelector(".adminCostBadge");if(costNode)wireCostBadge(costNode,customKey,`${p.name} · ${p.variant||""}`);
