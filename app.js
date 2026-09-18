@@ -1022,6 +1022,22 @@ function renderCustomMenu(){
   box.querySelectorAll(".menuItem").forEach(btn=>btn.addEventListener("click",()=>setCategory(btn.dataset.category)));
 }
 function customStatus(q,threshold){if(q===0)return["ESAURITO","empty"];if(q<=threshold)return["SCORTA BASSA","low"];return["DISPONIBILE","ok"]}
+const productImageObjectUrls=new Set();
+async function setPrivateProductImage(img,path){
+  if(!img||!path)return false;
+  try{
+    const {data,error}=await sb.storage.from("repair-intake").download(path);
+    if(error||!data)throw error||new Error("Immagine non disponibile");
+    const url=URL.createObjectURL(data);
+    productImageObjectUrls.add(url);
+    img.src=url;
+    img.hidden=false;
+    return true;
+  }catch(err){
+    console.warn("Foto prodotto non leggibile",path,err);
+    return false;
+  }
+}
 function renderCustomSection(){
   if(!currentUser||!currentCustomSectionId)return;
   const section=customSections.find(s=>Number(s.id)===currentCustomSectionId);
@@ -1040,9 +1056,7 @@ function renderCustomSection(){
     const groupThumb=group.querySelector(".customModelThumb");
     const groupPhoto=products.find(x=>x.image_path);
     if(groupPhoto?.image_path){
-      sb.storage.from("repair-intake").createSignedUrl(groupPhoto.image_path,3600).then(({data,error})=>{
-        if(!error&&data?.signedUrl){groupThumb.src=data.signedUrl+(data.signedUrl.includes("?")?"&":"?")+`v=${Date.now()}`;}
-      });
+      setPrivateProductImage(groupThumb,groupPhoto.image_path);
     }
     const bodyGrid=group.querySelector(".customProductGrid");
     products.sort((a,b)=>String(a.variant||"").localeCompare(String(b.variant||""),"it",{numeric:true,sensitivity:"base"})).forEach(p=>{
@@ -1053,7 +1067,7 @@ function renderCustomSection(){
       const customPriceHtml=salePriceBadgeHtml(customKey,`${p.name} · ${p.variant||""}`,customCategory,p.name)+costBadgeHtml(customKey);
       card.innerHTML=`<div class="customProductTop"><div class="productVisual"><img class="productModelImage" src="${escapeHtml(imageForModel(p.name))}" alt="${escapeHtml(p.name)}" data-product-image="${escapeHtml(p.image_path||"")}"><span>${escapeHtml(p.name).charAt(0).toUpperCase()}</span></div><div class="customProductInfo"><strong>${escapeHtml(p.variant||p.name)}</strong><span>${escapeHtml(p.variant? p.name : (section?.name||""))}</span>${p.sku||p.barcode?`<small>${escapeHtml(p.sku||p.barcode)}</small>`:""}<b class="status ${cls}">${status}</b></div></div>${customPriceHtml}<div class="customProductBottom"><div class="customQty"><small>Giacenza</small><strong>${q}</strong></div><div class="customActions"><button class="minus customMinus animatedBtn" type="button" title="Scarica 1 dalla giacenza" ${q<=0?"disabled":""}>−1 Scarica</button>${isAdmin()?'<button class="plus customPlus animatedBtn" type="button">+1</button><button class="edit customPhoto animatedBtn" type="button" title="Aggiungi o cambia immagine">📷</button><button class="edit customEdit animatedBtn" type="button" title="Modifica prodotto">✎</button>':""}</div></div>`;
       const modelImg=card.querySelector(".productModelImage");modelImg.onerror=()=>{modelImg.hidden=true;modelImg.nextElementSibling.hidden=false};modelImg.onload=()=>{modelImg.nextElementSibling.hidden=true};
-      if(p.image_path){sb.storage.from("repair-intake").createSignedUrl(p.image_path,3600).then(({data})=>{if(data?.signedUrl)modelImg.src=data.signedUrl+(data.signedUrl.includes("?")?"&":"?")+`v=${Date.now()}`;});}
+      if(p.image_path){setPrivateProductImage(modelImg,p.image_path);}
       card.querySelector(".customMinus").onclick=()=>openCustomSaleModal(p,section);
       const plus=card.querySelector(".customPlus"); if(plus)plus.onclick=()=>updateCustomProductQty(p,q+1);
       const photo=card.querySelector(".customPhoto");if(photo)photo.onclick=()=>chooseCustomProductImage(p);const edit=card.querySelector(".customEdit");if(edit)edit.onclick=()=>editCustomProduct(p);const priceNode=card.querySelector(".salePriceAdmin");if(priceNode)wireSalePriceBadge(priceNode,customKey,`${p.name} · ${p.variant||""}`,customCategory,p.name);const costNode=card.querySelector(".adminCostBadge");if(costNode)wireCostBadge(costNode,customKey,`${p.name} · ${p.variant||""}`);
@@ -1128,7 +1142,7 @@ async function uploadCustomProductImage(product,file){
   const {error}=await sb.from("beparytech_products").update({image_path:path,updated_at:new Date().toISOString()}).eq("id",product.id);
   if(error){await sb.storage.from("repair-intake").remove([path]);alert(error.message);return;}
   if(old)await sb.storage.from("repair-intake").remove([old]);
-  product.image_path=path; const {data:signed}=await sb.storage.from("repair-intake").createSignedUrl(path,3600); const visible=document.querySelector(`img[data-product-image]`); await loadCustomCatalog();renderCustomSection();document.getElementById("cloudStatus").textContent="☁︎ Foto aggiornata";
+  product.image_path=path; await loadCustomCatalog();renderCustomSection();document.getElementById("cloudStatus").textContent="☁︎ Foto aggiornata";
 }
 function chooseCustomProductImage(product){
   if(!isAdmin())return;
