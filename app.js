@@ -340,7 +340,16 @@ async function showAuth(user){
     await loadMyProfile();
     await Promise.all([loadCloud(),loadCustomCatalog(),loadAdminCosts(),loadSalePrices(),loadStores()]);
     document.getElementById("globalSearchBar").hidden=false;
-    setCategory("Dashboard");
+    // v107.4: dopo un refresh torna all’ultima pagina realmente aperta.
+    let restoreCategory="Dashboard";
+    try{ restoreCategory=localStorage.getItem("beparytech-last-category")||"Dashboard"; }catch(_){}
+    if(String(restoreCategory).startsWith("custom:")){
+      const sid=Number(String(restoreCategory).split(":")[1]);
+      if(!customSections.some(x=>Number(x.id)===sid && x.active!==false)) restoreCategory="Dashboard";
+    }
+    const adminOnlyCats=new Set(["Utenti","GestioneMagazzino","ScorteZero","Backup","Orari","VenditeAdmin","Fatturazione","CatalogoBestek","RiparazioniAdmin","AccettazioneRapida","AccettazioneCompleta","Impostazioni"]);
+    if(adminOnlyCats.has(restoreCategory) && !isAdmin()) restoreCategory="Dashboard";
+    setCategory(restoreCategory);
   }else{
     document.getElementById("globalSearchBar").hidden=true;
     document.getElementById("globalSearchResults").hidden=true;
@@ -373,6 +382,7 @@ function setCategory(category){
   const isCustom=String(category).startsWith("custom:");
   if((isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog)&&!isAdmin()) return;
   currentCategory=category;
+  try{ localStorage.setItem("beparytech-last-category",String(category)); }catch(_){}
   currentCustomSectionId=isCustom?Number(String(category).split(":")[1]):null;
   const sec=isCustom?customSections.find(s=>Number(s.id)===currentCustomSectionId):null;
   const title=isDashboard?"Dashboard":isAudit?"Cronologia":isSales?"Vendute":isUsers?"Utenti":isCatalog?"Gestione magazzino":isZeroStock?"Scorte a zero":isBackup?"Backup":isHours?"I miei orari":isDeviceSales?"Vendite ricambi":isBestekCatalog?"Catalogo Bestek":sec?.name||category;
@@ -1065,7 +1075,7 @@ function renderCustomSection(){
       const customKey=customCostKey(p.id);
       const customCategory=String(section?.name||"");
       const customPriceHtml=salePriceBadgeHtml(customKey,`${p.name} · ${p.variant||""}`,customCategory,p.name)+costBadgeHtml(customKey);
-      card.innerHTML=`<div class="customProductTop"><div class="productVisual"><img class="productModelImage" src="${escapeHtml(imageForModel(p.name))}" alt="${escapeHtml(p.name)}" data-product-image="${escapeHtml(p.image_path||"")}"><span>${escapeHtml(p.name).charAt(0).toUpperCase()}</span></div><div class="customProductInfo"><strong>${escapeHtml(p.variant||p.name)}</strong><span>${escapeHtml(p.variant? p.name : (section?.name||""))}</span>${p.sku||p.barcode?`<small>${escapeHtml(p.sku||p.barcode)}</small>`:""}<b class="status ${cls}">${status}</b></div></div>${customPriceHtml}<div class="customProductBottom"><div class="customQty"><small>Giacenza</small><strong>${q}</strong></div><div class="customActions"><button class="minus customMinus animatedBtn" type="button" title="Scarica 1 dalla giacenza" ${q<=0?"disabled":""}>−1 Scarica</button>${isAdmin()?'<button class="plus customPlus animatedBtn" type="button">+1</button><button class="edit customPhoto animatedBtn" type="button" title="Aggiungi o cambia immagine">📷</button><button class="edit customEdit animatedBtn" type="button" title="Modifica prodotto">✎</button>':""}</div></div>`;
+      card.innerHTML=`<div class="customProductTop"><div class="productVisual"><img class="productModelImage" src="${escapeHtml(imageForModel(p.name))}" alt="${escapeHtml(p.name)}" data-product-image="${escapeHtml(p.image_path||"")}"><span>${escapeHtml(p.name).charAt(0).toUpperCase()}</span></div><div class="customProductInfo"><strong>${escapeHtml(p.variant||p.name)}</strong><span>${escapeHtml(p.variant? p.name : (section?.name||""))}</span>${p.sku||p.barcode?`<small>${escapeHtml(p.sku||p.barcode)}</small>`:""}<b class="status ${cls}">${status}</b></div></div>${customPriceHtml}<div class="customProductBottom"><div class="customQty"><small>Giacenza</small><strong>${q}</strong></div><div class="customActions"><button class="minus customMinus animatedBtn" type="button" title="Scarica 1 dalla giacenza" ${q<=0?"disabled":""}>−1 Scarica</button>${isAdmin()?'<button class="plus customPlus animatedBtn" type="button">+1</button><button class="edit customPhoto animatedBtn" type="button" title="Aggiungi o cambia immagine">📷</button><button class="edit customEdit animatedBtn" type="button" title="Modifica tutto il prodotto">✎</button>':""}</div></div>`;
       const modelImg=card.querySelector(".productModelImage");modelImg.onerror=()=>{modelImg.hidden=true;modelImg.nextElementSibling.hidden=false};modelImg.onload=()=>{modelImg.nextElementSibling.hidden=true};
       if(p.image_path){setPrivateProductImage(modelImg,p.image_path);}
       card.querySelector(".customMinus").onclick=()=>openCustomSaleModal(p,section);
@@ -1156,9 +1166,22 @@ async function editCustomProduct(product){
   const sku=prompt("SKU / codice interno",product.sku||"");if(sku===null)return;
   const barcode=prompt("Barcode / QR code",product.barcode||"");if(barcode===null)return;
   const low=prompt("Soglia scorta bassa",String(product.low_stock_threshold??2));if(low===null)return;
-  const {error}=await sb.from("beparytech_products").update({name:name.trim(),variant:variant.trim(),sku:sku.trim()||null,barcode:barcode.trim()||null,low_stock_threshold:Math.max(0,Number(low)||0),updated_at:new Date().toISOString()}).eq("id",product.id);
+  const qtyRaw=prompt("Giacenza totale",String(product.quantity??0));if(qtyRaw===null)return;
+  const qty=Number(qtyRaw);if(!Number.isInteger(qty)||qty<0){alert("Inserisci una giacenza valida (0 o superiore).");return;}
+  const currentSection=customSections.find(x=>Number(x.id)===Number(product.section_id));
+  const sectionName=prompt("Sezione prodotto",currentSection?.name||"");if(sectionName===null)return;
+  const targetSection=customSections.find(x=>x.active!==false&&x.section_type==="inventory"&&String(x.name).trim().toLowerCase()===String(sectionName).trim().toLowerCase());
+  if(!targetSection){alert("Sezione non trovata. Scrivi esattamente il nome di una sezione attiva.");return;}
+  const activeRaw=prompt("Prodotto attivo? Scrivi SI oppure NO",product.active===false?"NO":"SI");if(activeRaw===null)return;
+  const active=!/^no$/i.test(String(activeRaw).trim());
+  const {error}=await sb.from("beparytech_products").update({name:name.trim(),variant:variant.trim(),sku:sku.trim()||null,barcode:barcode.trim()||null,low_stock_threshold:Math.max(0,Number(low)||0),section_id:Number(targetSection.id),active,updated_at:new Date().toISOString()}).eq("id",product.id);
   if(error){alert(error.message);return;}
-  await loadCustomCatalog();renderCustomSection();
+  if(Number(product.quantity)!==qty){
+    const {error:qErr}=await sb.rpc("adjust_beparytech_product_quantity",{p_product_id:product.id,p_new_quantity:qty,p_reason:"Modifica completa prodotto Admin"});
+    if(qErr){alert("Dati prodotto salvati, ma errore giacenza: "+qErr.message);return;}
+  }
+  await loadCustomCatalog();
+  if(Number(targetSection.id)!==Number(currentCustomSectionId)) setCategory(`custom:${targetSection.id}`); else renderCustomSection();
 }
 
 async function updateCustomProductQty(product,value){
@@ -2551,3 +2574,35 @@ function bindDymoDirectV98(){
   if(!btDymoEndpoint)setTimeout(()=>btFindDymoService(false).then(()=>btDetectDymoPrinters(false)).catch(()=>{}),500);
 }
 document.addEventListener("DOMContentLoaded",bindDymoDirectV98);setTimeout(bindDymoDirectV98,900);
+
+/* v107.5 — Centro modifiche Admin */
+(function(){
+  const previousSetCategory=setCategory;
+  setCategory=function(category,fromBack){
+    const adminChanges=document.getElementById('adminChangesView');
+    if(category==='ModificheImportanti'){
+      if(!isAdmin()) return;
+      previousSetCategory('Dashboard',fromBack);
+      currentCategory='ModificheImportanti';
+      try{localStorage.setItem('beparytech-last-category','ModificheImportanti');}catch(_){}
+      document.getElementById('dashboardView').hidden=true;
+      document.getElementById('inventory').hidden=true;
+      document.querySelector('.tools').hidden=true;
+      document.querySelector('.stats').hidden=true;
+      document.querySelectorAll('#salesView,#auditView,#usersView,#catalogView,#zeroStockView,#backupView,#hoursView,#deviceSalesView,#settingsView,#securityAccessView').forEach(x=>{if(x)x.hidden=true});
+      if(adminChanges) adminChanges.hidden=false;
+      document.getElementById('categoryName').textContent='Centro modifiche';
+      document.getElementById('categoryDescription').textContent='Controllo completo Admin';
+      document.querySelectorAll('.menuItem[data-category]').forEach(b=>b.classList.toggle('active',b.dataset.category==='ModificheImportanti'));
+      if(typeof updateSmartNavV91==='function') updateSmartNavV91();
+      return;
+    }
+    if(adminChanges) adminChanges.hidden=true;
+    return previousSetCategory(category,fromBack);
+  };
+  document.addEventListener('click',e=>{
+    const b=e.target.closest('[data-admin-target]');
+    if(!b||!isAdmin()) return;
+    setCategory(b.dataset.adminTarget);
+  });
+})();

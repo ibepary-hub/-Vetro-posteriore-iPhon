@@ -55,6 +55,7 @@
         <button id="usersMenuItem" class="menuItem adminOnly" type="button" data-category="Utenti"><span class="menuIcon">♙</span><span><strong>Utenti</strong><small>Accessi e password</small></span></button>
         <button id="securityAccessMenuItem" class="menuItem adminOnly" type="button" data-category="SicurezzaAccessi"><span class="menuIcon">◉</span><span><strong>Sicurezza accessi</strong><small>Login, dispositivi e provenienza</small></span></button>
         <button id="settingsMenuItem" class="menuItem adminOnly" type="button" data-category="Impostazioni"><span class="menuIcon">⚙</span><span><strong>Impostazioni</strong><small>DYMO e preferenze gestionale</small></span></button>
+        <button id="adminChangesMenuItem" class="menuItem adminOnly" type="button" data-category="ModificheImportanti"><span class="menuIcon">✦</span><span><strong>Centro modifiche</strong><small>Controllo completo Admin</small></span></button>
       </div>
     </nav>
     <div class="menuFooter"><span id="menuUserName">Utente</span><small id="menuUserRole">Standard</small></div>
@@ -448,6 +449,24 @@
 </section>
 
 
+
+
+<section id="adminChangesView" class="catalogView adminChangesView" hidden>
+  <div class="adminHero adminChangesHero"><div><span class="usersKicker">CONTROLLO ADMIN</span><h2>Centro modifiche</h2><p>Un unico posto per raggiungere tutte le aree modificabili del gestionale. Le operazioni delicate restano tracciate e richiedono conferma.</p></div><span class="adminBadge">FULL ADMIN</span></div>
+  <div class="adminChangesGrid">
+    <button type="button" data-admin-target="GestioneMagazzino"><b>▦</b><strong>Magazzino e prodotti</strong><span>Sezioni, prodotti, quantità, foto, codici e soglie.</span></button>
+    <button type="button" data-admin-target="VenditeAdmin"><b>€</b><strong>Vendite e prezzi</strong><span>Vendite ricambi, prezzi, IVA, note e riferimenti.</span></button>
+    <button type="button" data-admin-target="RiparazioniAdmin"><b>⌁</b><strong>Riparazioni e pratiche</strong><span>Cliente, dispositivo, stato, importi, note e dati pratica.</span></button>
+    <button type="button" data-admin-target="Utenti"><b>♙</b><strong>Utenti e permessi</strong><span>Account, accessi, ruoli e credenziali.</span></button>
+    <button type="button" data-admin-target="Orari"><b>◷</b><strong>Orari ed extra</strong><span>Ore lavorate, aziende, note e attività extra.</span></button>
+    <button type="button" data-admin-target="Fatturazione"><b>▤</b><strong>Fatturazione</strong><span>Voci, periodi, dati fattura ed esportazione Aruba.</span></button>
+    <button type="button" data-admin-target="Impostazioni"><b>⚙</b><strong>Impostazioni tecniche</strong><span>DYMO, etichette e preferenze del gestionale.</span></button>
+    <button type="button" data-admin-target="SicurezzaAccessi"><b>◉</b><strong>Sicurezza e accessi</strong><span>Controllo degli accessi e dispositivi registrati.</span></button>
+    <button type="button" data-admin-target="ScorteZero"><b>0</b><strong>Scorte e disponibilità</strong><span>Controlla gli articoli esauriti e intervieni sul magazzino.</span></button>
+    <button type="button" data-admin-target="Backup" class="importantChange"><b>⇩</b><strong>Backup dati</strong><span>Prima di modifiche importanti crea una copia dei dati.</span></button>
+  </div>
+  <div class="adminChangesNotice"><strong>Modifiche importanti</strong><span>Eliminazioni, variazioni di quantità, prezzi, utenti e dati economici devono restare confermate e registrate nella Cronologia. Gli utenti standard non vedono questa sezione.</span></div>
+</section>
 
 <section id="settingsView" class="catalogView settingsView" hidden>
   <div class="adminHero"><div><span class="usersKicker">IMPOSTAZIONI</span><h2>Stampa ed etichette</h2><p>Configura una volta la DYMO. Le preferenze restano memorizzate su questo dispositivo.</p></div><span class="adminBadge">ADMIN</span></div>
