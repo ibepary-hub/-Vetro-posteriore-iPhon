@@ -2682,3 +2682,50 @@ document.addEventListener("DOMContentLoaded",bindDymoDirectV98);setTimeout(bindD
     setCategory(b.dataset.adminTarget);
   });
 })();
+
+/* ===== v108.1 · DYMO SOLO STAMPA DIRETTA · nessuna pagina/browser print ===== */
+(function(){
+  async function btDirectOnlySale(id){
+    const s=saleById(Number(id));
+    if(!s) return;
+    try{
+      await btDymoDirectPrint({
+        title:saleDisplayName(s)||"Vendita",
+        meta:[s?.color,s?.customer].filter(Boolean).join(" · "),
+        note:saleNoteText(s)||"Nessuna nota",
+        qrText:""
+      });
+    }catch(err){
+      alert((err?.message||"Impossibile stampare sulla DYMO.")+"\n\nLa stampa DYMO ora è solo diretta: non verrà aperta nessuna pagina di stampa del browser.");
+    }
+  }
+  async function btDirectOnlyRepair(id){
+    const r=adminRepairRows.find(x=>Number(x.id)===Number(id));
+    if(!r) return;
+    const st=getRepairLabelSettingsV92();
+    try{
+      await btDymoDirectPrint({
+        title:r.practice_code||`RIP-${r.id}`,
+        meta:r.client_name||r.store||"Cliente",
+        note:[r.device||"Dispositivo",r.repair_type||"Riparazione"].filter(Boolean).join(" · "),
+        qrText:st.qr?`${location.origin}${location.pathname}?practice=${encodeURIComponent(r.practice_code||r.id)}`:""
+      });
+    }catch(err){
+      alert((err?.message||"Impossibile stampare sulla DYMO.")+"\n\nLa stampa DYMO ora è solo diretta: non verrà aperta nessuna pagina di stampa del browser.");
+    }
+  }
+
+  // Intercetta i pulsanti DYMO prima di qualunque vecchio listener/fallback.
+  document.addEventListener("click",function(e){
+    const saleBtn=e.target.closest?.(".printSaleNote");
+    const repairBtn=e.target.closest?.(".printRepairDymo");
+    const modalBtn=e.target.closest?.("#saleNotePrint");
+    if(!saleBtn&&!repairBtn&&!modalBtn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    if(saleBtn) return void btDirectOnlySale(saleBtn.dataset.id);
+    if(repairBtn) return void btDirectOnlyRepair(repairBtn.dataset.id);
+    if(modalBtn && selectedSale) return void btDirectOnlySale(selectedSale.id);
+  },true);
+})();
