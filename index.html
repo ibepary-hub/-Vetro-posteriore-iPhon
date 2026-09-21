@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.json?v=97">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=97">
+  <link rel="stylesheet" href="style.css?v=108">
 
 
 
@@ -292,6 +292,25 @@
       </div>
       <div id="deviceSalesSummary" class="deviceSalesSummary"></div>
       <div id="deviceSalesList"><div class="emptyState">Caricamento…</div></div>
+    </div>
+
+    <div id="deviceSaleEditModal" class="modalOverlay" hidden>
+      <div class="saleDialog deviceSaleEditDialog" role="dialog" aria-modal="true" aria-labelledby="deviceSaleEditTitle">
+        <button id="deviceSaleEditX" class="closeBtn" type="button" aria-label="Chiudi">×</button>
+        <div class="deviceSaleCardHead"><div><strong id="deviceSaleEditTitle">Modifica vendita</strong><small>Correggi i dati dell’ordine senza cambiare la grafica del gestionale.</small></div></div>
+        <form id="deviceSaleEditForm" class="deviceSaleGrid">
+          <label><span>Data vendita *</span><input id="editDeviceSaleDate" type="date" required></label>
+          <label><span>Negozio *</span><select id="editDeviceSaleStore" required><option value="">Seleziona negozio…</option><option>RPL Piacenza</option><option>RPL Manerbio</option><option>MELA Piacenza</option><option>MELA Lime Store</option><option>MELA Repubblica</option><option>MELA Emilia Est</option><option>DP Udine</option><option>DP Majano</option><option>DP Tolmezzo</option><option>DP Cividale</option><option>DP Codroipo</option><option>DP Colugna</option><option>E-POL</option><option>DL</option></select></label>
+          <label class="wide"><span>Ricambio / Articolo *</span><input id="editDeviceSaleName" maxlength="160" required></label>
+          <label><span>Prezzo escluso IVA *</span><div class="moneyInput"><span>€</span><input id="editDeviceSalePrice" type="number" min="0" step="0.01" required></div></label>
+          <label><span>IVA %</span><input id="editDeviceSaleVatRate" type="number" min="0" max="100" step="0.01"></label>
+          <label class="wide"><span>Link acquisto / riferimento</span><input id="editDeviceSalePurchaseUrl" type="url" maxlength="2000"></label>
+          <label class="wide"><span>Fornitore</span><input id="editDeviceSaleSupplier" maxlength="160"></label>
+          <label class="wide"><span>Nota</span><textarea id="editDeviceSaleNote" maxlength="1000" rows="3"></textarea></label>
+          <div class="wide deviceSaleEditActions"><button id="deviceSaleEditCancel" class="secondaryAction" type="button">Annulla</button><button class="primaryAction" type="submit">Salva modifiche</button></div>
+          <div id="deviceSaleEditMsg" class="createUserMsg wide" aria-live="polite"></div>
+        </form>
+      </div>
     </div>
   </div>
 
@@ -752,7 +771,7 @@
  <button type="button" data-smart-action="menu"><b>☰</b><span>Menu</span></button>
 </nav>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
-<script src="app.js?v=105"></script>
+<script src="app.js?v=108"></script>
 
 
 

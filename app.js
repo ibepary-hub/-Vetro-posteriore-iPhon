@@ -1531,17 +1531,93 @@ function updateDeviceSaleVatPreview(){
   document.getElementById("deviceSaleVat").textContent=euroFmt.format(vat||0);
   document.getElementById("deviceSaleGross").textContent=euroFmt.format(gross||0);
 }
+let deviceSalesRows=[];
+let editingDeviceSaleId=null;
+function deviceSaleById(id){return deviceSalesRows.find(r=>Number(r.id)===Number(id))||null;}
+function deviceSaleTotals(r){
+  const net=Number(r.net_amount ?? r.sale_price ?? 0), rate=Number(r.vat_rate||0);
+  const vat=Number(r.vat_amount ?? (net*rate/100));
+  return {net,vat,gross:net+vat};
+}
+function deviceSaleOrderNo(r){return `RIC-${String(r.id).padStart(5,"0")}`;}
+function deviceSalePrintableHtml(r,receipt=false){
+  const t=deviceSaleTotals(r),date=new Date(String(r.sold_at)+"T12:00:00").toLocaleDateString("it-IT");
+  const note=r.note?`<div class="note"><b>Note</b><br>${escapeHtml(r.note)}</div>`:"";
+  const supplier=r.supplier_name?`<div><span>Fornitore</span><b>${escapeHtml(r.supplier_name)}</b></div>`:"";
+  const cls=receipt?"receipt":"order";
+  return `<!doctype html><html lang="it"><head><meta charset="utf-8"><title>${receipt?"Scontrino":"Riepilogo ordine"} ${deviceSaleOrderNo(r)}</title><style>
+  *{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;margin:0;color:#111;background:#fff}.sheet{margin:0 auto;padding:${receipt?"14px":"28px"};width:${receipt?"80mm":"210mm"};max-width:100%}.brand{text-align:center;border-bottom:2px solid #111;padding-bottom:12px;margin-bottom:16px}.brand h1{font-size:${receipt?"22px":"28px"};margin:0}.brand small{font-size:10px;letter-spacing:.12em}.head{display:flex;justify-content:space-between;gap:20px;margin-bottom:18px}.head h2{margin:0 0 4px;font-size:${receipt?"16px":"22px"}}.meta{display:grid;gap:7px;margin:14px 0}.meta>div{display:flex;justify-content:space-between;gap:14px;border-bottom:1px dashed #bbb;padding-bottom:6px}.meta span{color:#555}.item{border:1px solid #bbb;border-radius:10px;padding:12px;margin:14px 0}.item strong{display:block;font-size:${receipt?"14px":"17px"};margin-bottom:5px}.totals{margin-top:16px;border-top:2px solid #111;padding-top:10px}.totals>div{display:flex;justify-content:space-between;padding:4px 0}.totals .grand{font-size:${receipt?"18px":"22px"};font-weight:800;border-top:1px solid #111;margin-top:6px;padding-top:9px}.note{margin-top:15px;padding:10px;border:1px dashed #999;border-radius:8px;font-size:12px}.footer{text-align:center;margin-top:24px;font-size:11px;color:#555}.actions{position:fixed;right:18px;top:18px}@media print{.actions{display:none}.sheet{width:auto;padding:${receipt?"5mm":"10mm"}}@page{margin:${receipt?"4mm":"8mm"};size:${receipt?"80mm auto":"A4"}}}
+  </style></head><body><button class="actions" onclick="window.print()">Stampa</button><main class="sheet ${cls}"><div class="brand"><h1>BeparyTech</h1><small>RIPARAZIONI · RICAMBI · SOLUZIONI</small></div><div class="head"><div><h2>${receipt?"Scontrino vendita":"Riepilogo ordine"}</h2><b>${deviceSaleOrderNo(r)}</b></div><div>${date}</div></div><div class="meta"><div><span>Negozio</span><b>${escapeHtml(r.store||"—")}</b></div>${supplier}</div><div class="item"><strong>${escapeHtml(r.device_name||"Ricambio")}</strong><span>1 × ${euroFmt.format(t.net)} + IVA ${Number(r.vat_rate||0).toLocaleString("it-IT")}%</span></div><div class="totals"><div><span>Imponibile</span><b>${euroFmt.format(t.net)}</b></div><div><span>IVA</span><b>${euroFmt.format(t.vat)}</b></div><div class="grand"><span>Totale</span><b>${euroFmt.format(t.gross)}</b></div></div>${note}<div class="footer">Grazie · BeparyTech</div></main><script>setTimeout(()=>window.print(),250)<\/script></body></html>`;
+}
+function openDeviceSalePrint(id,receipt=false){
+  const r=deviceSaleById(id); if(!r)return;
+  const w=window.open("","_blank","width=900,height=760");
+  if(!w){alert("Il browser ha bloccato la finestra di stampa. Consenti i popup per BeparyTech.");return;}
+  w.document.open();w.document.write(deviceSalePrintableHtml(r,receipt));w.document.close();
+}
+function exportDeviceSalePdf(id){openDeviceSalePrint(id,false);}
+function duplicateDeviceSale(id){
+  const r=deviceSaleById(id); if(!r)return;
+  document.getElementById("deviceSaleDate").value=new Date().toISOString().slice(0,10);
+  document.getElementById("deviceSaleStore").value=r.store||"";
+  document.getElementById("deviceSaleName").value=r.device_name||"";
+  document.getElementById("deviceSalePrice").value=Number(r.net_amount ?? r.sale_price ?? 0);
+  document.getElementById("deviceSaleVatRate").value=Number(r.vat_rate||0);
+  document.getElementById("deviceSalePurchaseUrl").value=r.purchase_url||"";
+  document.getElementById("deviceSaleSupplier").value=r.supplier_name||"";
+  document.getElementById("deviceSaleNote").value=r.note||"";
+  updateDeviceSaleVatPreview();
+  document.getElementById("deviceSaleForm")?.scrollIntoView({behavior:"smooth",block:"start"});
+  document.getElementById("deviceSaleName")?.focus();
+  document.getElementById("deviceSaleMsg").className="createUserMsg ok";
+  document.getElementById("deviceSaleMsg").textContent=`Ordine ${deviceSaleOrderNo(r)} copiato. Controlla i dati e premi Salva vendita.`;
+}
+function openEditDeviceSale(id){
+  const r=deviceSaleById(id); if(!r||!isAdmin())return; editingDeviceSaleId=Number(id);
+  document.getElementById("editDeviceSaleDate").value=r.sold_at||"";
+  const st=document.getElementById("editDeviceSaleStore");
+  if(r.store && ![...st.options].some(o=>o.value===r.store)){const o=document.createElement("option");o.value=o.textContent=r.store;st.appendChild(o);} st.value=r.store||"";
+  document.getElementById("editDeviceSaleName").value=r.device_name||"";
+  document.getElementById("editDeviceSalePrice").value=Number(r.net_amount ?? r.sale_price ?? 0);
+  document.getElementById("editDeviceSaleVatRate").value=Number(r.vat_rate||0);
+  document.getElementById("editDeviceSalePurchaseUrl").value=r.purchase_url||"";
+  document.getElementById("editDeviceSaleSupplier").value=r.supplier_name||"";
+  document.getElementById("editDeviceSaleNote").value=r.note||"";
+  document.getElementById("deviceSaleEditMsg").textContent="";
+  document.getElementById("deviceSaleEditModal").hidden=false;
+}
+function closeEditDeviceSale(){document.getElementById("deviceSaleEditModal").hidden=true;editingDeviceSaleId=null;}
+document.getElementById("deviceSaleEditX")?.addEventListener("click",closeEditDeviceSale);
+document.getElementById("deviceSaleEditCancel")?.addEventListener("click",closeEditDeviceSale);
+document.getElementById("deviceSaleEditModal")?.addEventListener("click",e=>{if(e.target.id==="deviceSaleEditModal")closeEditDeviceSale();});
+document.getElementById("deviceSaleEditForm")?.addEventListener("submit",async e=>{
+  e.preventDefault();if(!isAdmin()||!editingDeviceSaleId)return;
+  const msg=document.getElementById("deviceSaleEditMsg"),url=document.getElementById("editDeviceSalePurchaseUrl").value.trim();
+  if(url&&safeExternalUrl(url)==="#"){msg.className="createUserMsg error";msg.textContent="Link acquisto non valido.";return;}
+  const row={sold_at:document.getElementById("editDeviceSaleDate").value,store:document.getElementById("editDeviceSaleStore").value,device_name:document.getElementById("editDeviceSaleName").value.trim(),sale_price:Number(document.getElementById("editDeviceSalePrice").value),vat_rate:Number(document.getElementById("editDeviceSaleVatRate").value)||0,purchase_url:url||null,supplier_name:document.getElementById("editDeviceSaleSupplier").value.trim()||supplierFromUrl(url)||null,note:document.getElementById("editDeviceSaleNote").value.trim()||null};
+  const btn=e.submitter; if(btn){btn.disabled=true;btn.textContent="Salvo…";}
+  const {error}=await sb.from("beparytech_admin_device_sales").update(row).eq("id",editingDeviceSaleId);
+  if(btn){btn.disabled=false;btn.textContent="Salva modifiche";}
+  if(error){msg.className="createUserMsg error";msg.textContent=error.message||"Impossibile salvare le modifiche.";return;}
+  closeEditDeviceSale();await loadDeviceSales();document.getElementById("cloudStatus").textContent="☁︎ Vendita modificata";
+});
 async function loadDeviceSales(){
   if(!isAdmin()) return;
   const list=document.getElementById("deviceSalesList"), sum=document.getElementById("deviceSalesSummary"); if(!list)return;
   list.innerHTML='<div class="emptyState">Caricamento…</div>';
   const {data,error}=await sb.from("beparytech_admin_device_sales").select("*").order("sold_at",{ascending:false}).order("id",{ascending:false}).limit(300);
   if(error){list.innerHTML='<div class="emptyState">Impossibile caricare le vendite.</div>';return;}
-  const rows=data||[], vat=rows.reduce((a,r)=>a+Number(r.vat_amount||0),0), gross=rows.reduce((a,r)=>a+Number(r.sale_price||0)+Number(r.vat_amount||0),0);
+  const rows=data||[];deviceSalesRows=rows;
+  const vat=rows.reduce((a,r)=>a+deviceSaleTotals(r).vat,0), gross=rows.reduce((a,r)=>a+deviceSaleTotals(r).gross,0);
   sum.innerHTML=`<div><span>Vendite</span><strong>${rows.length}</strong></div><div><span>Totale</span><strong>${euroFmt.format(gross)}</strong></div><div><span>IVA</span><strong>${euroFmt.format(vat)}</strong></div>`;
   if(!rows.length){list.innerHTML='<div class="emptyState">Nessuna vendita registrata.</div>';return;}
-  list.innerHTML=rows.map(r=>`<article class="deviceAdminSaleRow"><div class="deviceAdminSaleTop"><div><strong>${escapeHtml(r.device_name)}</strong><span>${escapeHtml(r.store)} · ${new Date(r.sold_at+"T12:00:00").toLocaleDateString("it-IT")}</span></div><div class="deviceAdminSalePrice"><strong>${euroFmt.format(Number(r.sale_price||0)+Number(r.vat_amount||0))}</strong><span>Totale IVA inclusa · IVA ${Number(r.vat_rate||0).toLocaleString("it-IT")}%: ${euroFmt.format(Number(r.vat_amount||0))}</span></div></div><div class="deviceAdminSaleMeta"><span>Imponibile ${euroFmt.format(Number(r.net_amount||0))}</span>${r.supplier_name?`<span>Fornitore: ${escapeHtml(r.supplier_name)}</span>`:""}${r.note?`<span>Nota: ${escapeHtml(r.note)}</span>`:""}</div>${r.purchase_url?`<a class="deviceAdminSaleLink" href="${escapeHtml(safeExternalUrl(r.purchase_url))}" target="_blank" rel="noopener noreferrer">Apri riferimento acquisto ↗</a>`:""}<div class="deviceAdminSaleActions"><button class="rowAction deleteDeviceSale" data-id="${r.id}" type="button">Elimina</button></div></article>`).join("");
-  list.querySelectorAll(".deleteDeviceSale").forEach(b=>b.onclick=async()=>{if(!confirm("Eliminare questa vendita?"))return; const {error}=await sb.from("beparytech_admin_device_sales").delete().eq("id",Number(b.dataset.id)); if(error)alert(error.message); else loadDeviceSales();});
+  list.innerHTML=rows.map(r=>{const t=deviceSaleTotals(r);return `<article class="deviceAdminSaleRow"><div class="deviceAdminSaleTop"><div><strong>${escapeHtml(r.device_name)}</strong><span>${escapeHtml(r.store)} · ${new Date(r.sold_at+"T12:00:00").toLocaleDateString("it-IT")}</span><small class="deviceSaleOrderBadge">Ordine ${deviceSaleOrderNo(r)}</small></div><div class="deviceAdminSalePrice"><strong>${euroFmt.format(t.gross)}</strong><span>Totale IVA inclusa · IVA ${Number(r.vat_rate||0).toLocaleString("it-IT")}%: ${euroFmt.format(t.vat)}</span></div></div><div class="deviceAdminSaleMeta"><span>Imponibile ${euroFmt.format(t.net)}</span>${r.supplier_name?`<span>Fornitore: ${escapeHtml(r.supplier_name)}</span>`:""}${r.note?`<span>Nota: ${escapeHtml(r.note)}</span>`:""}</div>${r.purchase_url?`<a class="deviceAdminSaleLink" href="${escapeHtml(safeExternalUrl(r.purchase_url))}" target="_blank" rel="noopener noreferrer">Apri riferimento acquisto ↗</a>`:""}<div class="deviceAdminSaleActions"><button class="rowAction primaryPrintAction printDeviceSaleOrder" data-id="${r.id}" type="button">🖨 Stampa ordine</button><button class="rowAction receiptAction printDeviceSaleReceipt" data-id="${r.id}" type="button">🧾 Scontrino</button><button class="rowAction editDeviceSale" data-id="${r.id}" type="button">✎ Modifica</button><button class="rowAction duplicateDeviceSale" data-id="${r.id}" type="button">⧉ Duplica</button><button class="rowAction exportDeviceSalePdf" data-id="${r.id}" type="button">PDF</button><button class="rowAction delete deleteDeviceSale" data-id="${r.id}" type="button">Elimina</button></div></article>`}).join("");
+  list.querySelectorAll(".printDeviceSaleOrder").forEach(b=>b.onclick=()=>openDeviceSalePrint(Number(b.dataset.id),false));
+  list.querySelectorAll(".printDeviceSaleReceipt").forEach(b=>b.onclick=()=>openDeviceSalePrint(Number(b.dataset.id),true));
+  list.querySelectorAll(".editDeviceSale").forEach(b=>b.onclick=()=>openEditDeviceSale(Number(b.dataset.id)));
+  list.querySelectorAll(".duplicateDeviceSale").forEach(b=>b.onclick=()=>duplicateDeviceSale(Number(b.dataset.id)));
+  list.querySelectorAll(".exportDeviceSalePdf").forEach(b=>b.onclick=()=>exportDeviceSalePdf(Number(b.dataset.id)));
+  list.querySelectorAll(".deleteDeviceSale").forEach(b=>b.onclick=async()=>{const r=deviceSaleById(Number(b.dataset.id));if(!confirm(`Eliminare definitivamente ${r?deviceSaleOrderNo(r):"questa vendita"}?\n\nQuesta operazione non può essere annullata.`))return; const {error}=await sb.from("beparytech_admin_device_sales").delete().eq("id",Number(b.dataset.id)); if(error)alert(error.message); else loadDeviceSales();});
 }
 const dsDate=document.getElementById("deviceSaleDate"); if(dsDate) dsDate.value=new Date().toISOString().slice(0,10);
 ["deviceSalePrice","deviceSaleVatRate"].forEach(id=>document.getElementById(id)?.addEventListener("input",updateDeviceSaleVatPreview));
