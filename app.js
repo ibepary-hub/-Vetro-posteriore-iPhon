@@ -1547,15 +1547,34 @@ function deviceSalePrintableHtml(r,receipt=false){
   const cls=receipt?"receipt":"order";
   return `<!doctype html><html lang="it"><head><meta charset="utf-8"><title>${receipt?"Scontrino":"Riepilogo ordine"} ${deviceSaleOrderNo(r)}</title><style>
   *{box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;margin:0;color:#111;background:#fff}.sheet{margin:0 auto;padding:${receipt?"14px":"28px"};width:${receipt?"80mm":"210mm"};max-width:100%}.brand{text-align:center;border-bottom:2px solid #111;padding-bottom:12px;margin-bottom:16px}.brand h1{font-size:${receipt?"22px":"28px"};margin:0}.brand small{font-size:10px;letter-spacing:.12em}.head{display:flex;justify-content:space-between;gap:20px;margin-bottom:18px}.head h2{margin:0 0 4px;font-size:${receipt?"16px":"22px"}}.meta{display:grid;gap:7px;margin:14px 0}.meta>div{display:flex;justify-content:space-between;gap:14px;border-bottom:1px dashed #bbb;padding-bottom:6px}.meta span{color:#555}.item{border:1px solid #bbb;border-radius:10px;padding:12px;margin:14px 0}.item strong{display:block;font-size:${receipt?"14px":"17px"};margin-bottom:5px}.totals{margin-top:16px;border-top:2px solid #111;padding-top:10px}.totals>div{display:flex;justify-content:space-between;padding:4px 0}.totals .grand{font-size:${receipt?"18px":"22px"};font-weight:800;border-top:1px solid #111;margin-top:6px;padding-top:9px}.note{margin-top:15px;padding:10px;border:1px dashed #999;border-radius:8px;font-size:12px}.footer{text-align:center;margin-top:24px;font-size:11px;color:#555}.actions{position:fixed;right:18px;top:18px}@media print{.actions{display:none}.sheet{width:auto;padding:${receipt?"5mm":"10mm"}}@page{margin:${receipt?"4mm":"8mm"};size:${receipt?"80mm auto":"A4"}}}
-  </style></head><body><button class="actions" onclick="window.print()">Stampa</button><main class="sheet ${cls}"><div class="brand"><h1>BeparyTech</h1><small>RIPARAZIONI · RICAMBI · SOLUZIONI</small></div><div class="head"><div><h2>${receipt?"Scontrino vendita":"Riepilogo ordine"}</h2><b>${deviceSaleOrderNo(r)}</b></div><div>${date}</div></div><div class="meta"><div><span>Negozio</span><b>${escapeHtml(r.store||"—")}</b></div>${supplier}</div><div class="item"><strong>${escapeHtml(r.device_name||"Ricambio")}</strong><span>1 × ${euroFmt.format(t.net)} + IVA ${Number(r.vat_rate||0).toLocaleString("it-IT")}%</span></div><div class="totals"><div><span>Imponibile</span><b>${euroFmt.format(t.net)}</b></div><div><span>IVA</span><b>${euroFmt.format(t.vat)}</b></div><div class="grand"><span>Totale</span><b>${euroFmt.format(t.gross)}</b></div></div>${note}<div class="footer">Grazie · BeparyTech</div></main><script>setTimeout(()=>window.print(),250)<\/script></body></html>`;
+  </style></head><body><main class="sheet ${cls}"><div class="brand"><h1>BeparyTech</h1><small>RIPARAZIONI · RICAMBI · SOLUZIONI</small></div><div class="head"><div><h2>${receipt?"Scontrino vendita":"Riepilogo ordine"}</h2><b>${deviceSaleOrderNo(r)}</b></div><div>${date}</div></div><div class="meta"><div><span>Negozio</span><b>${escapeHtml(r.store||"—")}</b></div>${supplier}</div><div class="item"><strong>${escapeHtml(r.device_name||"Ricambio")}</strong><span>1 × ${euroFmt.format(t.net)} + IVA ${Number(r.vat_rate||0).toLocaleString("it-IT")}%</span></div><div class="totals"><div><span>Imponibile</span><b>${euroFmt.format(t.net)}</b></div><div><span>IVA</span><b>${euroFmt.format(t.vat)}</b></div><div class="grand"><span>Totale</span><b>${euroFmt.format(t.gross)}</b></div></div>${note}<div class="footer">Grazie · BeparyTech</div></main></body></html>`;
+}
+function directDeviceSalePrint(id,receipt=false){
+  const r=deviceSaleById(id); if(!r)return;
+  const iframe=document.createElement("iframe");
+  iframe.setAttribute("aria-hidden","true");
+  iframe.style.position="fixed";iframe.style.right="0";iframe.style.bottom="0";
+  iframe.style.width="0";iframe.style.height="0";iframe.style.border="0";iframe.style.opacity="0";iframe.style.pointerEvents="none";
+  document.body.appendChild(iframe);
+  const doc=iframe.contentDocument||iframe.contentWindow?.document;
+  if(!doc){iframe.remove();alert("Impossibile preparare la stampa.");return;}
+  doc.open();doc.write(deviceSalePrintableHtml(r,receipt));doc.close();
+  const run=()=>{
+    try{iframe.contentWindow.focus();iframe.contentWindow.print();}
+    catch(_){alert("Impossibile avviare la stampa.");}
+    setTimeout(()=>iframe.remove(),1800);
+  };
+  if(doc.readyState==="complete") setTimeout(run,120); else iframe.onload=()=>setTimeout(run,120);
 }
 function openDeviceSalePrint(id,receipt=false){
+  directDeviceSalePrint(id,receipt);
+}
+function exportDeviceSalePdf(id){
   const r=deviceSaleById(id); if(!r)return;
   const w=window.open("","_blank","width=900,height=760");
-  if(!w){alert("Il browser ha bloccato la finestra di stampa. Consenti i popup per BeparyTech.");return;}
-  w.document.open();w.document.write(deviceSalePrintableHtml(r,receipt));w.document.close();
+  if(!w){alert("Il browser ha bloccato la finestra PDF. Consenti i popup per BeparyTech.");return;}
+  w.document.open();w.document.write(deviceSalePrintableHtml(r,false));w.document.close();
 }
-function exportDeviceSalePdf(id){openDeviceSalePrint(id,false);}
 function duplicateDeviceSale(id){
   const r=deviceSaleById(id); if(!r)return;
   document.getElementById("deviceSaleDate").value=new Date().toISOString().slice(0,10);
