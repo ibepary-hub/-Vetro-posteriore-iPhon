@@ -2749,18 +2749,23 @@ document.addEventListener("DOMContentLoaded",bindDymoDirectV98);setTimeout(bindD
   },true);
 })();
 
-/* ===== v108.3 · VENDITA RICAMBI: STAMPA ORDINE DIRETTA DYMO ===== */
+/* ===== v108.4 · VENDITA RICAMBI: DYMO NETTO + IVA + TOTALE ===== */
 (function(){
   async function btPrintDeviceSaleOrderDymo(id){
     const r=deviceSaleById(Number(id));
     if(!r) return;
     const t=deviceSaleTotals(r);
     const date=new Date(String(r.sold_at)+"T12:00:00").toLocaleDateString("it-IT");
+    const net=euroFmt.format(t.net);
+    const vat=euroFmt.format(t.vat);
     const total=euroFmt.format(t.gross);
+    const vatRate=Number(r.vat_rate||0).toLocaleString("it-IT");
     const product=String(r.device_name||"Ricambio").trim();
     const extra=[];
     extra.push(product);
-    extra.push(`Totale: ${total}`);
+    extra.push(`Senza IVA: ${net}`);
+    extra.push(`IVA ${vatRate}%: ${vat}`);
+    extra.push(`Totale con IVA: ${total}`);
     if(r.supplier_name) extra.push(`Fornitore: ${r.supplier_name}`);
     if(r.note) extra.push(`Nota: ${r.note}`);
     try{
