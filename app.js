@@ -2748,3 +2748,41 @@ document.addEventListener("DOMContentLoaded",bindDymoDirectV98);setTimeout(bindD
     if(modalBtn && selectedSale) return void btDirectOnlySale(selectedSale.id);
   },true);
 })();
+
+/* ===== v108.3 · VENDITA RICAMBI: STAMPA ORDINE DIRETTA DYMO ===== */
+(function(){
+  async function btPrintDeviceSaleOrderDymo(id){
+    const r=deviceSaleById(Number(id));
+    if(!r) return;
+    const t=deviceSaleTotals(r);
+    const date=new Date(String(r.sold_at)+"T12:00:00").toLocaleDateString("it-IT");
+    const total=euroFmt.format(t.gross);
+    const product=String(r.device_name||"Ricambio").trim();
+    const extra=[];
+    extra.push(product);
+    extra.push(`Totale: ${total}`);
+    if(r.supplier_name) extra.push(`Fornitore: ${r.supplier_name}`);
+    if(r.note) extra.push(`Nota: ${r.note}`);
+    try{
+      await btDymoDirectPrint({
+        title:deviceSaleOrderNo(r),
+        meta:[r.store||"Negozio",date].filter(Boolean).join(" · "),
+        note:extra.join("\n"),
+        qrText:""
+      });
+    }catch(err){
+      alert((err?.message||"Impossibile stampare sulla DYMO.")+"\n\nControlla che DYMO Connect sia aperto e che la stampante sia collegata.");
+    }
+  }
+
+  // Usa esattamente lo stesso canale di stampa diretta già usato in Uscite magazzino.
+  // Intercettazione in capture per impedire al vecchio handler di aprire la stampa di Chrome.
+  document.addEventListener("click",function(e){
+    const btn=e.target.closest?.(".printDeviceSaleOrder");
+    if(!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+    void btPrintDeviceSaleOrderDymo(btn.dataset.id);
+  },true);
+})();
