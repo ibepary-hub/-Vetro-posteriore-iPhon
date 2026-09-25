@@ -31,6 +31,15 @@ let storeList = [];
 let adminCosts = {};
 let salesStoreFilter = "ALL";
 
+// v108.5: sincronizzazione giacenze tra tutti i dispositivi/account.
+// Realtime aggiorna subito; il controllo periodico e al ritorno sull'app fa da fallback
+// se la pubblicazione Realtime di Supabase non e' disponibile o il telefono perde rete.
+let inventoryRealtimeChannel = null;
+let inventoryRealtimeDebounce = null;
+let inventoryFallbackTimer = null;
+let inventorySyncBusy = false;
+const INVENTORY_FALLBACK_MS = 12000;
+
 const inventory = document.getElementById("inventory");
 const modelTemplate = document.getElementById("modelTemplate");
 const colorTemplate = document.getElementById("colorTemplate");
@@ -140,16 +149,101 @@ function populateStoreControls(){const ids=["saleCustomerSelect","editStoreSelec
 function renderSalesStoreTabs(){const box=document.getElementById("salesStoreTabs");if(!box)return;const names=["ALL",...storeList.filter(x=>x.active!==false).map(x=>x.name)];if(salesStoreFilter!=="ALL"&&!names.includes(salesStoreFilter))salesStoreFilter="ALL";box.innerHTML=names.map(n=>`<button type="button" class="salesStoreTab ${salesStoreFilter===n?"active":""}" data-store="${escapeHtml(n)}">${n==="ALL"?"Tutti i negozi":escapeHtml(n)}</button>`).join("");box.querySelectorAll(".salesStoreTab").forEach(b=>b.onclick=()=>{salesStoreFilter=b.dataset.store;renderSales();renderSalesStoreTabs();});}
 async function renderStoreAdmin(){const box=document.getElementById("storeAdminList");if(!box||!isAdmin())return;box.innerHTML=storeList.length?storeList.map(s=>`<div class="storeAdminRow" data-id="${s.id}"><div><strong>${escapeHtml(s.name)}</strong><small>${s.admin_only?"Solo Admin":"Visibile agli operatori"}${s.active===false?" · Disattivato":""}</small></div><div><button type="button" class="miniBtn renameStore">Rinomina</button><button type="button" class="miniBtn toggleStore">${s.active===false?"Riattiva":"Disattiva"}</button></div></div>`).join(""):"<div class='emptyState'>Nessun negozio.</div>";box.querySelectorAll(".renameStore").forEach(b=>b.onclick=async()=>{const row=storeList.find(x=>Number(x.id)===Number(b.closest("[data-id]").dataset.id));if(!row)return;const name=prompt("Nuovo nome negozio",row.name);if(!name||!name.trim())return;const {error}=await sb.from("beparytech_stores").update({name:name.trim()}).eq("id",row.id);if(error)alert(error.message);else await loadStores();});box.querySelectorAll(".toggleStore").forEach(b=>b.onclick=async()=>{const row=storeList.find(x=>Number(x.id)===Number(b.closest("[data-id]").dataset.id));if(!row)return;const {error}=await sb.from("beparytech_stores").update({active:row.active===false}).eq("id",row.id);if(error)alert(error.message);else await loadStores();});}
 
-async function loadCloud(){
-  if(!currentUser) return;
-  document.getElementById("cloudStatus").textContent="☁︎ Sincronizzo…";
+async function loadCloud(options={}){
+  if(!currentUser) return false;
+  const silent=Boolean(options.silent);
+  if(!silent) document.getElementById("cloudStatus").textContent="☁︎ Sincronizzo…";
   const { data, error } = await sb.from("backglass_inventory").select("item_key,quantity");
-  if(error){ document.getElementById("cloudStatus").textContent="Errore cloud"; return; }
-  stock={};
-  (data||[]).forEach(r=>stock[r.item_key]=r.quantity);
-  document.getElementById("cloudStatus").textContent="☁︎ Online";
-  render();
+  if(error){
+    if(!silent) document.getElementById("cloudStatus").textContent="Errore cloud";
+    console.error("Sincronizzazione giacenza:",error);
+    return false;
+  }
+  const next={};
+  (data||[]).forEach(r=>next[r.item_key]=Number(r.quantity||0));
+  const changed=Object.keys(next).length!==Object.keys(stock).length || Object.keys(next).some(k=>Number(stock[k]||0)!==next[k]);
+  stock=next;
+  if(changed || !silent) render();
+  if(!silent) document.getElementById("cloudStatus").textContent="☁︎ Online";
+  return changed;
 }
+
+async function syncCustomProductQuantities(){
+  if(!currentUser) return false;
+  const {data,error}=await sb.from("beparytech_products").select("id,quantity,updated_at").eq("active",true);
+  if(error){console.error("Sincronizzazione prodotti:",error);return false;}
+  const byId=new Map((data||[]).map(r=>[Number(r.id),r]));
+  let changed=false;
+  customProducts.forEach(p=>{
+    const fresh=byId.get(Number(p.id));
+    if(!fresh)return;
+    const q=Number(fresh.quantity||0);
+    if(Number(p.quantity||0)!==q){p.quantity=q;changed=true;}
+    if(fresh.updated_at)p.updated_at=fresh.updated_at;
+  });
+  if(changed){
+    if(String(currentCategory).startsWith("custom:")) renderCustomSection();
+    if(currentCategory==="ScorteZero" && isAdmin()) renderZeroStock();
+  }
+  return changed;
+}
+
+async function syncAllInventorySilently(){
+  if(!currentUser || inventorySyncBusy) return;
+  inventorySyncBusy=true;
+  try{
+    const [baseChanged,customChanged]=await Promise.all([
+      loadCloud({silent:true}),
+      syncCustomProductQuantities()
+    ]);
+    if(baseChanged||customChanged){
+      const cloud=document.getElementById("cloudStatus");
+      if(cloud) cloud.textContent="☁︎ Giacenza aggiornata";
+      window.setTimeout(()=>{if(cloud && currentUser)cloud.textContent="☁︎ Online";},1400);
+    }
+  }finally{inventorySyncBusy=false;}
+}
+
+function scheduleInventoryRealtimeRefresh(){
+  if(inventoryRealtimeDebounce) clearTimeout(inventoryRealtimeDebounce);
+  inventoryRealtimeDebounce=setTimeout(()=>{
+    inventoryRealtimeDebounce=null;
+    syncAllInventorySilently();
+  },180);
+}
+
+async function stopInventoryRealtime(){
+  if(inventoryRealtimeDebounce){clearTimeout(inventoryRealtimeDebounce);inventoryRealtimeDebounce=null;}
+  if(inventoryFallbackTimer){clearInterval(inventoryFallbackTimer);inventoryFallbackTimer=null;}
+  if(inventoryRealtimeChannel){
+    try{await sb.removeChannel(inventoryRealtimeChannel);}catch(_){ }
+    inventoryRealtimeChannel=null;
+  }
+}
+
+async function startInventoryRealtime(){
+  await stopInventoryRealtime();
+  if(!currentUser)return;
+  inventoryRealtimeChannel=sb.channel(`beparytech-inventory-${currentUser.id}-${Date.now()}`)
+    .on("postgres_changes",{event:"*",schema:"public",table:"backglass_inventory"},scheduleInventoryRealtimeRefresh)
+    .on("postgres_changes",{event:"*",schema:"public",table:"beparytech_products"},scheduleInventoryRealtimeRefresh)
+    .subscribe(status=>{
+      if(status==="SUBSCRIBED"){
+        const cloud=document.getElementById("cloudStatus");
+        if(cloud) cloud.textContent="☁︎ Online · LIVE";
+      }
+      if(status==="CHANNEL_ERROR" || status==="TIMED_OUT"){
+        console.warn("Realtime giacenza non disponibile; resta attivo il controllo automatico.");
+      }
+    });
+  inventoryFallbackTimer=setInterval(syncAllInventorySilently,INVENTORY_FALLBACK_MS);
+}
+
+document.addEventListener("visibilitychange",()=>{
+  if(!document.hidden && currentUser) syncAllInventorySilently();
+});
+window.addEventListener("focus",()=>{if(currentUser)syncAllInventorySilently();});
+window.addEventListener("online",()=>{if(currentUser)syncAllInventorySilently();});
 
 async function setQty(model,color,value){
   if(!isAdmin()) return;
@@ -339,6 +433,7 @@ async function showAuth(user){
     document.getElementById("userEmail").textContent=user.email;
     await loadMyProfile();
     await Promise.all([loadCloud(),loadCustomCatalog(),loadAdminCosts(),loadSalePrices(),loadStores()]);
+    await startInventoryRealtime();
     document.getElementById("globalSearchBar").hidden=false;
     // v107.4: dopo un refresh torna all’ultima pagina realmente aperta.
     let restoreCategory="Dashboard";
@@ -351,6 +446,7 @@ async function showAuth(user){
     if(adminOnlyCats.has(restoreCategory) && !isAdmin()) restoreCategory="Dashboard";
     setCategory(restoreCategory);
   }else{
+    await stopInventoryRealtime();
     document.getElementById("globalSearchBar").hidden=true;
     document.getElementById("globalSearchResults").hidden=true;
     document.getElementById("usersTab").hidden=true;
@@ -372,7 +468,7 @@ document.getElementById("forgotPasswordBtn").onclick=async()=>{
   const {error}=await sb.auth.resetPasswordForEmail(email,{redirectTo:PASSWORD_RESET_REDIRECT});
   authMsg.textContent=error?error.message:"Email di recupero inviata. Controlla la posta.";
 };
-async function performLogout(){await sb.auth.signOut(); stock={}; showAuth(null);}
+async function performLogout(){await stopInventoryRealtime();await sb.auth.signOut();stock={};await showAuth(null);}
 document.getElementById("logoutBtn").onclick=performLogout;
 document.getElementById("headerLogoutBtn")?.addEventListener("click",performLogout);
 
@@ -1735,11 +1831,11 @@ document.getElementById("saveRecoveryPassword").onclick=async()=>{
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("./sw.js?v=94", { updateViaCache: "none" });
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1085", { updateViaCache: "none" });
       await reg.update();
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (!sessionStorage.getItem("bt-cache-reloaded-v94")) {
-          sessionStorage.setItem("bt-cache-reloaded-v94", "1");
+        if (!sessionStorage.getItem("bt-cache-reloaded-v1085")) {
+          sessionStorage.setItem("bt-cache-reloaded-v1085", "1");
           location.reload();
         }
       });
