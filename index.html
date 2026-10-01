@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.json?v=97">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=1085">
+  <link rel="stylesheet" href="style.css?v=110">
 
 
 
@@ -31,12 +31,14 @@
         <button id="quickRepairMenuItem" class="menuItem adminOnly" type="button" data-category="AccettazioneRapida"><span class="menuIcon">⚡</span><span><strong>Accettazione rapida</strong><small>Cliente, dispositivo e lavoro</small></span></button>
         <button id="fullRepairMenuItem" class="menuItem adminOnly" type="button" data-category="AccettazioneCompleta"><span class="menuIcon">＋</span><span><strong>Accettazione completa</strong><small>Foto, firma, IMEI e preventivo</small></span></button>
         <button id="repairsMenuItem" class="menuItem adminOnly" type="button" data-category="RiparazioniAdmin"><span class="menuIcon">🛠</span><span><strong>Riparazioni / Pratiche</strong><small>In lavorazione, pronti e storico</small></span></button>
+        <button id="workDdtMenuItem" class="menuItem adminOnly" type="button" data-category="ContoLavorazione"><span class="menuIcon">⇄</span><span><strong>DDT conto lavorazione</strong><small>Entrata, lavorazione e restituzione</small></span></button>
       </div>
 
       <div class="menuGroup">
         <div class="menuGroupTitle">MAGAZZINO</div>
         <button class="menuItem" type="button" data-category="Cronologia"><span class="menuIcon">≋</span><span><strong>Cronologia magazzino</strong><small>Tutte le attività</small></span></button>
         <button class="menuItem" type="button" data-category="Vendite"><span class="menuIcon">✓</span><span><strong>Uscite magazzino</strong><small>Scarichi, note e rientri</small></span></button>
+        <button class="menuItem" type="button" data-category="NoteDymo"><span class="menuIcon">✎</span><span><strong>Note DYMO</strong><small>Scrivi e stampa etichette libere</small></span></button>
         <button id="bestekCatalogMenuItem" class="menuItem adminOnly" type="button" data-category="CatalogoBestek" hidden><span class="menuIcon">BK</span><span><strong>Catalogo Bestek</strong><small>Codici e accessori verificati</small></span></button>
         <button id="catalogMenuItem" class="menuItem adminOnly" type="button" data-category="GestioneMagazzino" hidden><span class="menuIcon">＋</span><span><strong>Gestione magazzino</strong><small>Sezioni e prodotti</small></span></button>
         <button id="zeroStockMenuItem" class="menuItem adminOnly" type="button" data-category="ScorteZero" hidden><span class="menuIcon">0</span><span><strong>Scorte a zero</strong><small>BackGlass, Housing e Ricambi</small></span></button>
@@ -216,6 +218,84 @@
       </div>
     </section>
     <section id="backupView" class="catalogView" hidden><div class="adminHero"><div><span class="usersKicker">BACKUP</span><h2>Esporta i dati</h2><p>Scarica una copia del magazzino e della cronologia.</p></div><span class="adminBadge">ADMIN</span></div><div class="backupGrid"><button id="exportInventoryCsv" class="catalogCard backupAction" type="button"><strong>CSV Magazzino</strong><span>Prodotti, sezioni e quantità</span></button><button id="exportRequestsCsv" class="catalogCard backupAction" type="button"><strong>CSV Da ordinare</strong><span>Tutte le richieste</span></button><button id="exportFullBackup" class="catalogCard backupAction" type="button"><strong>Backup JSON completo</strong><span>Magazzino, richieste, vendite e cronologia</span></button></div></section>
+
+    <section id="dymoNotesView" class="catalogView dymoNotesView" hidden>
+      <div class="adminHero dymoNotesHero"><div><span class="usersKicker">STAMPA RAPIDA</span><h2>Note DYMO</h2><p>Scrivi un'etichetta libera e inviala direttamente alla DYMO senza passare dalla finestra di stampa del browser.</p></div><span class="adminBadge">DYMO</span></div>
+      <div class="dymoFreeCard">
+        <div class="dymoFreeGrid">
+          <label><span>Titolo</span><input id="dymoFreeTitle" type="text" maxlength="80" placeholder="BEPARYTECH"></label>
+          <label><span>Sottotitolo / riferimento</span><input id="dymoFreeMeta" type="text" maxlength="120" placeholder="Cliente, ordine, modello…"></label>
+          <label class="wide"><span>Nota da stampare *</span><textarea id="dymoFreeNote" rows="7" maxlength="800" placeholder="Scrivi qui la nota da stampare sulla DYMO…"></textarea></label>
+        </div>
+        <div class="dymoFreeActions"><button id="dymoFreePrintBtn" class="primaryAction animatedBtn" type="button">Stampa direttamente sulla DYMO</button><div id="dymoFreeStatus" class="createUserMsg" aria-live="polite"></div></div>
+        <div class="dymoFreeHint">Usa la stessa stampante e lo stesso formato configurati in Impostazioni → DYMO. Il testo viene adattato automaticamente all'etichetta 32×57.</div>
+      </div>
+    </section>
+
+
+    <section id="workDdtView" class="catalogView workDdtView" hidden>
+      <div class="adminHero workDdtHero"><div><span class="usersKicker">CONTO LAVORAZIONE</span><h2>DDT entrata e restituzione</h2><p>Registra il DDT ricevuto dal cliente, gestisci ogni dispositivo e genera il DDT di reso da conto lavorazione.</p></div><span class="adminBadge">DDT</span></div>
+
+      <div class="workDdtStats">
+        <div><span>In lavorazione</span><strong id="workDdtOpenCount">0</strong></div>
+        <div><span>Pronti / parziali</span><strong id="workDdtReadyCount">0</strong></div>
+        <div><span>Chiusi</span><strong id="workDdtClosedCount">0</strong></div>
+        <div><span>Pezzi in laboratorio</span><strong id="workDdtPiecesCount">0</strong></div>
+      </div>
+
+      <div class="workDdtToolbar">
+        <button id="workDdtNewBtn" class="primaryAction animatedBtn" type="button">+ Nuovo DDT in entrata</button>
+        <button id="workDdtRefreshBtn" class="miniBtn animatedBtn" type="button">Aggiorna</button>
+        <input id="workDdtSearch" type="search" placeholder="Cerca cliente, DDT, IMEI, seriale, dispositivo…">
+        <select id="workDdtStatusFilter"><option value="all">Tutti gli stati</option><option>Ricevuto</option><option>In lavorazione</option><option>Pronto per restituzione</option><option>Restituzione parziale</option><option>Chiuso</option></select>
+      </div>
+
+      <form id="workDdtForm" class="workDdtForm" hidden>
+        <div class="workDdtFormHead"><div><strong id="workDdtFormTitle">Nuovo DDT in entrata</strong><small>Documento ricevuto dal cliente</small></div><button id="workDdtCancelBtn" class="miniBtn" type="button">Chiudi</button></div>
+        <input id="workDdtEditId" type="hidden">
+        <div class="workDdtGrid">
+          <label><span>Cliente *</span><input id="workDdtCustomer" required maxlength="180" placeholder="Es. VR Trasporti / Azienda cliente"></label>
+          <label><span>Indirizzo cliente</span><input id="workDdtCustomerAddress" maxlength="300" placeholder="Via, CAP, città"></label>
+          <label><span>N. DDT cliente *</span><input id="workDdtInboundNumber" required maxlength="80" placeholder="Es. 458/2026"></label>
+          <label><span>Data DDT cliente *</span><input id="workDdtInboundDate" required type="date"></label>
+          <label><span>Data arrivo *</span><input id="workDdtReceivedDate" required type="date"></label>
+          <label><span>Stato pratica</span><select id="workDdtStatus"><option>Ricevuto</option><option selected>In lavorazione</option><option>Pronto per restituzione</option><option>Restituzione parziale</option><option>Chiuso</option></select></label>
+          <label><span>Mittente DDT uscita</span><input id="workDdtSenderName" maxlength="180" placeholder="BeparyTech"></label>
+          <label><span>Indirizzo mittente</span><input id="workDdtSenderAddress" maxlength="300" placeholder="Indirizzo da stampare sul DDT di uscita"></label>
+          <label class="wide"><span>Allega DDT ricevuto</span><input id="workDdtAttachment" type="file" accept="application/pdf,image/*"><small id="workDdtAttachmentInfo">PDF o immagine, max 10 MB.</small></label>
+          <label class="wide"><span>Note</span><textarea id="workDdtNotes" rows="3" maxlength="1500" placeholder="Note sul carico o indicazioni del cliente"></textarea></label>
+        </div>
+        <div class="workDdtFormActions"><button class="primaryAction" type="submit">Salva DDT</button><div id="workDdtFormMsg" class="createUserMsg"></div></div>
+      </form>
+
+      <div id="workDdtEditor" class="workDdtEditor" hidden>
+        <div class="workDdtEditorHead"><div><strong id="workDdtEditorTitle">Dettaglio DDT</strong><small id="workDdtEditorSub"></small></div><button id="workDdtEditorClose" class="miniBtn" type="button">Chiudi dettaglio</button></div>
+        <form id="workDdtItemForm" class="workDdtItemForm">
+          <input id="workDdtItemEditId" type="hidden">
+          <div class="workDdtItemGrid">
+            <label><span>Tipo</span><select id="workDdtItemType"><option>Telefono</option><option>Tablet</option><option>Computer</option><option>Console</option><option>Altro</option></select></label>
+            <label><span>Dispositivo / descrizione *</span><input id="workDdtItemDescription" required maxlength="240" placeholder="Es. iPhone 15 Pro / Lenovo T14"></label>
+            <label><span>IMEI / Seriale</span><input id="workDdtItemSerial" maxlength="160"></label>
+            <label><span>Q.tà ricevuta</span><input id="workDdtItemQty" type="number" min="1" max="999" value="1"></label>
+            <label><span>Q.tà già restituita</span><input id="workDdtItemReturnedQty" type="number" min="0" max="999" value="0"></label>
+            <label><span>Stato</span><select id="workDdtItemStatus"><option>Da lavorare</option><option>In lavorazione</option><option>Attesa ricambio</option><option>Riparato</option><option>Non riparato</option><option>Pronto</option><option>Restituito</option></select></label>
+            <label class="wide"><span>Lavorazione richiesta</span><input id="workDdtItemWork" maxlength="500" placeholder="Es. sostituzione display / diagnosi scheda madre"></label>
+            <label class="wide"><span>Esito / note</span><textarea id="workDdtItemResult" rows="2" maxlength="1000"></textarea></label>
+          </div>
+          <div class="workDdtFormActions"><button class="primaryAction" type="submit">Salva riga</button><button id="workDdtItemReset" class="miniBtn" type="button">Nuova riga</button><div id="workDdtItemMsg" class="createUserMsg"></div></div>
+        </form>
+        <div id="workDdtItemsList" class="workDdtItemsList"></div>
+        <div class="workDdtReturnBox">
+          <div><strong>DDT di restituzione</strong><small>Include le quantità segnate come restituite. Causale predefinita: Reso da conto lavorazione.</small></div>
+          <div class="workDdtReturnFields"><label><span>Numero</span><input id="workDdtOutboundNumber" placeholder="Automatico se vuoto"></label><label><span>Data</span><input id="workDdtOutboundDate" type="date"></label><label><span>Causale</span><input id="workDdtOutboundReason" value="Reso da conto lavorazione"></label></div>
+          <div class="workDdtReturnActions"><button id="workDdtReturnReadyBtn" class="miniBtn" type="button">Segna tutti i pronti come restituiti</button><button id="workDdtGeneratePdfBtn" class="primaryAction" type="button">Genera DDT restituzione PDF</button><button id="workDdtOpenOutboundBtn" class="miniBtn" type="button" hidden>Apri ultimo DDT PDF</button></div>
+          <div id="workDdtReturnMsg" class="createUserMsg"></div>
+        </div>
+      </div>
+
+      <div id="workDdtList" class="workDdtList"></div>
+    </section>
+
     <section id="salesView" class="salesView" hidden>
       <div class="salesHeader"><div><strong>Vendute</strong><span>Vendite aperte, consegne, archivio, prezzi e riepilogo per modello</span></div><button id="refreshSalesBtn" class="miniBtn" type="button">Aggiorna</button></div>
       <div class="salesSubTabs" role="tablist" aria-label="Vendite e archivio">
@@ -454,7 +534,7 @@
     </div>
 
     <section class="deviceSaleCard adminUniformCard invoicePreviewCard">
-      <div class="deviceSaleCardHead"><div><strong>3. Anteprima fattura</strong><small id="invoicePreviewSubtitle">RPL e tutti i punti MELA vengono fatturati a Riparalo S.r.l.</small></div></div>
+      <div class="deviceSaleCardHead"><div><strong>3. Anteprima fattura</strong><small id="invoicePreviewSubtitle">RPL e tutti i punti MELA vengono fatturati a Riparalo S.r.l. La competenza segue la data vendita/ordine, anche se la consegna avviene dopo.</small></div></div>
       <div id="invoiceSummary" class="deviceSalesSummary"><div><span>Righe</span><strong>0</strong></div><div><span>Imponibile</span><strong>€ 0,00</strong></div><div><span>IVA</span><strong>€ 0,00</strong></div><div><span>Totale</span><strong>€ 0,00</strong></div></div>
       <div id="invoiceLines" class="invoiceLines"><div class="emptyState">Scegli il periodo e premi “Aggiorna anteprima”.</div></div>
       <div class="invoiceActions">
@@ -771,7 +851,7 @@
  <button type="button" data-smart-action="menu"><b>☰</b><span>Menu</span></button>
 </nav>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
-<script src="app.js?v=1085"></script>
+<script src="app.js?v=110"></script>
 
 
 
