@@ -31,6 +31,7 @@ let storeList = [];
 let adminCosts = {};
 let salesStoreFilter = "ALL";
 
+// v109: fatturazione per data competenza, catalogo realtime completo e Note DYMO libere.
 // v108.5: sincronizzazione giacenze tra tutti i dispositivi/account.
 // Realtime aggiorna subito; il controllo periodico e al ritorno sull'app fa da fallback
 // se la pubblicazione Realtime di Supabase non e' disponibile o il telefono perde rete.
@@ -212,8 +213,23 @@ function scheduleInventoryRealtimeRefresh(){
   },180);
 }
 
+function scheduleCatalogRealtimeRefresh(){
+  if(catalogRealtimeDebounce) clearTimeout(catalogRealtimeDebounce);
+  catalogRealtimeDebounce=setTimeout(async()=>{
+    catalogRealtimeDebounce=null;
+    if(!currentUser)return;
+    try{
+      await loadCustomCatalog();
+      const cloud=document.getElementById("cloudStatus");
+      if(cloud) cloud.textContent="☁︎ Catalogo aggiornato";
+      window.setTimeout(()=>{if(cloud&&currentUser)cloud.textContent="☁︎ Online · LIVE";},1400);
+    }catch(err){console.warn("Aggiornamento catalogo realtime non riuscito",err);}
+  },220);
+}
+
 async function stopInventoryRealtime(){
   if(inventoryRealtimeDebounce){clearTimeout(inventoryRealtimeDebounce);inventoryRealtimeDebounce=null;}
+  if(catalogRealtimeDebounce){clearTimeout(catalogRealtimeDebounce);catalogRealtimeDebounce=null;}
   if(inventoryFallbackTimer){clearInterval(inventoryFallbackTimer);inventoryFallbackTimer=null;}
   if(inventoryRealtimeChannel){
     try{await sb.removeChannel(inventoryRealtimeChannel);}catch(_){ }
@@ -226,7 +242,8 @@ async function startInventoryRealtime(){
   if(!currentUser)return;
   inventoryRealtimeChannel=sb.channel(`beparytech-inventory-${currentUser.id}-${Date.now()}`)
     .on("postgres_changes",{event:"*",schema:"public",table:"backglass_inventory"},scheduleInventoryRealtimeRefresh)
-    .on("postgres_changes",{event:"*",schema:"public",table:"beparytech_products"},scheduleInventoryRealtimeRefresh)
+    .on("postgres_changes",{event:"*",schema:"public",table:"beparytech_products"},()=>{scheduleInventoryRealtimeRefresh();scheduleCatalogRealtimeRefresh();})
+    .on("postgres_changes",{event:"*",schema:"public",table:"beparytech_sections"},scheduleCatalogRealtimeRefresh)
     .subscribe(status=>{
       if(status==="SUBSCRIBED"){
         const cloud=document.getElementById("cloudStatus");
@@ -240,10 +257,10 @@ async function startInventoryRealtime(){
 }
 
 document.addEventListener("visibilitychange",()=>{
-  if(!document.hidden && currentUser) syncAllInventorySilently();
+  if(!document.hidden && currentUser){syncAllInventorySilently();scheduleCatalogRealtimeRefresh();}
 });
-window.addEventListener("focus",()=>{if(currentUser)syncAllInventorySilently();});
-window.addEventListener("online",()=>{if(currentUser)syncAllInventorySilently();});
+window.addEventListener("focus",()=>{if(currentUser){syncAllInventorySilently();scheduleCatalogRealtimeRefresh();}});
+window.addEventListener("online",()=>{if(currentUser){syncAllInventorySilently();scheduleCatalogRealtimeRefresh();}});
 
 async function setQty(model,color,value){
   if(!isAdmin()) return;
@@ -391,7 +408,7 @@ function applyRoleVisibility(){
     document.getElementById("hoursView").hidden=true;
     const dsv=document.getElementById("deviceSalesView"); if(dsv) dsv.hidden=true;
     const sv=document.getElementById("settingsView"); if(sv) sv.hidden=true;
-    if(["Utenti","GestioneMagazzino","ScorteZero","Backup","Orari","VenditeAdmin","Fatturazione","CatalogoBestek","RiparazioniAdmin","AccettazioneRapida","AccettazioneCompleta","Impostazioni"].includes(currentCategory)) setCategory("Dashboard");
+    if(["Utenti","GestioneMagazzino","ScorteZero","Backup","Orari","VenditeAdmin","Fatturazione","CatalogoBestek","RiparazioniAdmin","AccettazioneRapida","AccettazioneCompleta","ContoLavorazione","Impostazioni"].includes(currentCategory)) setCategory("Dashboard");
   }
   const menuUser=document.getElementById("menuUserName"), menuRole=document.getElementById("menuUserRole");
   if(menuUser) menuUser.textContent=currentProfile?.username||currentUser?.email||"Utente";
@@ -442,7 +459,7 @@ async function showAuth(user){
       const sid=Number(String(restoreCategory).split(":")[1]);
       if(!customSections.some(x=>Number(x.id)===sid && x.active!==false)) restoreCategory="Dashboard";
     }
-    const adminOnlyCats=new Set(["Utenti","GestioneMagazzino","ScorteZero","Backup","Orari","VenditeAdmin","Fatturazione","CatalogoBestek","RiparazioniAdmin","AccettazioneRapida","AccettazioneCompleta","Impostazioni"]);
+    const adminOnlyCats=new Set(["Utenti","GestioneMagazzino","ScorteZero","Backup","Orari","VenditeAdmin","Fatturazione","CatalogoBestek","RiparazioniAdmin","AccettazioneRapida","AccettazioneCompleta","ContoLavorazione","Impostazioni"]);
     if(adminOnlyCats.has(restoreCategory) && !isAdmin()) restoreCategory="Dashboard";
     setCategory(restoreCategory);
   }else{
@@ -474,26 +491,28 @@ document.getElementById("headerLogoutBtn")?.addEventListener("click",performLogo
 
 
 function setCategory(category){
-  const isDashboard=category==="Dashboard", isSales=category==="Vendite", isAudit=category==="Cronologia", isUsers=category==="Utenti", isCatalog=category==="GestioneMagazzino", isZeroStock=category==="ScorteZero", isBackup=category==="Backup", isHours=category==="Orari", isDeviceSales=(category==="VenditeAdmin" || category==="Fatturazione"), isBestekCatalog=category==="CatalogoBestek";
+  const isDashboard=category==="Dashboard", isSales=category==="Vendite", isAudit=category==="Cronologia", isUsers=category==="Utenti", isCatalog=category==="GestioneMagazzino", isZeroStock=category==="ScorteZero", isBackup=category==="Backup", isHours=category==="Orari", isDeviceSales=(category==="VenditeAdmin" || category==="Fatturazione"), isBestekCatalog=category==="CatalogoBestek", isDymoNotes=category==="NoteDymo", isWorkDdt=category==="ContoLavorazione";
   const isCustom=String(category).startsWith("custom:");
-  if((isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog)&&!isAdmin()) return;
+  if((isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog||isWorkDdt)&&!isAdmin()) return;
   currentCategory=category;
   try{ localStorage.setItem("beparytech-last-category",String(category)); }catch(_){}
   currentCustomSectionId=isCustom?Number(String(category).split(":")[1]):null;
   const sec=isCustom?customSections.find(s=>Number(s.id)===currentCustomSectionId):null;
-  const title=isDashboard?"Dashboard":isAudit?"Cronologia":isSales?"Vendute":isUsers?"Utenti":isCatalog?"Gestione magazzino":isZeroStock?"Scorte a zero":isBackup?"Backup":isHours?"I miei orari":isDeviceSales?"Vendite ricambi":isBestekCatalog?"Catalogo Bestek":sec?.name||category;
-  const desc=isDashboard?"Riepilogo generale":isAudit?"Tutte le attività del gestionale":isSales?"Vendite, note, stampa DYMO e rientri":isUsers?"Gestione accessi":isCatalog?"Crea e gestisci sezioni e prodotti":isZeroStock?"BackGlass e Housing esauriti, separati":isBackup?"Esporta una copia dei dati":isHours?"Area privata Admin · ore lavorate ed extra":isDeviceSales?"Area privata Admin · ricambi elettronici, IVA e acquisti":isBestekCatalog?"Area privata Admin · codici e accessori Bestek":sec?.description||"Sezione magazzino";
+  const title=isDashboard?"Dashboard":isAudit?"Cronologia":isSales?"Vendute":isUsers?"Utenti":isCatalog?"Gestione magazzino":isZeroStock?"Scorte a zero":isBackup?"Backup":isHours?"I miei orari":isDeviceSales?"Vendite ricambi":isBestekCatalog?"Catalogo Bestek":isDymoNotes?"Note DYMO":isWorkDdt?"DDT conto lavorazione":sec?.name||category;
+  const desc=isDashboard?"Riepilogo generale":isAudit?"Tutte le attività del gestionale":isSales?"Vendite, note, stampa DYMO e rientri":isUsers?"Gestione accessi":isCatalog?"Crea e gestisci sezioni e prodotti":isZeroStock?"BackGlass e Housing esauriti, separati":isBackup?"Esporta una copia dei dati":isHours?"Area privata Admin · ore lavorate ed extra":isDeviceSales?"Area privata Admin · ricambi elettronici, IVA e acquisti":isBestekCatalog?"Area privata Admin · codici e accessori Bestek":isDymoNotes?"Scrivi una nota libera e stampala direttamente sulla DYMO":isWorkDdt?"DDT in entrata, lavorazioni e restituzioni al cliente":sec?.description||"Sezione magazzino";
   document.getElementById("categoryName").textContent=title;
   document.getElementById("categoryDescription").textContent=desc;
-  document.querySelector(".tools").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog;
-  document.querySelector(".stats").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog;
-  inventory.hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog;
+  document.querySelector(".tools").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog||isDymoNotes||isWorkDdt;
+  document.querySelector(".stats").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog||isDymoNotes||isWorkDdt;
+  inventory.hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog||isDymoNotes||isWorkDdt;
   document.getElementById("dashboardView").hidden=!isDashboard;
   document.getElementById("salesView").hidden=!isSales;
   document.getElementById("auditView").hidden=!isAudit;
   document.getElementById("usersView").hidden=!isUsers;
   document.getElementById("catalogView").hidden=!isCatalog;
   const bestekView=document.getElementById("bestekCatalogView"); if(bestekView) bestekView.hidden=!isBestekCatalog;
+  const dymoNotesView=document.getElementById("dymoNotesView"); if(dymoNotesView) dymoNotesView.hidden=!isDymoNotes;
+  const workDdtView=document.getElementById("workDdtView"); if(workDdtView) workDdtView.hidden=!isWorkDdt;
   document.getElementById("zeroStockView").hidden=!isZeroStock;
   document.getElementById("backupView").hidden=!isBackup;
   document.getElementById("hoursView").hidden=!isHours;
@@ -507,7 +526,7 @@ function setCategory(category){
     },0);
   }
   search.value=""; filter.value="all"; closeMainMenu();
-  if(isDashboard) loadDashboard(); else if(isAudit) loadAudit(); else if(isSales) loadSales(); else if(isUsers) loadUsers(); else if(isCatalog) renderCatalogAdmin(); else if(isZeroStock) renderZeroStock(); else if(isBackup){} else if(isHours) loadHours(); else if(isDeviceSales) loadDeviceSales(); else if(isBestekCatalog) renderBestekCatalog(); else if(isCustom) renderCustomSection(); else if(category==="BackGlass"||category==="Housing") render();
+  if(isDashboard) loadDashboard(); else if(isAudit) loadAudit(); else if(isSales) loadSales(); else if(isUsers) loadUsers(); else if(isCatalog) renderCatalogAdmin(); else if(isZeroStock) renderZeroStock(); else if(isBackup){} else if(isHours) loadHours(); else if(isDeviceSales) loadDeviceSales(); else if(isBestekCatalog) renderBestekCatalog(); else if(isWorkDdt) loadWorkDdts(); else if(isCustom) renderCustomSection(); else if(category==="BackGlass"||category==="Housing") render();
 }
 
 
@@ -1831,11 +1850,11 @@ document.getElementById("saveRecoveryPassword").onclick=async()=>{
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1085", { updateViaCache: "none" });
+      const reg = await navigator.serviceWorker.register("./sw.js?v=109", { updateViaCache: "none" });
       await reg.update();
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (!sessionStorage.getItem("bt-cache-reloaded-v1085")) {
-          sessionStorage.setItem("bt-cache-reloaded-v1085", "1");
+        if (!sessionStorage.getItem("bt-cache-reloaded-v109")) {
+          sessionStorage.setItem("bt-cache-reloaded-v109", "1");
           location.reload();
         }
       });
@@ -2145,7 +2164,17 @@ function updateInvoiceClientUi(){
   ["invoiceIncludeStock","invoiceIncludeParts","invoiceIncludeHours"].forEach(id=>{const el=document.getElementById(id);if(el){el.disabled=vr;if(vr)el.checked=false;else if(id!=="invoiceIncludeHours"||el.checked===false)el.checked=true;}});const rep=document.getElementById("invoiceIncludeRepairs");if(rep){rep.disabled=false;rep.checked=true;}
   invoiceAutomationLines=[];renderInvoicePreview();
 }
-function invoiceLineDate(v){return String(v||"").slice(0,10);}
+function invoiceLineDate(v){
+  if(!v)return "";
+  const d=new Date(v);
+  if(!Number.isNaN(d.getTime())) return localDateISO(d);
+  return String(v||"").slice(0,10);
+}
+function invoiceTimestampRange(from,to){
+  const parseLocal=s=>{const [y,m,d]=String(s).split("-").map(Number);return new Date(y,m-1,d,0,0,0,0);};
+  const start=parseLocal(from),end=parseLocal(to);end.setDate(end.getDate()+1);
+  return {start:start.toISOString(),endExclusive:end.toISOString()};
+}
 async function buildBusinessInvoicePreview(){
   if(!isAdmin())return;const msg=document.getElementById("invoiceLoadMsg"),from=document.getElementById("invoiceFrom")?.value,to=document.getElementById("invoiceTo")?.value,mode=invoiceClientMode();
   if(!from||!to||from>to){if(msg){msg.className="createUserMsg error";msg.textContent="Controlla il periodo: la data iniziale deve essere precedente a quella finale.";}return;}
@@ -2157,7 +2186,7 @@ async function buildBusinessInvoicePreview(){
       (data||[]).forEach(r=>lines.push({selected:true,date:invoiceLineDate(r.repaired_at),store:"VR Trasporti",source:"Riparazione",description:`${r.repair_type||"Riparazione"} · ${r.device||"dispositivo"}${r.imei_serial?` · IMEI/Seriale ${r.imei_serial}`:""}`,qty:1,unitNet:Number(r.price_ex_vat||0),vatRate:Number(r.vat_rate??22),ref:`RIP-${r.id}`,repairId:Number(r.id)}));
     }else{
       const includeStock=document.getElementById("invoiceIncludeStock")?.checked,includeParts=document.getElementById("invoiceIncludeParts")?.checked,includeRepairs=document.getElementById("invoiceIncludeRepairs")?.checked,includeHours=document.getElementById("invoiceIncludeHours")?.checked;
-      const jobs=[];jobs.push(includeStock?sb.from("beparytech_sales").select("id,customer,category,item_key,model,color,quantity,sold_at,is_archived,restored_to_inventory,delivered_at,delete_reason").gte("sold_at",from).lte("sold_at",to).limit(2000):Promise.resolve({data:[],error:null}));jobs.push(includeParts?sb.from("beparytech_admin_device_sales").select("id,sold_at,store,device_name,sale_price,net_amount,vat_rate,vat_amount,note").gte("sold_at",from).lte("sold_at",to).limit(1000):Promise.resolve({data:[],error:null}));jobs.push(includeRepairs?sb.from("beparytech_admin_repairs").select("id,repaired_at,client_name,store,device,repair_type,price_ex_vat,vat_rate,note,invoiced").gte("repaired_at",from).lte("repaired_at",to).limit(1000):Promise.resolve({data:[],error:null}));jobs.push(includeHours?sb.from("beparytech_work_hours").select("id,work_date,morning_in,morning_out,afternoon_in,afternoon_out,company,total_minutes_override,note").gte("work_date",from).lte("work_date",to).limit(1000):Promise.resolve({data:[],error:null}));jobs.push(includeHours?sb.from("beparytech_work_extras").select("id,work_date,description,minutes,amount,company,note").gte("work_date",from).lte("work_date",to).limit(1000):Promise.resolve({data:[],error:null}));
+      const jobs=[],tsRange=invoiceTimestampRange(from,to);jobs.push(includeStock?sb.from("beparytech_sales").select("id,customer,category,item_key,model,color,quantity,sold_at,is_archived,restored_to_inventory,delivered_at,delete_reason").gte("sold_at",tsRange.start).lt("sold_at",tsRange.endExclusive).limit(2000):Promise.resolve({data:[],error:null}));jobs.push(includeParts?sb.from("beparytech_admin_device_sales").select("id,sold_at,store,device_name,sale_price,net_amount,vat_rate,vat_amount,note").gte("sold_at",from).lte("sold_at",to).limit(1000):Promise.resolve({data:[],error:null}));jobs.push(includeRepairs?sb.from("beparytech_admin_repairs").select("id,repaired_at,client_name,store,device,repair_type,price_ex_vat,vat_rate,note,invoiced").gte("repaired_at",from).lte("repaired_at",to).eq("invoiced",false).limit(1000):Promise.resolve({data:[],error:null}));jobs.push(includeHours?sb.from("beparytech_work_hours").select("id,work_date,morning_in,morning_out,afternoon_in,afternoon_out,company,total_minutes_override,note").gte("work_date",from).lte("work_date",to).limit(1000):Promise.resolve({data:[],error:null}));jobs.push(includeHours?sb.from("beparytech_work_extras").select("id,work_date,description,minutes,amount,company,note").gte("work_date",from).lte("work_date",to).limit(1000):Promise.resolve({data:[],error:null}));
       const [stockRes,partsRes,repairsRes,hoursRes,extrasRes]=await Promise.all(jobs),firstErr=stockRes.error||partsRes.error||repairsRes.error||hoursRes.error||extrasRes.error;if(firstErr)throw firstErr;
       (stockRes.data||[]).filter(r=>invoiceIsTargetStore(r.customer)&&saleCountsAsSold(r)).forEach(r=>{const unit=saleUnitPrice(r);if(unit==null)return;lines.push({selected:true,date:invoiceLineDate(r.sold_at),store:r.customer,source:"Magazzino",description:`${r.category||"Ricambio"} ${noLogoName(r.model,r.category)}${r.color?` · ${r.color}`:""}`.trim(),qty:Math.max(1,Number(r.quantity||1)),unitNet:Number(unit),vatRate:22,ref:`MAG-${r.id}`});});
       (partsRes.data||[]).filter(r=>invoiceIsTargetStore(r.store)).forEach(r=>lines.push({selected:true,date:invoiceLineDate(r.sold_at),store:r.store,source:"Vendita ricambio",description:r.device_name||"Ricambio elettronico",qty:1,unitNet:Number(r.net_amount??r.sale_price??0),vatRate:Number(r.vat_rate??22),ref:`RIC-${r.id}`}));
@@ -2185,6 +2214,29 @@ function exportInvoiceXml(){try{if(!saveIssuerSettings())return;if(invoiceClient
 async function markSelectedRepairsInvoiced(){const ids=selectedInvoiceLines().filter(r=>r.repairId).map(r=>r.repairId),doc=invoiceDocumentBasics(),msg=document.getElementById("invoiceLoadMsg");if(!ids.length)return;if(!doc.number){if(msg){msg.className="createUserMsg error";msg.textContent="Inserisci il numero fattura prima di segnare le riparazioni come fatturate.";}return;}if(!confirm(`Segnare ${ids.length} riparazioni come fatturate con riferimento ${doc.number}?`))return;try{const ctx=await btGetWorkspaceOwnerId();const {error}=await sb.from("beparytech_admin_repairs").update({invoiced:true,invoice_ref:doc.number}).in("id",ids).eq("workspace_owner_id",ctx.owner);if(error)throw error;if(msg){msg.className="createUserMsg ok";msg.textContent="Riparazioni segnate come fatturate.";}await buildBusinessInvoicePreview();await loadAdminRepairs();}catch(e){if(msg){msg.className="createUserMsg error";msg.textContent=e.message||"Impossibile aggiornare le riparazioni.";}}}
 function bindInvoiceAutomation(){const panel=document.getElementById("adminInvoicesPanel");if(!panel||panel.dataset.bound==="1")return;panel.dataset.bound="1";defaultInvoicePeriod();loadIssuerSettings();loadVrClientSettings();updateInvoiceClientUi();document.getElementById("invoiceClientSelect")?.addEventListener("change",updateInvoiceClientUi);document.getElementById("saveVrClientBtn")?.addEventListener("click",saveVrClientSettings);document.getElementById("saveIssuerBtn")?.addEventListener("click",saveIssuerSettings);document.getElementById("invoiceRefreshBtn")?.addEventListener("click",buildBusinessInvoicePreview);document.getElementById("invoiceCsvBtn")?.addEventListener("click",exportInvoiceCsv);document.getElementById("invoiceXmlBtn")?.addEventListener("click",exportInvoiceXml);document.getElementById("invoiceMarkPaidBtn")?.addEventListener("click",markSelectedRepairsInvoiced);}
 document.addEventListener("DOMContentLoaded",bindInvoiceAutomation);
+
+// ===== v109: Note DYMO libere =====
+function bindFreeDymoNotes(){
+  const btn=document.getElementById("dymoFreePrintBtn");
+  if(!btn||btn.dataset.bound==="1")return;
+  btn.dataset.bound="1";
+  btn.addEventListener("click",async()=>{
+    const title=String(document.getElementById("dymoFreeTitle")?.value||"").trim()||"BEPARYTECH";
+    const meta=String(document.getElementById("dymoFreeMeta")?.value||"").trim();
+    const note=String(document.getElementById("dymoFreeNote")?.value||"").trim();
+    const status=document.getElementById("dymoFreeStatus");
+    if(!note){if(status){status.className="createUserMsg error";status.textContent="Scrivi una nota da stampare.";}return;}
+    btn.disabled=true;
+    if(status){status.className="createUserMsg";status.textContent="Invio alla DYMO…";}
+    try{
+      await btDymoDirectPrint({title,meta,note,qrText:""});
+      if(status){status.className="createUserMsg ok";status.textContent="Etichetta inviata alla DYMO.";}
+    }catch(err){
+      if(status){status.className="createUserMsg error";status.textContent=err?.message||"Impossibile stampare sulla DYMO.";}
+    }finally{btn.disabled=false;}
+  });
+}
+document.addEventListener("DOMContentLoaded",bindFreeDymoNotes);
 
 // ===== v53: pannelli Orari chiusi + navigazione contestuale responsive =====
 function bindHourAccordions(){
@@ -2887,3 +2939,108 @@ document.addEventListener("DOMContentLoaded",bindDymoDirectV98);setTimeout(bindD
     void btPrintDeviceSaleOrderDymo(btn.dataset.id);
   },true);
 })();
+
+
+// ===== v110: DDT conto lavorazione =====
+let workDdtRows=[];
+let workDdtItems=[];
+let workDdtSelectedId=null;
+let workDdtRealtime=null;
+
+function workDdtToday(){return localDateISO(new Date());}
+function workDdtFmtDate(v){if(!v)return '-';try{return new Date(String(v).slice(0,10)+'T12:00:00').toLocaleDateString('it-IT');}catch(_){return String(v);}}
+function workDdtStatusClass(v){return String(v||'').toLowerCase().replaceAll(' ','-').replaceAll('à','a');}
+function workDdtAutoNumber(row){const y=(row?.outbound_ddt_date||workDdtToday()).slice(0,4);return `CL-${y}/${String(row?.id||0).padStart(5,'0')}`;}
+function workDdtSaveSenderLocal(){try{localStorage.setItem('beparytech-ddt-sender',JSON.stringify({name:document.getElementById('workDdtSenderName')?.value||'',address:document.getElementById('workDdtSenderAddress')?.value||''}));}catch(_){}}
+function workDdtLoadSenderLocal(){try{const x=JSON.parse(localStorage.getItem('beparytech-ddt-sender')||'{}');const n=document.getElementById('workDdtSenderName'),a=document.getElementById('workDdtSenderAddress');if(n&&!n.value)n.value=x.name||'BeparyTech';if(a&&!a.value)a.value=x.address||'';}catch(_){} }
+function resetWorkDdtForm(){
+  const f=document.getElementById('workDdtForm'); if(!f)return; f.reset();
+  document.getElementById('workDdtEditId').value=''; document.getElementById('workDdtFormTitle').textContent='Nuovo DDT in entrata';
+  document.getElementById('workDdtInboundDate').value=workDdtToday(); document.getElementById('workDdtReceivedDate').value=workDdtToday(); document.getElementById('workDdtStatus').value='In lavorazione';
+  document.getElementById('workDdtAttachmentInfo').textContent='PDF o immagine, max 10 MB.'; workDdtLoadSenderLocal();
+}
+function resetWorkDdtItemForm(){const f=document.getElementById('workDdtItemForm');if(!f)return;f.reset();document.getElementById('workDdtItemEditId').value='';document.getElementById('workDdtItemQty').value='1';document.getElementById('workDdtItemReturnedQty').value='0';document.getElementById('workDdtItemStatus').value='Da lavorare';}
+async function uploadWorkDdtInboundFile(ctx,ddtId,file){
+  if(!file)return null;if(file.size>10*1024*1024)throw new Error('Il DDT allegato supera 10 MB.');
+  const safe=typeof btSafeFileName==='function'?btSafeFileName(file.name||'ddt'):String(file.name||'ddt').replace(/[^a-z0-9_.-]+/gi,'-');
+  const path=`${ctx.owner}/ddt/${ddtId}/inbound-${Date.now()}-${safe}`;
+  const {error}=await sb.storage.from('repair-intake').upload(path,file,{cacheControl:'3600',upsert:false,contentType:file.type||'application/octet-stream'});if(error)throw error;return path;
+}
+async function openWorkDdtAttachment(path){if(!path)return;const {data,error}=await sb.storage.from('repair-intake').createSignedUrl(path,900);if(error){alert(error.message);return;}window.open(data.signedUrl,'_blank');}
+async function ensureWorkDdtRealtime(){
+  if(workDdtRealtime)return;
+  workDdtRealtime=sb.channel('beparytech-work-ddt-live')
+    .on('postgres_changes',{event:'*',schema:'public',table:'beparytech_work_ddts'},()=>{if(currentCategory==='ContoLavorazione')loadWorkDdts(true);})
+    .on('postgres_changes',{event:'*',schema:'public',table:'beparytech_work_ddt_items'},()=>{if(currentCategory==='ContoLavorazione')loadWorkDdts(true);})
+    .subscribe();
+}
+async function loadWorkDdts(silent=false){
+  if(!isAdmin())return;bindWorkDdtUi();await ensureWorkDdtRealtime();
+  const list=document.getElementById('workDdtList');if(list&&!silent)list.innerHTML='<div class="emptyState">Caricamento DDT…</div>';
+  try{
+    const ctx=await btGetWorkspaceOwnerId();
+    const [{data:heads,error:e1},{data:items,error:e2}]=await Promise.all([
+      sb.from('beparytech_work_ddts').select('*').eq('workspace_owner_id',ctx.owner).order('inbound_ddt_date',{ascending:false}).order('id',{ascending:false}).limit(500),
+      sb.from('beparytech_work_ddt_items').select('*').eq('workspace_owner_id',ctx.owner).order('id',{ascending:true}).limit(5000)
+    ]);if(e1)throw e1;if(e2)throw e2;workDdtRows=heads||[];workDdtItems=items||[];renderWorkDdts();if(workDdtSelectedId)openWorkDdtEditor(workDdtSelectedId,false);
+  }catch(e){if(list)list.innerHTML=`<div class="emptyState error">${escapeHtml(e.message||'Impossibile caricare i DDT.')}</div>`;}
+}
+function renderWorkDdts(){
+  const q=String(document.getElementById('workDdtSearch')?.value||'').trim().toLowerCase(),sf=document.getElementById('workDdtStatusFilter')?.value||'all';
+  const itemByDdt=new Map();for(const it of workDdtItems){if(!itemByDdt.has(Number(it.ddt_id)))itemByDdt.set(Number(it.ddt_id),[]);itemByDdt.get(Number(it.ddt_id)).push(it);}
+  const rows=workDdtRows.filter(r=>{
+    if(sf!=='all'&&r.status!==sf)return false; if(!q)return true;const its=itemByDdt.get(Number(r.id))||[];
+    return [r.customer_name,r.customer_address,r.inbound_ddt_number,r.outbound_ddt_number,r.notes,...its.flatMap(x=>[x.description,x.serial_imei,x.requested_work,x.result_note])].some(v=>String(v||'').toLowerCase().includes(q));
+  });
+  const open=workDdtRows.filter(r=>['Ricevuto','In lavorazione'].includes(r.status)).length,ready=workDdtRows.filter(r=>['Pronto per restituzione','Restituzione parziale'].includes(r.status)).length,closed=workDdtRows.filter(r=>r.status==='Chiuso').length;
+  const pieces=workDdtItems.reduce((a,x)=>a+Math.max(0,Number(x.quantity||0)-Number(x.returned_quantity||0)),0);
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=String(v)};set('workDdtOpenCount',open);set('workDdtReadyCount',ready);set('workDdtClosedCount',closed);set('workDdtPiecesCount',pieces);
+  const list=document.getElementById('workDdtList');if(!list)return;
+  list.innerHTML=rows.length?rows.map(r=>{const its=itemByDdt.get(Number(r.id))||[],recv=its.reduce((a,x)=>a+Number(x.quantity||0),0),ret=its.reduce((a,x)=>a+Number(x.returned_quantity||0),0),left=Math.max(0,recv-ret);return `<article class="workDdtCard ${workDdtSelectedId===Number(r.id)?'active':''}">
+    <div class="workDdtCardTop"><div><div class="workDdtBadges"><span class="workDdtBadge status ${workDdtStatusClass(r.status)}">${escapeHtml(r.status)}</span><span class="workDdtBadge">DDT cliente ${escapeHtml(r.inbound_ddt_number)}</span>${r.outbound_ddt_number?`<span class="workDdtBadge out">Uscita ${escapeHtml(r.outbound_ddt_number)}</span>`:''}</div><strong>${escapeHtml(r.customer_name)}</strong><small>DDT del ${workDdtFmtDate(r.inbound_ddt_date)} · arrivato ${workDdtFmtDate(r.received_at)}</small>${r.notes?`<p>${escapeHtml(r.notes)}</p>`:''}</div><div class="workDdtCounts"><b>${left}</b><span>pezzi in laboratorio</span><small>${ret}/${recv} restituiti</small></div></div>
+    <div class="workDdtCardActions"><button class="rowAction workDdtOpen" data-id="${r.id}" type="button">Apri (${its.length} righe)</button><button class="rowAction workDdtEdit" data-id="${r.id}" type="button">Modifica DDT</button>${r.inbound_attachment_path?`<button class="rowAction workDdtAttachment" data-id="${r.id}" type="button">DDT ricevuto</button>`:''}${r.outbound_attachment_path?`<button class="rowAction workDdtOutbound" data-id="${r.id}" type="button">DDT restituzione</button>`:''}<button class="rowAction delete workDdtDelete" data-id="${r.id}" type="button">Elimina</button></div>
+  </article>`}).join(''):'<div class="emptyState">Nessun DDT conto lavorazione trovato.</div>';
+}
+async function saveWorkDdt(ev){
+  ev.preventDefault();const msg=document.getElementById('workDdtFormMsg');if(msg){msg.className='createUserMsg';msg.textContent='Salvataggio…';}
+  try{
+    const ctx=await btGetWorkspaceOwnerId(),id=Number(document.getElementById('workDdtEditId').value||0),file=document.getElementById('workDdtAttachment').files?.[0]||null;
+    const payload={customer_name:document.getElementById('workDdtCustomer').value.trim(),customer_address:document.getElementById('workDdtCustomerAddress').value.trim()||null,inbound_ddt_number:document.getElementById('workDdtInboundNumber').value.trim(),inbound_ddt_date:document.getElementById('workDdtInboundDate').value,received_at:document.getElementById('workDdtReceivedDate').value,status:document.getElementById('workDdtStatus').value,sender_name:document.getElementById('workDdtSenderName').value.trim()||null,sender_address:document.getElementById('workDdtSenderAddress').value.trim()||null,notes:document.getElementById('workDdtNotes').value.trim()||null,updated_at:new Date().toISOString()};
+    if(!payload.customer_name||!payload.inbound_ddt_number||!payload.inbound_ddt_date||!payload.received_at)throw new Error('Compila cliente, numero DDT e date.');workDdtSaveSenderLocal();let savedId=id;
+    if(id){const {error}=await sb.from('beparytech_work_ddts').update(payload).eq('id',id).eq('workspace_owner_id',ctx.owner);if(error)throw error;}
+    else{const {data,error}=await sb.from('beparytech_work_ddts').insert({...payload,workspace_owner_id:ctx.owner,created_by:ctx.user}).select('id').single();if(error)throw error;savedId=Number(data.id);}
+    if(file){const path=await uploadWorkDdtInboundFile(ctx,savedId,file);const {error}=await sb.from('beparytech_work_ddts').update({inbound_attachment_path:path,updated_at:new Date().toISOString()}).eq('id',savedId).eq('workspace_owner_id',ctx.owner);if(error)throw error;}
+    if(msg){msg.className='createUserMsg ok';msg.textContent='DDT salvato.';}document.getElementById('workDdtForm').hidden=true;workDdtSelectedId=savedId;await loadWorkDdts(true);openWorkDdtEditor(savedId);
+  }catch(e){if(msg){msg.className='createUserMsg error';msg.textContent=e.message||'Errore salvataggio DDT.';}}
+}
+function editWorkDdt(id){const r=workDdtRows.find(x=>Number(x.id)===Number(id));if(!r)return;const f=document.getElementById('workDdtForm');f.hidden=false;document.getElementById('workDdtFormTitle').textContent='Modifica DDT in entrata';document.getElementById('workDdtEditId').value=r.id;document.getElementById('workDdtCustomer').value=r.customer_name||'';document.getElementById('workDdtCustomerAddress').value=r.customer_address||'';document.getElementById('workDdtInboundNumber').value=r.inbound_ddt_number||'';document.getElementById('workDdtInboundDate').value=String(r.inbound_ddt_date||'').slice(0,10);document.getElementById('workDdtReceivedDate').value=String(r.received_at||'').slice(0,10);document.getElementById('workDdtStatus').value=r.status||'In lavorazione';document.getElementById('workDdtSenderName').value=r.sender_name||'';document.getElementById('workDdtSenderAddress').value=r.sender_address||'';document.getElementById('workDdtNotes').value=r.notes||'';document.getElementById('workDdtAttachmentInfo').textContent=r.inbound_attachment_path?'Allegato presente. Scegli un nuovo file solo per sostituire/aggiungere una nuova copia.':'PDF o immagine, max 10 MB.';f.scrollIntoView({behavior:'smooth',block:'start'});}
+function openWorkDdtEditor(id,scroll=true){const r=workDdtRows.find(x=>Number(x.id)===Number(id));if(!r)return;workDdtSelectedId=Number(id);const ed=document.getElementById('workDdtEditor');ed.hidden=false;document.getElementById('workDdtEditorTitle').textContent=`${r.customer_name} · DDT ${r.inbound_ddt_number}`;document.getElementById('workDdtEditorSub').textContent=`Ricevuto ${workDdtFmtDate(r.received_at)} · ${r.status}`;document.getElementById('workDdtOutboundNumber').value=r.outbound_ddt_number||'';document.getElementById('workDdtOutboundDate').value=String(r.outbound_ddt_date||workDdtToday()).slice(0,10);document.getElementById('workDdtOutboundReason').value=r.outbound_reason||'Reso da conto lavorazione';document.getElementById('workDdtOpenOutboundBtn').hidden=!r.outbound_attachment_path;resetWorkDdtItemForm();renderWorkDdtItems();renderWorkDdts();if(scroll)ed.scrollIntoView({behavior:'smooth',block:'start'});}
+function renderWorkDdtItems(){const list=document.getElementById('workDdtItemsList');if(!list)return;const rows=workDdtItems.filter(x=>Number(x.ddt_id)===Number(workDdtSelectedId));list.innerHTML=rows.length?rows.map(x=>`<article class="workDdtItemRow"><div><div class="workDdtBadges"><span class="workDdtBadge">${escapeHtml(x.item_type||'Altro')}</span><span class="workDdtBadge status ${workDdtStatusClass(x.work_status)}">${escapeHtml(x.work_status)}</span>${x.repair_id?'<span class="workDdtBadge out">Pratica creata</span>':''}</div><strong>${escapeHtml(x.description)}</strong>${x.serial_imei?`<small>IMEI/Seriale: ${escapeHtml(x.serial_imei)}</small>`:''}${x.requested_work?`<p>Richiesta: ${escapeHtml(x.requested_work)}</p>`:''}${x.result_note?`<p>Esito: ${escapeHtml(x.result_note)}</p>`:''}</div><div class="workDdtItemQty"><b>${Number(x.returned_quantity||0)}/${Number(x.quantity||1)}</b><span>restituiti</span></div><div class="workDdtItemActions"><button class="rowAction workDdtItemEdit" data-id="${x.id}" type="button">Modifica</button>${Number(x.returned_quantity||0)<Number(x.quantity||1)?`<button class="rowAction workDdtItemReturnAll" data-id="${x.id}" type="button">Segna restituito</button>`:''}${!x.repair_id?`<button class="rowAction workDdtCreateRepair" data-id="${x.id}" type="button">Crea riparazione</button>`:`<button class="rowAction workDdtGoRepair" type="button">Vai a riparazioni</button>`}<button class="rowAction delete workDdtItemDelete" data-id="${x.id}" type="button">Elimina</button></div></article>`).join(''):'<div class="emptyState">Aggiungi i dispositivi o materiali presenti nel DDT.</div>';}
+async function saveWorkDdtItem(ev){ev.preventDefault();const msg=document.getElementById('workDdtItemMsg');try{if(!workDdtSelectedId)throw new Error('Apri prima un DDT.');const ctx=await btGetWorkspaceOwnerId(),id=Number(document.getElementById('workDdtItemEditId').value||0),qty=Math.max(1,Number(document.getElementById('workDdtItemQty').value||1)),ret=Math.max(0,Number(document.getElementById('workDdtItemReturnedQty').value||0));if(ret>qty)throw new Error('La quantità restituita non può superare quella ricevuta.');const payload={ddt_id:workDdtSelectedId,workspace_owner_id:ctx.owner,item_type:document.getElementById('workDdtItemType').value,description:document.getElementById('workDdtItemDescription').value.trim(),serial_imei:document.getElementById('workDdtItemSerial').value.trim()||null,quantity:qty,returned_quantity:ret,requested_work:document.getElementById('workDdtItemWork').value.trim()||null,work_status:ret===qty?'Restituito':document.getElementById('workDdtItemStatus').value,result_note:document.getElementById('workDdtItemResult').value.trim()||null,updated_at:new Date().toISOString()};if(!payload.description)throw new Error('Inserisci il dispositivo o la descrizione.');let error;if(id)({error}=await sb.from('beparytech_work_ddt_items').update(payload).eq('id',id).eq('workspace_owner_id',ctx.owner));else({error}=await sb.from('beparytech_work_ddt_items').insert({...payload}));if(error)throw error;if(msg){msg.className='createUserMsg ok';msg.textContent='Riga salvata.';}resetWorkDdtItemForm();await loadWorkDdts(true);openWorkDdtEditor(workDdtSelectedId,false);}catch(e){if(msg){msg.className='createUserMsg error';msg.textContent=e.message||'Errore salvataggio riga.';}}}
+function editWorkDdtItem(id){const x=workDdtItems.find(v=>Number(v.id)===Number(id));if(!x)return;document.getElementById('workDdtItemEditId').value=x.id;document.getElementById('workDdtItemType').value=x.item_type||'Altro';document.getElementById('workDdtItemDescription').value=x.description||'';document.getElementById('workDdtItemSerial').value=x.serial_imei||'';document.getElementById('workDdtItemQty').value=x.quantity||1;document.getElementById('workDdtItemReturnedQty').value=x.returned_quantity||0;document.getElementById('workDdtItemWork').value=x.requested_work||'';document.getElementById('workDdtItemStatus').value=x.work_status||'Da lavorare';document.getElementById('workDdtItemResult').value=x.result_note||'';document.getElementById('workDdtItemForm').scrollIntoView({behavior:'smooth',block:'center'});}
+async function setWorkDdtItemReturned(id){const x=workDdtItems.find(v=>Number(v.id)===Number(id));if(!x)return;try{const ctx=await btGetWorkspaceOwnerId();const {error}=await sb.from('beparytech_work_ddt_items').update({returned_quantity:x.quantity,work_status:'Restituito',updated_at:new Date().toISOString()}).eq('id',x.id).eq('workspace_owner_id',ctx.owner);if(error)throw error;await loadWorkDdts(true);openWorkDdtEditor(workDdtSelectedId,false);}catch(e){alert(e.message);}}
+async function createRepairFromWorkDdtItem(id){const x=workDdtItems.find(v=>Number(v.id)===Number(id)),d=workDdtRows.find(v=>Number(v.id)===Number(x?.ddt_id));if(!x||!d)return;try{const ctx=await btGetWorkspaceOwnerId();const day=workDdtToday(),code=`RIP-DDT-${d.id}-${x.id}`;const payload={workspace_owner_id:ctx.owner,created_by:ctx.user,repaired_at:day,accepted_at:new Date().toISOString(),practice_code:code,receipt_token:code,store:d.customer_name,client_name:d.customer_name,device:x.description,imei_serial:x.serial_imei||null,repair_type:x.requested_work||'Lavorazione da DDT',reported_issue:x.requested_work||null,price_ex_vat:0,vat_rate:22,repair_status:'Da completare',quote_status:'Da diagnosticare',warranty_months:0,invoiced:false,note:`Da DDT conto lavorazione ${d.inbound_ddt_number} del ${workDdtFmtDate(d.inbound_ddt_date)}`,photo_paths:[]};const {data,error}=await sb.from('beparytech_admin_repairs').insert(payload).select('id').single();if(error)throw error;const {error:e2}=await sb.from('beparytech_work_ddt_items').update({repair_id:data.id,work_status:'In lavorazione',updated_at:new Date().toISOString()}).eq('id',x.id).eq('workspace_owner_id',ctx.owner);if(e2)throw e2;await loadWorkDdts(true);openWorkDdtEditor(workDdtSelectedId,false);}catch(e){alert(e.message||'Impossibile creare la riparazione.');}}
+async function markReadyWorkDdtReturned(){const ready=workDdtItems.filter(x=>Number(x.ddt_id)===Number(workDdtSelectedId)&&Number(x.returned_quantity||0)<Number(x.quantity||1)&&['Riparato','Non riparato','Pronto'].includes(x.work_status));if(!ready.length){alert('Non ci sono righe pronte da restituire.');return;}if(!confirm(`Segnare come restituiti ${ready.length} articoli pronti?`))return;try{const ctx=await btGetWorkspaceOwnerId();for(const x of ready){const {error}=await sb.from('beparytech_work_ddt_items').update({returned_quantity:x.quantity,work_status:'Restituito',updated_at:new Date().toISOString()}).eq('id',x.id).eq('workspace_owner_id',ctx.owner);if(error)throw error;}await loadWorkDdts(true);openWorkDdtEditor(workDdtSelectedId,false);}catch(e){alert(e.message);}}
+function buildWorkDdtPdf(row,items,number,date,reason){
+  if(!window.jspdf?.jsPDF)throw new Error('Modulo PDF non disponibile.');const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:'mm',format:'a4'});let y=18;
+  doc.setFont('helvetica','bold');doc.setFontSize(18);doc.text('DOCUMENTO DI TRASPORTO',15,y);y+=7;doc.setFontSize(11);doc.text('Reso da conto lavorazione',15,y);doc.setFont('helvetica','normal');doc.text(`N. ${number}`,150,18);doc.text(`Data ${workDdtFmtDate(date)}`,150,25);y+=12;
+  const sender=row.sender_name||'BeparyTech';doc.setFont('helvetica','bold');doc.text('Mittente',15,y);doc.text('Destinatario',110,y);y+=6;doc.setFont('helvetica','normal');doc.text(doc.splitTextToSize(sender,82),15,y);doc.text(doc.splitTextToSize(row.customer_name||'-',82),110,y);y+=5;doc.setFontSize(9);doc.text(doc.splitTextToSize(row.sender_address||'',82),15,y);doc.text(doc.splitTextToSize(row.customer_address||'',82),110,y);y+=15;
+  doc.setFontSize(10);doc.setFont('helvetica','bold');doc.text('Causale:',15,y);doc.setFont('helvetica','normal');doc.text(reason||'Reso da conto lavorazione',34,y);y+=6;doc.setFont('helvetica','bold');doc.text('Riferimento:',15,y);doc.setFont('helvetica','normal');doc.text(`DDT cliente n. ${row.inbound_ddt_number} del ${workDdtFmtDate(row.inbound_ddt_date)}`,39,y);y+=10;
+  const header=()=>{doc.setFont('helvetica','bold');doc.setFontSize(9);doc.text('Q.tà',15,y);doc.text('Descrizione',29,y);doc.text('IMEI / Seriale',105,y);doc.text('Esito lavorazione',150,y);doc.line(15,y+2,195,y+2);y+=7;doc.setFont('helvetica','normal');};header();
+  for(const x of items){if(y>270){doc.addPage();y=18;header();}const desc=doc.splitTextToSize(`${x.item_type||''} ${x.description||''}`.trim(),70),ser=doc.splitTextToSize(x.serial_imei||'-',40),res=doc.splitTextToSize(`${x.work_status||''}${x.result_note?` - ${x.result_note}`:''}`,42),h=Math.max(desc.length,ser.length,res.length)*4.2;doc.text(String(x.returned_quantity||0),15,y);doc.text(desc,29,y);doc.text(ser,105,y);doc.text(res,150,y);y+=Math.max(7,h+2);}
+  y+=4;doc.line(15,y,195,y);y+=7;doc.setFontSize(8);doc.text(doc.splitTextToSize('Merce di proprietà del cliente restituita al termine o durante il conto lavorazione. Conservare il documento come riferimento della movimentazione.',180),15,y);return doc;
+}
+async function generateWorkDdtReturnPdf(){
+  const msg=document.getElementById('workDdtReturnMsg');try{const row=workDdtRows.find(x=>Number(x.id)===Number(workDdtSelectedId));if(!row)throw new Error('DDT non selezionato.');const items=workDdtItems.filter(x=>Number(x.ddt_id)===Number(row.id)&&Number(x.returned_quantity||0)>0);if(!items.length)throw new Error('Prima indica almeno una quantità restituita.');const ctx=await btGetWorkspaceOwnerId(),date=document.getElementById('workDdtOutboundDate').value||workDdtToday(),number=document.getElementById('workDdtOutboundNumber').value.trim()||workDdtAutoNumber({...row,outbound_ddt_date:date}),reason=document.getElementById('workDdtOutboundReason').value.trim()||'Reso da conto lavorazione',doc=buildWorkDdtPdf(row,items,number,date,reason),blob=doc.output('blob'),safe=number.replace(/[^a-z0-9_-]+/gi,'-'),path=`${ctx.owner}/ddt/${row.id}/outbound-${safe}.pdf`;const {error:upErr}=await sb.storage.from('repair-intake').upload(path,blob,{cacheControl:'3600',upsert:true,contentType:'application/pdf'});if(upErr)throw upErr;const all=workDdtItems.filter(x=>Number(x.ddt_id)===Number(row.id)),closed=all.length>0&&all.every(x=>Number(x.returned_quantity||0)>=Number(x.quantity||1)),status=closed?'Chiuso':'Restituzione parziale';const {error}=await sb.from('beparytech_work_ddts').update({outbound_ddt_number:number,outbound_ddt_date:date,outbound_reason:reason,outbound_attachment_path:path,status,updated_at:new Date().toISOString()}).eq('id',row.id).eq('workspace_owner_id',ctx.owner);if(error)throw error;doc.save(`DDT_${safe}_conto_lavorazione.pdf`);if(msg){msg.className='createUserMsg ok';msg.textContent=`DDT ${number} generato e archiviato.`;}await loadWorkDdts(true);openWorkDdtEditor(row.id,false);
+  }catch(e){if(msg){msg.className='createUserMsg error';msg.textContent=e.message||'Impossibile generare il DDT.';}}
+}
+async function deleteWorkDdt(id){if(!confirm('Eliminare questo DDT e tutte le sue righe?'))return;try{const ctx=await btGetWorkspaceOwnerId();const r=workDdtRows.find(x=>Number(x.id)===Number(id));const paths=[r?.inbound_attachment_path,r?.outbound_attachment_path].filter(Boolean);const {error}=await sb.from('beparytech_work_ddts').delete().eq('id',Number(id)).eq('workspace_owner_id',ctx.owner);if(error)throw error;if(paths.length)await sb.storage.from('repair-intake').remove(paths);if(workDdtSelectedId===Number(id)){workDdtSelectedId=null;document.getElementById('workDdtEditor').hidden=true;}await loadWorkDdts(true);}catch(e){alert(e.message);}}
+async function deleteWorkDdtItem(id){if(!confirm('Eliminare questa riga dal DDT?'))return;try{const ctx=await btGetWorkspaceOwnerId();const {error}=await sb.from('beparytech_work_ddt_items').delete().eq('id',Number(id)).eq('workspace_owner_id',ctx.owner);if(error)throw error;await loadWorkDdts(true);openWorkDdtEditor(workDdtSelectedId,false);}catch(e){alert(e.message);}}
+function bindWorkDdtUi(){
+  const v=document.getElementById('workDdtView');if(!v||v.dataset.bound==='1')return;v.dataset.bound='1';resetWorkDdtForm();
+  document.getElementById('workDdtNewBtn').onclick=()=>{resetWorkDdtForm();document.getElementById('workDdtForm').hidden=false;document.getElementById('workDdtForm').scrollIntoView({behavior:'smooth',block:'start'});};
+  document.getElementById('workDdtCancelBtn').onclick=()=>document.getElementById('workDdtForm').hidden=true;document.getElementById('workDdtRefreshBtn').onclick=()=>loadWorkDdts();document.getElementById('workDdtSearch').oninput=renderWorkDdts;document.getElementById('workDdtStatusFilter').onchange=renderWorkDdts;document.getElementById('workDdtForm').addEventListener('submit',saveWorkDdt);
+  document.getElementById('workDdtEditorClose').onclick=()=>{workDdtSelectedId=null;document.getElementById('workDdtEditor').hidden=true;renderWorkDdts();};document.getElementById('workDdtItemForm').addEventListener('submit',saveWorkDdtItem);document.getElementById('workDdtItemReset').onclick=resetWorkDdtItemForm;document.getElementById('workDdtReturnReadyBtn').onclick=markReadyWorkDdtReturned;document.getElementById('workDdtGeneratePdfBtn').onclick=generateWorkDdtReturnPdf;document.getElementById('workDdtOpenOutboundBtn').onclick=()=>{const r=workDdtRows.find(x=>Number(x.id)===Number(workDdtSelectedId));if(r?.outbound_attachment_path)openWorkDdtAttachment(r.outbound_attachment_path);};
+  v.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const id=Number(b.dataset.id||0);if(b.classList.contains('workDdtOpen'))openWorkDdtEditor(id);else if(b.classList.contains('workDdtEdit'))editWorkDdt(id);else if(b.classList.contains('workDdtAttachment')){const r=workDdtRows.find(x=>Number(x.id)===id);openWorkDdtAttachment(r?.inbound_attachment_path);}else if(b.classList.contains('workDdtOutbound')){const r=workDdtRows.find(x=>Number(x.id)===id);openWorkDdtAttachment(r?.outbound_attachment_path);}else if(b.classList.contains('workDdtDelete'))deleteWorkDdt(id);else if(b.classList.contains('workDdtItemEdit'))editWorkDdtItem(id);else if(b.classList.contains('workDdtItemReturnAll'))setWorkDdtItemReturned(id);else if(b.classList.contains('workDdtCreateRepair'))createRepairFromWorkDdtItem(id);else if(b.classList.contains('workDdtGoRepair'))setCategory('RiparazioniAdmin');else if(b.classList.contains('workDdtItemDelete'))deleteWorkDdtItem(id);});
+}
+document.addEventListener('DOMContentLoaded',bindWorkDdtUi);setInterval(bindWorkDdtUi,2000);
