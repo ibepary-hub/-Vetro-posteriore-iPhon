@@ -1,0 +1,5 @@
+BEPARYTECH v1119 - DASHBOARD HOME FIX
+
+Carica direttamente questi file su GitHub al posto della versione precedente.
+Dopo il login il gestionale apre sempre la Dashboard.
+Se il telefono mostra ancora la vecchia schermata al primo avvio, chiudi e riapri la PWA/browser una volta: il Service Worker v1119 forza l'aggiornamento degli asset.

@@ -1,0 +1,10 @@
+BeparyTech v1117
+
+Novità:
+- Impostazioni → Negozi / punti vendita con aggiunta, rinomina, attiva/disattiva.
+- Elenco negozi dinamico anche nelle modifiche vendita dispositivo.
+- Fix “Altro cliente”: in accettazione completa compare una riga Nome cliente dedicata.
+- Mantenuti tutti i fix sicurezza e privacy delle versioni precedenti.
+- Limite max_stores resta applicato lato database.
+
+Database: nessuna nuova migrazione richiesta rispetto alla v1116.

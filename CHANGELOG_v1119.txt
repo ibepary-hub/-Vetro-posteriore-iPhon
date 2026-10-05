@@ -1,0 +1,9 @@
+BeparyTech v1119
+
+- Login/refresh: apertura sempre sulla Dashboard, non più sull'ultima sezione salvata.
+- Dashboard mobile rinnovata e più operativa.
+- KPI principali: riparazioni aperte, ritiri previsti oggi, incasso mese, scorte critiche.
+- Nuovi accessi rapidi: nuova accettazione, riparazioni, vendite ricambi, magazzino, DDT, cronologia.
+- KPI cliccabili verso le relative sezioni.
+- Cache/PWA aggiornata a v1119 per evitare schermate vecchie dopo l'update.
+- Mantiene tutte le funzioni e correzioni sicurezza delle versioni precedenti.

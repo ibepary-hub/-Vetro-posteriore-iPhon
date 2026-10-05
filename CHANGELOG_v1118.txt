@@ -1,0 +1,8 @@
+v1118
+- Onboarding SaaS automatico senza UUID manuale.
+- Creazione server-side del proprietario workspace.
+- JWT obbligatorio sulla Edge Function.
+- Verifica Super Admin lato server.
+- Password temporanea mai salvata nel database gestionale.
+- Multi-negozio automatico in base a max_stores.
+- UI tecnica semplificata.

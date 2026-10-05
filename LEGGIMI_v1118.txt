@@ -1,0 +1,28 @@
+BEPARYTECH v1118 - ONBOARDING CLIENTI AUTOMATICO
+
+Novità principali
+- Rimossa la richiesta manuale del Workspace owner UUID.
+- Nuovi campi in Clienti software: Email accesso amministratore e Password temporanea.
+- Il pulsante Crea azienda usa la Edge Function protetta beparytech-saas-company per creare automaticamente:
+  1) account Supabase Auth del proprietario;
+  2) riga licenza/azienda;
+  3) profilo Admin;
+  4) workspace_owner_id uguale all'UUID Auth generato.
+- La password temporanea non viene salvata nelle tabelle del gestionale.
+- Multi-negozio viene aggiunto automaticamente ai moduli quando Negozi max > 1.
+- L'UUID tecnico non è più mostrato nella lista aziende.
+- La modifica di aziende esistenti continua a funzionare senza ricreare l'account proprietario.
+
+Backend live
+- Edge Function: beparytech-saas-company
+- verify_jwt: true
+- Solo un utente presente in beparytech_super_admins può creare una nuova azienda.
+
+Password temporanea
+- Minimo 12 caratteri
+- Almeno una maiuscola, una minuscola, un numero e un simbolo
+- Il pulsante Genera crea automaticamente una password conforme.
+
+Multi-negozio
+- Negozi max = 1: modulo multi_store non assegnato.
+- Negozi max > 1: modulo multi_store assegnato automaticamente.

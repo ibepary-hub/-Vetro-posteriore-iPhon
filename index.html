@@ -10,10 +10,10 @@
   <meta name="apple-mobile-web-app-title" content="BeparyTech Manager">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
   <title>BeparyTech Manager</title>
-  <link rel="manifest" href="manifest.json?v=1116">
+  <link rel="manifest" href="manifest.json?v=1119">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=1116">
+  <link rel="stylesheet" href="style.css?v=1119">
 
 
 
@@ -56,7 +56,7 @@
         <button id="backupMenuItem" class="menuItem adminOnly" type="button" data-category="Backup"><span class="menuIcon">⇩</span><span><strong>Backup</strong><small>Esporta dati</small></span></button>
         <button id="usersMenuItem" class="menuItem adminOnly" type="button" data-category="Utenti"><span class="menuIcon">♙</span><span><strong>Utenti</strong><small>Accessi e password</small></span></button>
         <button id="securityAccessMenuItem" class="menuItem adminOnly" type="button" data-category="SicurezzaAccessi"><span class="menuIcon">◉</span><span><strong>Sicurezza accessi</strong><small>Login, dispositivi e provenienza</small></span></button>
-        <button id="settingsMenuItem" class="menuItem adminOnly" type="button" data-category="Impostazioni"><span class="menuIcon">⚙</span><span><strong>Impostazioni</strong><small>DYMO e preferenze gestionale</small></span></button>
+        <button id="settingsMenuItem" class="menuItem adminOnly" type="button" data-category="Impostazioni"><span class="menuIcon">⚙</span><span><strong>Impostazioni</strong><small>Negozi, DYMO e preferenze</small></span></button>
         <button id="adminChangesMenuItem" class="menuItem adminOnly" type="button" data-category="ModificheImportanti"><span class="menuIcon">✦</span><span><strong>Centro modifiche</strong><small>Controllo completo Admin</small></span></button>
       </div>
 
@@ -137,7 +137,7 @@
         <button id="logoutBtn" class="secondary full">Esci</button>
       </div>
     </section>
-    <section id="dashboardView" class="dashboardView dashboardV87" hidden>
+    <section id="dashboardView" class="dashboardView dashboardV87 dashboardV1119" hidden>
       <div class="dashTopbar">
         <div class="dashSearchVisual"><span>⌕</span><strong>Cerca prodotti, IMEI, clienti, fatture…</strong></div>
         <div class="dashUserMini"><span id="dashUserInitials">BT</span><div><strong id="dashUserName">BeparyTech</strong><small id="dashUserRole">Amministratore</small></div></div>
@@ -165,11 +165,13 @@
             </div>
           </div>
 
-          <div class="quickAccessGrid v87QuickAccess" aria-label="Accesso rapido">
-            <button type="button" data-quick-category="BackGlass"><b>▣</b><span><strong>BackGlass</strong><small>Vetri posteriori · NO LOGO</small></span><em>Apri →</em></button>
-            <button type="button" data-quick-category="Housing"><b>▢</b><span><strong>Housing</strong><small>Scocche complete · NO LOGO</small></span><em>Apri →</em></button>
-            <button type="button" data-quick-category="Vendite"><b>✓</b><span><strong>Vendite</strong><small>Scarichi e consegne</small></span><em>Apri →</em></button>
-            <button type="button" class="adminQuick" data-quick-category="RiparazioniAdmin"><b>⌁</b><span><strong>Riparazioni</strong><small>Clienti aziendali</small></span><em>Apri →</em></button>
+          <div class="quickAccessGrid v87QuickAccess dashboardPrimaryActions" aria-label="Azioni principali">
+            <button type="button" class="adminQuick primaryActionCard" data-quick-category="AccettazioneRapida"><b>＋</b><span><strong>Nuova accettazione</strong><small>Apri subito una nuova pratica</small></span><em>Apri →</em></button>
+            <button type="button" class="adminQuick primaryActionCard" data-quick-category="RiparazioniAdmin"><b>⌁</b><span><strong>Riparazioni</strong><small>Pratiche, ritiri e consegne</small></span><em>Apri →</em></button>
+            <button type="button" class="adminQuick primaryActionCard" data-quick-category="VenditeAdmin"><b>€</b><span><strong>Vendite ricambi</strong><small>Nuova vendita e fatturazione</small></span><em>Apri →</em></button>
+            <button type="button" class="primaryActionCard" data-quick-category="BackGlass"><b>▣</b><span><strong>Magazzino</strong><small>BackGlass, Housing e ricambi</small></span><em>Apri →</em></button>
+            <button type="button" class="adminQuick primaryActionCard" data-quick-category="ContoLavorazione"><b>▤</b><span><strong>DDT lavorazione</strong><small>Entrata, lavorazione e restituzione</small></span><em>Apri →</em></button>
+            <button type="button" class="primaryActionCard" data-quick-category="Cronologia"><b>≋</b><span><strong>Cronologia</strong><small>Ultimi movimenti del gestionale</small></span><em>Apri →</em></button>
           </div>
 
           <div id="adminOperationalPanels" class="dashboardColumns adminOnly" hidden>
@@ -432,7 +434,7 @@
 <option>MELA Piacenza</option><option>MELA Lime Store</option><option>MELA Repubblica</option><option>MELA Emilia Est</option>
 <option>DP Udine</option><option>DP Majano</option><option>DP Tolmezzo</option><option>DP Cividale</option><option>DP Codroipo</option><option>DP Colugna</option>
 <option>E-POL</option></select></label>
-        <label class="wide"><span>Cliente personalizzato</span><input id="adminRepairCustomClient" maxlength="160" placeholder="Usa solo se hai scelto Altro cliente" disabled></label><label><span>Telefono cliente</span><input id="adminRepairCustomerPhone" type="tel" maxlength="40" placeholder="es. +39 333 1234567"></label><label><span>Email cliente</span><input id="adminRepairCustomerEmail" type="email" maxlength="160" placeholder="Facoltativa"></label>
+        <label id="adminRepairCustomClientWrap" class="wide" hidden><span>Nome cliente *</span><input id="adminRepairCustomClient" maxlength="160" placeholder="Scrivi il nome del cliente" disabled></label><label><span>Telefono cliente</span><input id="adminRepairCustomerPhone" type="tel" maxlength="40" placeholder="es. +39 333 1234567"></label><label><span>Email cliente</span><input id="adminRepairCustomerEmail" type="email" maxlength="160" placeholder="Facoltativa"></label>
         <label class="wide"><span>Dispositivo *</span><input id="adminRepairDevice" maxlength="160" placeholder="es. iPhone 15 Pro, S21 Ultra 5G..." required></label>
         <label><span>Tipo di riparazione *</span><input id="adminRepairType" list="adminRepairTypeOptions" maxlength="240" placeholder="Seleziona o scrivi l’intervento" required><datalist id="adminRepairTypeOptions"><option value="Cambio display"><option value="Cambio batteria"><option value="Cambio connettore"><option value="Riparazione scheda madre"><option value="Altro"></datalist></label>
         <label><span>IMEI / Seriale</span><input id="adminRepairImei" maxlength="120" placeholder="Facoltativo"></label><label class="wide"><span>Difetto dichiarato dal cliente *</span><textarea id="adminRepairReportedIssue" maxlength="1000" rows="2" placeholder="es. Non carica, display rotto, non si accende…" required></textarea></label><label class="wide"><span>Stato estetico all’accettazione</span><input id="adminRepairDeviceCondition" maxlength="500" placeholder="es. Vetro posteriore graffiato, cornice segnata…"></label><label class="wide"><span>Accessori consegnati</span><input id="adminRepairAccessories" maxlength="500" placeholder="es. Custodia, SIM, caricatore · oppure Nessuno"></label>
@@ -575,12 +577,13 @@
   </div>
 
   <section class="saasEditorCard">
-    <div class="saasEditorHead"><div><strong id="saasFormTitle">Nuova azienda cliente</strong><small>Per collegare il cliente inserisci l'UUID del suo account Auth come proprietario workspace.</small></div><button id="saasCancelEditBtn" class="miniBtn" type="button" hidden>Annulla modifica</button></div>
+    <div class="saasEditorHead"><div><strong id="saasFormTitle">Nuova azienda cliente</strong><small>Inserisci i dati del cliente: BeparyTech creerà automaticamente account amministratore, workspace e licenza.</small></div><button id="saasCancelEditBtn" class="miniBtn" type="button" hidden>Annulla modifica</button></div>
     <form id="saasCompanyForm" autocomplete="off">
       <input id="saasCompanyId" type="hidden">
       <div class="saasFormGrid">
         <label><span>Ragione sociale *</span><input id="saasCompanyName" required maxlength="160" placeholder="es. Rossi Tech S.r.l."></label>
-        <label><span>Workspace owner UUID *</span><input id="saasOwnerId" required maxlength="64" placeholder="UUID Supabase Auth"></label>
+        <label id="saasAdminEmailWrap"><span>Email accesso amministratore *</span><input id="saasAdminEmail" type="email" maxlength="254" placeholder="admin@cliente.it" autocomplete="off"></label>
+        <label id="saasTempPasswordWrap"><span>Password temporanea *</span><div class="saasPasswordLine"><input id="saasTempPassword" type="text" maxlength="128" placeholder="Password iniziale sicura" autocomplete="new-password"><button id="saasGeneratePassword" class="miniBtn" type="button">Genera</button></div></label>
         <label><span>P.IVA</span><input id="saasVat" maxlength="16" placeholder="IT01234567890"></label>
         <label><span>Piano</span><select id="saasPlan"><option value="base">Base</option><option value="pro" selected>Pro</option><option value="business">Business</option><option value="owner">Owner</option></select></label>
         <label><span>Stato licenza</span><select id="saasStatus"><option value="active">Attiva</option><option value="trial">Trial</option><option value="suspended">Sospesa</option><option value="expired">Scaduta</option></select></label>
@@ -590,7 +593,7 @@
         <label><span>Email amministrativa</span><input id="saasBillingEmail" type="email" maxlength="180" placeholder="cliente@email.it"></label>
         <label><span>Dominio / slug</span><input id="saasSlug" maxlength="80" placeholder="rossitech"></label>
       </div>
-      <div class="saasModulesBox"><strong>Moduli abilitati</strong><div id="saasModulesGrid" class="saasModulesGrid">
+      <div class="saasModulesBox"><strong>Moduli abilitati</strong><small class="saasAutoModuleHint">Multi-negozio si abilita automaticamente quando “Negozi max” è maggiore di 1.</small><div id="saasModulesGrid" class="saasModulesGrid">
         <label><input type="checkbox" value="inventory" checked> Magazzino</label>
         <label><input type="checkbox" value="sales" checked> Vendite</label>
         <label><input type="checkbox" value="repairs" checked> Riparazioni</label>
@@ -599,7 +602,6 @@
         <label><input type="checkbox" value="dymo" checked> DYMO / QR</label>
         <label><input type="checkbox" value="hours"> Orari</label>
         <label><input type="checkbox" value="bestek"> Catalogo Bestek</label>
-        <label><input type="checkbox" value="multi_store"> Multi-negozio</label>
         <label><input type="checkbox" value="backup" checked> Backup</label>
       </div></div>
       <div class="saasEditorActions"><button id="saasSaveCompanyBtn" class="primaryAction animatedBtn" type="submit">Crea azienda</button><div id="saasFormMsg" class="createUserMsg"></div></div>
@@ -608,7 +610,7 @@
 
   <div class="saasToolbar"><input id="saasSearch" type="search" placeholder="Cerca azienda, P.IVA, piano…"><select id="saasStatusFilter"><option value="all">Tutti gli stati</option><option value="active">Attive</option><option value="trial">Trial</option><option value="suspended">Sospese</option><option value="expired">Scadute</option></select><button id="saasRefreshBtn" class="miniBtn animatedBtn" type="button">↻ Aggiorna</button></div>
   <div id="saasCompaniesList" class="saasCompaniesList"><div class="emptyState">Caricamento aziende…</div></div>
-  <div class="saasSecurityNote"><strong>Separazione dati</strong><span>Le aziende sono identificate da <code>workspace_owner_id</code>. Il file SQL incluso aggiunge il livello licenza/Super Admin senza condividere i dati operativi tra clienti.</span></div>
+  <div class="saasSecurityNote"><strong>Separazione dati</strong><span>Ogni cliente usa un workspace separato creato automaticamente. L’identificativo tecnico resta gestito dal sistema e non deve essere inserito manualmente.</span></div>
 </section>
 
 <section id="adminChangesView" class="catalogView adminChangesView" hidden>
@@ -620,7 +622,7 @@
     <button type="button" data-admin-target="Utenti"><b>♙</b><strong>Utenti e permessi</strong><span>Account, accessi, ruoli e credenziali.</span></button>
     <button type="button" data-admin-target="Orari"><b>◷</b><strong>Orari ed extra</strong><span>Ore lavorate, aziende, note e attività extra.</span></button>
     <button type="button" data-admin-target="Fatturazione"><b>▤</b><strong>Fatturazione</strong><span>Voci, periodi, dati fattura ed esportazione Aruba.</span></button>
-    <button type="button" data-admin-target="Impostazioni"><b>⚙</b><strong>Impostazioni tecniche</strong><span>DYMO, etichette e preferenze del gestionale.</span></button>
+    <button type="button" data-admin-target="Impostazioni"><b>⚙</b><strong>Impostazioni</strong><span>Negozi, DYMO, etichette e preferenze del gestionale.</span></button>
     <button type="button" data-admin-target="SicurezzaAccessi"><b>◉</b><strong>Sicurezza e accessi</strong><span>Controllo degli accessi e dispositivi registrati.</span></button>
     <button type="button" data-admin-target="ScorteZero"><b>0</b><strong>Scorte e disponibilità</strong><span>Controlla gli articoli esauriti e intervieni sul magazzino.</span></button>
     <button type="button" data-admin-target="Backup" class="importantChange"><b>⇩</b><strong>Backup dati</strong><span>Prima di modifiche importanti crea una copia dei dati.</span></button>
@@ -629,7 +631,18 @@
 </section>
 
 <section id="settingsView" class="catalogView settingsView" hidden>
-  <div class="adminHero"><div><span class="usersKicker">IMPOSTAZIONI</span><h2>Stampa ed etichette</h2><p>Configura una volta la DYMO. Le preferenze restano memorizzate su questo dispositivo.</p></div><span class="adminBadge">ADMIN</span></div>
+  <div class="adminHero"><div><span class="usersKicker">IMPOSTAZIONI</span><h2>Negozi e configurazione</h2><p>Gestisci i punti vendita del workspace e configura stampa ed etichette.</p></div><span class="adminBadge">ADMIN</span></div>
+  <section class="catalogCard storeManagerCard adminOnlyBlock settingsStoreCard">
+    <div class="catalogListHead"><div><strong>🏬 Negozi / punti vendita</strong><small>Aggiungi, rinomina, disattiva o riattiva i negozi della tua azienda.</small></div><span class="adminBadge">ADMIN</span></div>
+    <form id="storeAdminForm" class="storeAdminForm">
+      <input id="storeAdminName" maxlength="80" placeholder="Nome negozio · es. Piacenza Centro" required>
+      <label class="storePrivateToggle"><input id="storeAdminPrivate" type="checkbox"><span>Solo Admin</span></label>
+      <button class="primaryAction" type="submit">+ Aggiungi negozio</button>
+    </form>
+    <div class="labelConfigHint">Il numero massimo di negozi dipende dal piano assegnato al workspace. Il limite viene controllato anche lato server.</div>
+    <div id="storeAdminMsg" class="createUserMsg"></div>
+    <div id="storeAdminList" class="storeAdminList"></div>
+  </section>
   <section class="deviceSaleCard adminUniformCard repairLabelSettings">
       <div class="deviceSaleCardHead"><div><strong>🏷 Etichette DYMO</strong><small>Scegli una volta il formato. Verrà ricordato su questo dispositivo.</small></div><span id="dymoRepairSizeBadge" class="practicePill">32 × 57 mm</span></div>
       <div class="labelConfigGrid">
@@ -747,16 +760,6 @@
         </form>
       </div>
       <div class="catalogCard catalogListCard"><div class="catalogListHead"><div><strong>Sezioni create</strong><small>Prodotti disponibili nel menu</small></div><button id="refreshCatalogBtn" class="miniBtn animatedBtn" type="button">Aggiorna</button></div><div id="catalogAdminList"></div></div>
-      <div class="catalogCard storeManagerCard adminOnlyBlock">
-        <div class="catalogListHead"><div><strong>Gestione negozi</strong><small>Solo Admin · aggiungi, modifica o disattiva negozi</small></div><span class="adminBadge">ADMIN</span></div>
-        <form id="storeAdminForm" class="storeAdminForm">
-          <input id="storeAdminName" maxlength="80" placeholder="Nome negozio" required>
-          <label class="storePrivateToggle"><input id="storeAdminPrivate" type="checkbox"><span>Solo Admin</span></label>
-          <button class="primaryAction" type="submit">+ Aggiungi negozio</button>
-        </form>
-        <div id="storeAdminMsg" class="createUserMsg"></div>
-        <div id="storeAdminList" class="storeAdminList"></div>
-      </div>
     </section>
   </div>
 
@@ -912,7 +915,7 @@
  <button type="button" data-smart-action="menu"><b>☰</b><span>Menu</span></button>
 </nav>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
-<script src="app.js?v=1116"></script>
+<script src="app.js?v=1119"></script>
 
 
 

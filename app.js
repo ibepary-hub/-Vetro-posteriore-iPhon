@@ -18,7 +18,7 @@ let workspaceOwnerId = null;
 let btSuperAdmin = false;
 let btCompanyLicense = null;
 let btSaasCompanies = [];
-let currentCategory = "BackGlass";
+let currentCategory = "Dashboard";
 let pendingSale = null;
 let selectedCustomer = null;
 let sales = [];
@@ -75,7 +75,7 @@ function statusFor(q){
 }
 function colorDot(name){
   const n=name.toLowerCase();
-  if(n.includes("nero")||n.includes("grafite")||n.includes("mezzanotte")) return "#111827";
+  if(n.includes("nero")||n.includes("grafite")||n.includes("mezzanotte")) return "#111927";
   if(n.includes("bianco")||n.includes("galassia")||n.includes("argento")) return "#e5e7eb";
   if(n.includes("oro")) return "#d4a857"; if(n.includes("rosso")) return "#dc2626";
   if(n.includes("blu")||n.includes("azzurro")) return "#2563eb"; if(n.includes("verde")) return "#16a34a";
@@ -149,7 +149,7 @@ function refreshCostUi(){if(String(currentCategory).startsWith("custom:"))render
 function wireCostBadge(costNode,key,label){const edit=costNode?.querySelector(".editCostBtn");if(edit)edit.onclick=()=>editCost(normalizedCostKey(key),label);}
 
 async function loadStores(){if(!currentUser){storeList=[];return;}const {data,error}=await sb.rpc("list_beparytech_stores");if(error){console.error(error);storeList=[];return;}storeList=Array.isArray(data)?data:[];populateStoreControls();renderSalesStoreTabs();if(isAdmin())renderStoreAdmin();}
-function populateStoreControls(){const ids=["saleCustomerSelect","editStoreSelect","deviceSaleStore","adminRepairStore"];ids.forEach(id=>{const el=document.getElementById(id);if(!el)return;const prev=el.value;el.innerHTML=`<option value="">Seleziona negozio…</option>`+storeList.filter(x=>x.active!==false).map(x=>`<option value="${escapeHtml(x.name)}">${escapeHtml(x.name)}${x.admin_only?" · ADMIN":""}</option>`).join("");if([...el.options].some(o=>o.value===prev))el.value=prev;});}
+function populateStoreControls(){const ids=["saleCustomerSelect","editStoreSelect","deviceSaleStore","editDeviceSaleStore","adminRepairStore"];ids.forEach(id=>{const el=document.getElementById(id);if(!el)return;const prev=el.value;el.innerHTML=`<option value="">Seleziona negozio…</option>`+storeList.filter(x=>x.active!==false).map(x=>`<option value="${escapeHtml(x.name)}">${escapeHtml(x.name)}${x.admin_only?" · ADMIN":""}</option>`).join("");if([...el.options].some(o=>o.value===prev))el.value=prev;});}
 function renderSalesStoreTabs(){const box=document.getElementById("salesStoreTabs");if(!box)return;const names=["ALL",...storeList.filter(x=>x.active!==false).map(x=>x.name)];if(salesStoreFilter!=="ALL"&&!names.includes(salesStoreFilter))salesStoreFilter="ALL";box.innerHTML=names.map(n=>`<button type="button" class="salesStoreTab ${salesStoreFilter===n?"active":""}" data-store="${escapeHtml(n)}">${n==="ALL"?"Tutti i negozi":escapeHtml(n)}</button>`).join("");box.querySelectorAll(".salesStoreTab").forEach(b=>b.onclick=()=>{salesStoreFilter=b.dataset.store;renderSales();renderSalesStoreTabs();});}
 async function renderStoreAdmin(){const box=document.getElementById("storeAdminList");if(!box||!isAdmin())return;box.innerHTML=storeList.length?storeList.map(s=>`<div class="storeAdminRow" data-id="${s.id}"><div><strong>${escapeHtml(s.name)}</strong><small>${s.admin_only?"Solo Admin":"Visibile agli operatori"}${s.active===false?" · Disattivato":""}</small></div><div><button type="button" class="miniBtn renameStore">Rinomina</button><button type="button" class="miniBtn toggleStore">${s.active===false?"Riattiva":"Disattiva"}</button></div></div>`).join(""):"<div class='emptyState'>Nessun negozio.</div>";box.querySelectorAll(".renameStore").forEach(b=>b.onclick=async()=>{const row=storeList.find(x=>Number(x.id)===Number(b.closest("[data-id]").dataset.id));if(!row)return;const name=prompt("Nuovo nome negozio",row.name);if(!name||!name.trim())return;const {error}=await sb.from("beparytech_stores").update({name:name.trim()}).eq("id",row.id);if(error)alert(error.message);else await loadStores();});box.querySelectorAll(".toggleStore").forEach(b=>b.onclick=async()=>{const row=storeList.find(x=>Number(x.id)===Number(b.closest("[data-id]").dataset.id));if(!row)return;const {error}=await sb.from("beparytech_stores").update({active:row.active===false}).eq("id",row.id);if(error)alert(error.message);else await loadStores();});}
 
@@ -498,17 +498,11 @@ async function showAuth(user){
     await Promise.all([loadCloud(),loadCustomCatalog(),loadAdminCosts(),loadSalePrices(),loadStores()]);
     await startInventoryRealtime();
     document.getElementById("globalSearchBar").hidden=false;
-    // v107.4: dopo un refresh torna all’ultima pagina realmente aperta.
-    let restoreCategory="Dashboard";
-    try{ restoreCategory=localStorage.getItem("beparytech-last-category")||"Dashboard"; }catch(_){}
-    if(String(restoreCategory).startsWith("custom:")){
-      const sid=Number(String(restoreCategory).split(":")[1]);
-      if(!customSections.some(x=>Number(x.id)===sid && x.active!==false)) restoreCategory="Dashboard";
-    }
-    const adminOnlyCats=new Set(["Utenti","GestioneMagazzino","ScorteZero","Backup","Orari","VenditeAdmin","Fatturazione","CatalogoBestek","RiparazioniAdmin","AccettazioneRapida","AccettazioneCompleta","ContoLavorazione","Impostazioni"]);
-    if(restoreCategory==="SaaSAziende"&&!isSuperAdmin()) restoreCategory="Dashboard";
-    if(adminOnlyCats.has(restoreCategory) && !isAdmin()) restoreCategory="Dashboard";
-    setCategory(restoreCategory);
+    // v1119: dopo login/refresh si apre sempre la Dashboard.
+    // L'ultima sezione resta utile durante la sessione, ma non decide più la schermata iniziale.
+    try{ localStorage.setItem("beparytech-last-category","Dashboard"); }catch(_){}
+    btNavStack.length=0;
+    setCategory("Dashboard");
   }else{
     await stopInventoryRealtime();
     document.getElementById("globalSearchBar").hidden=true;
@@ -1474,13 +1468,18 @@ async function loadDashboard(){
   try{
     const [partsRes,repairsRes]=await Promise.all([
       sb.from("beparytech_admin_device_sales").select("sold_at,sale_price,vat_amount").gte("sold_at",dateISO).limit(1000),
-      sb.from("beparytech_admin_repairs").select("repaired_at,total_inc_vat,price_ex_vat,vat_amount,repair_status").gte("repaired_at",dateISO).limit(1000)
+      sb.from("beparytech_admin_repairs").select("repaired_at,estimated_pickup_date,total_inc_vat,price_ex_vat,vat_amount,repair_status,practice_code,client_name,device").order("repaired_at",{ascending:false}).limit(1000)
     ]);
     partsRows=partsRes.data||[];repairRows=repairsRes.data||[];
   }catch(_){ }
-  const monthRevenue=partsRows.reduce((a,r)=>a+Number(r.sale_price||0)+Number(r.vat_amount||0),0)+repairRows.reduce((a,r)=>a+Number(r.total_inc_vat||0),0);
-  const doneRepairs=repairRows.filter(r=>String(r.repair_status||"").toLowerCase().includes("ripar")||String(r.repair_status||"").toLowerCase().includes("complet")).length;
-  document.getElementById("dashboardCards").innerHTML=`<div class="dashCard kpiBlue"><span>Prodotti in magazzino</span><strong>${total}</strong><small>${inv.length} articoli censiti</small></div><div class="dashCard kpiGreen"><span>Vendite questo mese</span><strong>${euroFmt.format(monthRevenue)}</strong><small>${partsRows.length} vendite ricambi</small></div><div class="dashCard kpiOrange"><span>Riparazioni effettuate</span><strong>${repairRows.length}</strong><small>${doneRepairs} completate nel mese</small></div><div class="dashCard kpiPurple"><span>Da controllare</span><strong>${low.length+empty.length}</strong><small>${empty.length} esauriti · ${low.length} bassi</small></div>`;
+  const monthRepairRows=repairRows.filter(r=>String(r.repaired_at||"")>=dateISO);
+  const monthRevenue=partsRows.reduce((a,r)=>a+Number(r.sale_price||0)+Number(r.vat_amount||0),0)+monthRepairRows.reduce((a,r)=>a+Number(r.total_inc_vat||0),0);
+  const openStatuses=new Set(["da completare","da diagnosticare","in lavorazione","attesa ricambio","pronto"]);
+  const openRepairs=repairRows.filter(r=>{const st=String(r.repair_status||"").trim().toLowerCase();return openStatuses.has(st)||(!st.includes("consegn")&&!st.includes("chius")&&!st.includes("annull"));});
+  const todayISO=new Date().toISOString().slice(0,10);
+  const pickupsToday=repairRows.filter(r=>r.estimated_pickup_date===todayISO && !String(r.repair_status||"").toLowerCase().includes("consegn"));
+  document.getElementById("dashboardCards").innerHTML=`<button class="dashCard kpiBlue dashNavCard" data-dash-category="RiparazioniAdmin"><span>Riparazioni aperte</span><strong>${openRepairs.length}</strong><small>${openRepairs.length?"Pratiche ancora da chiudere":"Tutto sotto controllo"}</small></button><button class="dashCard kpiOrange dashNavCard" data-dash-category="RiparazioniAdmin"><span>Ritiri previsti oggi</span><strong>${pickupsToday.length}</strong><small>${pickupsToday.length?"Da preparare o consegnare":"Nessun ritiro previsto"}</small></button><button class="dashCard kpiGreen dashNavCard" data-dash-category="VenditeAdmin"><span>Incasso questo mese</span><strong>${euroFmt.format(monthRevenue)}</strong><small>${partsRows.length} vendite ricambi · ${monthRepairRows.length} riparazioni</small></button><button class="dashCard kpiPurple dashNavCard" data-dash-category="ScorteZero"><span>Scorte critiche</span><strong>${low.length+empty.length}</strong><small>${empty.length} esauriti · ${low.length} bassi</small></button>`;
+  document.querySelectorAll(".dashNavCard[data-dash-category]").forEach(b=>b.onclick=()=>setCategory(b.dataset.dashCategory));
   document.getElementById("dashboardLowStock").innerHTML=[...empty,...low].slice(0,8).map(p=>{const sec=customSections.find(x=>Number(x.id)===Number(p.section_id));return `<button class="dashboardLine" data-section="${p.section_id}"><span><strong>${escapeHtml(p.name)}</strong><small>${escapeHtml(sec?.name||"")} · ${escapeHtml(p.variant||"")}</small></span><b>${p.quantity} pz</b></button>`}).join("")||'<div class="emptyState">Nessuna scorta critica.</div>';
   document.getElementById("dashboardActivity").innerHTML=audit.map(e=>`<div class="dashboardLine"><span><strong>${escapeHtml(e.title)}</strong><small>${escapeHtml(e.actor_name||"Sistema")} · ${new Date(e.created_at).toLocaleString("it-IT")}</small></span></div>`).join("")||'<div class="emptyState">Nessuna attività.</div>';
   document.querySelectorAll(".dashboardLine[data-section]").forEach(b=>b.onclick=()=>setCategory(`custom:${b.dataset.section}`));
@@ -1937,7 +1936,7 @@ document.getElementById("saveRecoveryPassword").onclick=async()=>{
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1116", { updateViaCache: "none" });
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1119", { updateViaCache: "none" });
       await reg.update();
       navigator.serviceWorker.addEventListener("controllerchange", () => {
         if (!sessionStorage.getItem("bt-cache-reloaded-v1116")) {
@@ -1985,7 +1984,7 @@ async function uploadAdminRepairPhotos(ctx,practiceCode){
  return out.slice(0,6);
 }
 function initAdminRepairSignature(){
- const c=document.getElementById('adminRepairSignatureCanvas');if(!c||c.dataset.bound==='1')return;c.dataset.bound='1';const x=c.getContext('2d');x.lineWidth=3;x.lineCap='round';x.strokeStyle='#111827';let down=false;const pt=e=>{const r=c.getBoundingClientRect(),t=e.touches?e.touches[0]:e;return {x:(t.clientX-r.left)*(c.width/r.width),y:(t.clientY-r.top)*(c.height/r.height)}};const start=e=>{down=true;const p=pt(e);x.beginPath();x.moveTo(p.x,p.y);e.preventDefault()};const move=e=>{if(!down)return;const p=pt(e);x.lineTo(p.x,p.y);x.stroke();adminRepairSignatureData=c.toDataURL('image/png');const st=document.getElementById('adminRepairSignatureState');if(st)st.textContent='Firma acquisita';e.preventDefault()};const end=()=>{down=false};c.addEventListener('pointerdown',start);c.addEventListener('pointermove',move);window.addEventListener('pointerup',end);document.getElementById('clearAdminRepairSignature')?.addEventListener('click',()=>{x.clearRect(0,0,c.width,c.height);adminRepairSignatureData=null;const st=document.getElementById('adminRepairSignatureState');if(st)st.textContent='Nessuna firma';});
+ const c=document.getElementById('adminRepairSignatureCanvas');if(!c||c.dataset.bound==='1')return;c.dataset.bound='1';const x=c.getContext('2d');x.lineWidth=3;x.lineCap='round';x.strokeStyle='#111927';let down=false;const pt=e=>{const r=c.getBoundingClientRect(),t=e.touches?e.touches[0]:e;return {x:(t.clientX-r.left)*(c.width/r.width),y:(t.clientY-r.top)*(c.height/r.height)}};const start=e=>{down=true;const p=pt(e);x.beginPath();x.moveTo(p.x,p.y);e.preventDefault()};const move=e=>{if(!down)return;const p=pt(e);x.lineTo(p.x,p.y);x.stroke();adminRepairSignatureData=c.toDataURL('image/png');const st=document.getElementById('adminRepairSignatureState');if(st)st.textContent='Firma acquisita';e.preventDefault()};const end=()=>{down=false};c.addEventListener('pointerdown',start);c.addEventListener('pointermove',move);window.addEventListener('pointerup',end);document.getElementById('clearAdminRepairSignature')?.addEventListener('click',()=>{x.clearRect(0,0,c.width,c.height);adminRepairSignatureData=null;const st=document.getElementById('adminRepairSignatureState');if(st)st.textContent='Nessuna firma';});
 }
 function drawAdminRepairSignature(data){const c=document.getElementById('adminRepairSignatureCanvas');if(!c)return;const x=c.getContext('2d');x.clearRect(0,0,c.width,c.height);if(data){const im=new Image();im.onload=()=>x.drawImage(im,0,0,c.width,c.height);im.src=data;}const st=document.getElementById('adminRepairSignatureState');if(st)st.textContent=data?'Firma acquisita':'Nessuna firma';}
 async function showAdminRepairPhotos(id){
@@ -2008,7 +2007,7 @@ function resetAdminRepairEditor(){
   const d=document.getElementById("adminRepairDate");
   if(d) d.value=new Date().toISOString().slice(0,10);
   ["adminRepairStore","adminRepairClient","adminRepairCustomClient","adminRepairDevice","adminRepairType","adminRepairPrice","adminRepairNote","adminRepairEShareRef","adminRepairImei","adminRepairPartCost","adminRepairPracticeCode","adminRepairCustomerPhone","adminRepairCustomerEmail","adminRepairReportedIssue","adminRepairDeviceCondition","adminRepairAccessories","adminRepairQuoteAmount","adminRepairEstimatedPickup"].forEach(id=>{const el=document.getElementById(id);if(el)el.value="";});
-  const st=document.getElementById("adminRepairStatus");if(st)st.value="Da riparare";const qs=document.getElementById("adminRepairQuoteStatus");if(qs)qs.value="Da diagnosticare";const wm=document.getElementById("adminRepairWarrantyMonths");if(wm)wm.value="3";const inv=document.getElementById("adminRepairInvoiced");if(inv)inv.value="false";const cc=document.getElementById("adminRepairCustomClient");if(cc)cc.disabled=true;
+  const st=document.getElementById("adminRepairStatus");if(st)st.value="Da riparare";const qs=document.getElementById("adminRepairQuoteStatus");if(qs)qs.value="Da diagnosticare";const wm=document.getElementById("adminRepairWarrantyMonths");if(wm)wm.value="3";const inv=document.getElementById("adminRepairInvoiced");if(inv)inv.value="false";const cc=document.getElementById("adminRepairCustomClient");if(cc)cc.disabled=true;const ccw=document.getElementById("adminRepairCustomClientWrap");if(ccw)ccw.hidden=true;
   const vat=document.getElementById("adminRepairVatRate"); if(vat)vat.value="22";
   adminRepairNewPhotos=[];adminRepairExistingPhotos=[];adminRepairSignatureData=null;renderAdminRepairPhotoPreview();drawAdminRepairSignature(null);const pc=document.getElementById("adminRepairPhotos");if(pc)pc.value="";const consent=document.getElementById("adminRepairSignatureConsent");if(consent)consent.checked=false;
   updateAdminRepairVatPreview();
@@ -2020,7 +2019,7 @@ function startAdminRepairEdit(id){
   const form=document.getElementById("adminRepairForm"); if(form)form.dataset.editing="1";
   document.getElementById("adminRepairDate").value=r.repaired_at||"";
   document.getElementById("adminRepairStore").value=r.store||"";
-  const knownClient=["RIPARALO S.R.L.","VR Trasporti"].includes(r.client_name);document.getElementById("adminRepairClient").value=knownClient?r.client_name:"ALTRO";document.getElementById("adminRepairCustomClient").disabled=knownClient;document.getElementById("adminRepairCustomClient").value=knownClient?"":(r.client_name||"");
+  const knownClient=["RIPARALO S.R.L.","VR Trasporti"].includes(r.client_name);document.getElementById("adminRepairClient").value=knownClient?r.client_name:"ALTRO";document.getElementById("adminRepairCustomClient").disabled=knownClient;document.getElementById("adminRepairCustomClient").value=knownClient?"":(r.client_name||"");const customClientWrap=document.getElementById("adminRepairCustomClientWrap");if(customClientWrap)customClientWrap.hidden=knownClient;
   document.getElementById("adminRepairDevice").value=r.device||"";
   document.getElementById("adminRepairType").value=r.repair_type||"";
   document.getElementById("adminRepairPrice").value=Number(r.price_ex_vat||0);
@@ -2074,7 +2073,7 @@ function bindAdminRepairs(){
  document.getElementById("adminRepairPrice")?.addEventListener("input",updateAdminRepairVatPreview);
  document.getElementById("adminRepairVatRate")?.addEventListener("input",updateAdminRepairVatPreview);
  document.getElementById("refreshAdminRepairsBtn")?.addEventListener("click",loadAdminRepairs);
- const clientSel=document.getElementById("adminRepairClient"),customClient=document.getElementById("adminRepairCustomClient");clientSel?.addEventListener("change",()=>{if(customClient){customClient.disabled=clientSel.value!=="ALTRO";if(clientSel.value==="VR Trasporti"){document.getElementById("adminRepairStore").value="VR Trasporti";}else if(clientSel.value!=="ALTRO"&&customClient)customClient.value="";}});
+ const clientSel=document.getElementById("adminRepairClient"),customClient=document.getElementById("adminRepairCustomClient"),customClientWrap=document.getElementById("adminRepairCustomClientWrap");const syncAdminRepairClient=()=>{const other=clientSel?.value==="ALTRO";if(customClientWrap)customClientWrap.hidden=!other;if(customClient){customClient.disabled=!other;customClient.required=!!other;if(!other)customClient.value="";}if(clientSel?.value==="VR Trasporti"){document.getElementById("adminRepairStore").value="VR Trasporti";}};clientSel?.addEventListener("change",syncAdminRepairClient);syncAdminRepairClient();
  document.getElementById("adminRepairCancelEdit")?.addEventListener("click",()=>{resetAdminRepairEditor();const msg=document.getElementById("adminRepairMsg");if(msg)msg.textContent="Modifica annullata.";});
  form.addEventListener("submit",async ev=>{
    ev.preventDefault(); const msg=document.getElementById("adminRepairMsg"); if(msg){msg.className="createUserMsg";msg.textContent=adminRepairEditingId?"Salvataggio modifiche…":"Salvataggio…";}
@@ -2356,7 +2355,7 @@ function updateSmartNavigation(){
  const p=nav.querySelector('[data-smart-action="primary"]'), h=nav.querySelector('[data-smart-action="history"]');
  let pl='Cerca', pi='⌕', hl='Cronologia', hi='≋';
  if(currentCategory==='Orari'){pl='Orario';pi='◷';hl='Extra';hi='＋'}
- else if(currentCategory==='VenditeAdmin'){pl='Vendita';pi='−1';hl='Cronologia';hi='◷'}else if(['RiparazioniAdmin','AccettazioneRapida','AccettazioneCompleta'].includes(currentCategory)){pl='Nuova';pi='＋';hl='Pratiche';hi='⌁'}else if(currentCategory==='Impostazioni'){pl='Etichette';pi='🏷';hl='Home';hi='⌂'}
+ else if(currentCategory==='VenditeAdmin'){pl='Vendita';pi='−1';hl='Cronologia';hi='◷'}else if(['RiparazioniAdmin','AccettazioneRapida','AccettazioneCompleta'].includes(currentCategory)){pl='Nuova';pi='＋';hl='Pratiche';hi='⌁'}else if(currentCategory==='Impostazioni'){pl='Negozi';pi='🏬';hl='Home';hi='⌂'}
  else if(currentCategory==='Fatturazione'){pl='Fattura';pi='🧾';hl='Vendite';hi='€'}
  else if(currentCategory==='Vendite'){pl='Vendite';pi='✓';hl='Cronologia';hi='≋'}
  else if(currentCategory==='Utenti'){pl='Nuovo utente';pi='＋';hl='Gestisci';hi='♙'}
@@ -2366,7 +2365,7 @@ function updateSmartNavigation(){
 document.addEventListener('DOMContentLoaded',()=>{
  bindHourAccordions(); const nav=document.getElementById('mobileBottomNav'), back=document.getElementById('smartBackBtn');
  back?.addEventListener('click',smartBack);
- nav?.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.smartAction;if(a==='home')setCategory('Dashboard');else if(a==='scanner')openScanner();else if(a==='menu')openMainMenu();else if(currentCategory==='Orari'&&a==='primary')document.querySelector('#hoursForm .hourCardToggle')?.click();else if(currentCategory==='Orari'&&a==='history')document.querySelector('#extraForm .hourCardToggle')?.click();else if(currentCategory==='VenditeAdmin'&&a==='primary')document.querySelector('[data-work-tab="sales"]')?.click();else if(currentCategory==='VenditeAdmin'&&a==='history')setCategory('Cronologia');else if(['RiparazioniAdmin','AccettazioneRapida','AccettazioneCompleta'].includes(currentCategory)&&a==='primary')setCategory('AccettazioneRapida');else if(['RiparazioniAdmin','AccettazioneRapida','AccettazioneCompleta'].includes(currentCategory)&&a==='history')setCategory('RiparazioniAdmin');else if(currentCategory==='Impostazioni'&&a==='primary')document.querySelector('.repairLabelSettings')?.scrollIntoView({behavior:'smooth',block:'start'});else if(currentCategory==='Impostazioni'&&a==='history')setCategory('Dashboard');else if(currentCategory==='Fatturazione'&&a==='primary')document.querySelector('[data-work-tab="invoices"]')?.click();else if(currentCategory==='Fatturazione'&&a==='history')setCategory('VenditeAdmin');else if(a==='history')setCategory('Cronologia');else document.getElementById('globalSearch')?.focus();});
+ nav?.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const a=b.dataset.smartAction;if(a==='home')setCategory('Dashboard');else if(a==='scanner')openScanner();else if(a==='menu')openMainMenu();else if(currentCategory==='Orari'&&a==='primary')document.querySelector('#hoursForm .hourCardToggle')?.click();else if(currentCategory==='Orari'&&a==='history')document.querySelector('#extraForm .hourCardToggle')?.click();else if(currentCategory==='VenditeAdmin'&&a==='primary')document.querySelector('[data-work-tab="sales"]')?.click();else if(currentCategory==='VenditeAdmin'&&a==='history')setCategory('Cronologia');else if(['RiparazioniAdmin','AccettazioneRapida','AccettazioneCompleta'].includes(currentCategory)&&a==='primary')setCategory('AccettazioneRapida');else if(['RiparazioniAdmin','AccettazioneRapida','AccettazioneCompleta'].includes(currentCategory)&&a==='history')setCategory('RiparazioniAdmin');else if(currentCategory==='Impostazioni'&&a==='primary')document.querySelector('.settingsStoreCard')?.scrollIntoView({behavior:'smooth',block:'start'});else if(currentCategory==='Impostazioni'&&a==='history')setCategory('Dashboard');else if(currentCategory==='Fatturazione'&&a==='primary')document.querySelector('[data-work-tab="invoices"]')?.click();else if(currentCategory==='Fatturazione'&&a==='history')setCategory('VenditeAdmin');else if(a==='history')setCategory('Cronologia');else document.getElementById('globalSearch')?.focus();});
  let sx=0,sy=0,st=0;document.addEventListener('touchstart',e=>{if(e.touches.length!==1)return;sx=e.touches[0].clientX;sy=e.touches[0].clientY;st=Date.now()},{passive:true});document.addEventListener('touchend',e=>{if(!e.changedTouches?.length||sx>35)return;const dx=e.changedTouches[0].clientX-sx,dy=Math.abs(e.changedTouches[0].clientY-sy);if(dx>85&&dy<70&&Date.now()-st<700)smartBack()},{passive:true});
  updateSmartNavigation();
 });
@@ -2511,7 +2510,7 @@ function completeAdminRepairV92(id){
   const msg=document.getElementById("adminRepairMsg");if(msg){msg.className="createUserMsg";msg.textContent="Completa i dati mancanti e salva: resterà la stessa pratica.";}
 }
 
-const REPAIR_LABEL_KEY="bt-repair-label-v92";
+const REPAIR_LABEL_KEY="bt-repair-label-v1119";
 const REPAIR_LABEL_PRESETS={"32x57":[32,57],"25x54":[25,54],"36x89":[36,89],"19x51":[19,51],"54x101":[54,101],"57x32":[57,32]};
 function getRepairLabelSettingsV92(){try{return {...{preset:"32x57",w:32,h:57,qr:true},...JSON.parse(localStorage.getItem(REPAIR_LABEL_KEY)||"{}")};}catch(_){return {preset:"32x57",w:32,h:57,qr:true};}}
 function saveRepairLabelSettingsV92(){const p=document.getElementById("repairLabelPreset")?.value||"32x57",w=Math.max(10,Math.min(120,Number(document.getElementById("repairLabelWidth")?.value)||32)),h=Math.max(10,Math.min(200,Number(document.getElementById("repairLabelHeight")?.value)||57)),qr=!!document.getElementById("repairLabelIncludeQr")?.checked;localStorage.setItem(REPAIR_LABEL_KEY,JSON.stringify({preset:p,w,h,qr}));const b=document.getElementById("dymoRepairSizeBadge");if(b)b.textContent=`${w} × ${h} mm`;return {preset:p,w,h,qr};}
@@ -2548,7 +2547,7 @@ function v93SetRepairMode(mode){
   if(history) history.hidden=mode!=="practices";
   const title=document.getElementById("adminWorkHeroTitle"), text=document.getElementById("adminWorkHeroText");
   if(mode==="quick"){if(title)title.textContent="Accettazione rapida";if(text)text.textContent="Registra in pochi secondi cliente, dispositivo e lavoro da fare. Completerai la stessa pratica dopo.";}
-  if(mode==="full"){if(title)title.textContent="Accettazione completa";if(text)text.textContent="Scheda completa con foto, firma, IMEI, preventivo, prezzo, garanzia e consegna.";}
+  if(mode==="full"){if(title)title.textContent="Accettazione completa";if(text)text.textContent="Scheda completa con firma, IMEI, preventivo, prezzo, garanzia e consegna.";}
   if(mode==="practices"){if(title)title.textContent="Riparazioni / Pratiche";if(text)text.textContent="Tutte le pratiche: da completare, in lavorazione, in attesa, pronte e consegnate.";}
 }
 const v93PreviousSetCategory=setCategory;
@@ -2567,9 +2566,9 @@ setCategory=function(category,fromBack=false){
     const d=document.getElementById("dashboardView");if(d)d.hidden=true;
     const sv=document.getElementById("settingsView");if(sv)sv.hidden=false;
     document.getElementById("categoryName").textContent="Impostazioni";
-    document.getElementById("categoryDescription").textContent="Area privata Admin · stampa DYMO e preferenze";
+    document.getElementById("categoryDescription").textContent="Area privata Admin · negozi, stampa DYMO e preferenze";
     document.querySelectorAll(".menuItem[data-category]").forEach(b=>b.classList.toggle("active",b.dataset.category==="Impostazioni"));
-    closeMainMenu();bindRepairLabelSettingsV92();updateSmartNavigation();return;
+    closeMainMenu();loadStores().catch(()=>{});bindRepairLabelSettingsV92();updateSmartNavigation();return;
   }
   const sv=document.getElementById("settingsView");if(sv)sv.hidden=true;
   v93PreviousSetCategory(category,fromBack);
@@ -3156,17 +3155,71 @@ function bindWorkDdtUi(){
 document.addEventListener('DOMContentLoaded',bindWorkDdtUi);setInterval(bindWorkDdtUi,2000);
 
 
-// v1110 · BeparyTech Software: gestione multi-azienda / licenze
-function saasSelectedModules(){return [...document.querySelectorAll('#saasModulesGrid input[type="checkbox"]:checked')].map(x=>x.value);}
+// v1119 · BeparyTech Software: onboarding SaaS automatico
+function saasSelectedModules(){
+  const mods=[...document.querySelectorAll('#saasModulesGrid input[type="checkbox"]:checked')].map(x=>x.value);
+  const maxStores=Number(document.getElementById('saasMaxStores')?.value||1);
+  if(maxStores>1&&!mods.includes('multi_store'))mods.push('multi_store');
+  return mods;
+}
 function saasSetModules(mods){const s=new Set(Array.isArray(mods)?mods:[]);document.querySelectorAll('#saasModulesGrid input[type="checkbox"]').forEach(x=>x.checked=s.has(x.value));}
-function saasResetForm(){const f=document.getElementById('saasCompanyForm');if(!f)return;f.reset();document.getElementById('saasCompanyId').value='';document.getElementById('saasPlan').value='pro';document.getElementById('saasStatus').value='active';document.getElementById('saasMaxUsers').value='5';document.getElementById('saasMaxStores').value='2';saasSetModules(['inventory','sales','repairs','ddt','invoicing','dymo','backup']);document.getElementById('saasFormTitle').textContent='Nuova azienda cliente';document.getElementById('saasSaveCompanyBtn').textContent='Crea azienda';document.getElementById('saasCancelEditBtn').hidden=true;document.getElementById('saasOwnerId').disabled=false;document.getElementById('saasFormMsg').textContent='';}
+function saasSetCreateMode(isCreate){
+  const emailWrap=document.getElementById('saasAdminEmailWrap'),passWrap=document.getElementById('saasTempPasswordWrap');
+  const email=document.getElementById('saasAdminEmail'),pass=document.getElementById('saasTempPassword');
+  if(emailWrap)emailWrap.hidden=!isCreate;if(passWrap)passWrap.hidden=!isCreate;
+  if(email)email.required=!!isCreate;if(pass)pass.required=!!isCreate;
+}
+function saasResetForm(){
+  const f=document.getElementById('saasCompanyForm');if(!f)return;f.reset();
+  document.getElementById('saasCompanyId').value='';document.getElementById('saasPlan').value='pro';document.getElementById('saasStatus').value='active';document.getElementById('saasMaxUsers').value='5';document.getElementById('saasMaxStores').value='2';
+  saasSetModules(['inventory','sales','repairs','ddt','invoicing','dymo','backup']);saasSetCreateMode(true);
+  document.getElementById('saasFormTitle').textContent='Nuova azienda cliente';document.getElementById('saasSaveCompanyBtn').textContent='Crea azienda';document.getElementById('saasCancelEditBtn').hidden=true;document.getElementById('saasFormMsg').textContent='';
+}
 function saasFmtDate(v){if(!v)return 'Senza scadenza';const d=new Date(v+'T12:00:00');return Number.isFinite(d.getTime())?d.toLocaleDateString('it-IT'):v;}
 function saasStatusLabel(v){return ({active:'Attiva',trial:'Trial',suspended:'Sospesa',expired:'Scaduta'})[v]||v||'-';}
 function saasSlugify(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,80);}
-function saasRender(){const box=document.getElementById('saasCompaniesList');if(!box)return;const q=(document.getElementById('saasSearch')?.value||'').trim().toLowerCase(),st=document.getElementById('saasStatusFilter')?.value||'all';const rows=btSaasCompanies.filter(x=>(st==='all'||x.status===st)&&(!q||[x.name,x.vat_number,x.plan,x.billing_email,x.slug].join(' ').toLowerCase().includes(q)));box.innerHTML=rows.length?rows.map(x=>`<article class="saasCompanyRow" data-id="${x.id}"><div class="saasCompanyMain"><div class="saasCompanyLogo">${escapeHtml((x.name||'A').trim().charAt(0).toUpperCase())}</div><div><strong>${escapeHtml(x.name||'Azienda')}</strong><span>${escapeHtml(x.vat_number||'P.IVA non indicata')} · ${escapeHtml(x.billing_email||'email non indicata')}</span><small>Workspace: ${escapeHtml(x.workspace_owner_id||'-')}</small></div></div><div class="saasCompanyMeta"><span class="saasPlanBadge">${escapeHtml(String(x.plan||'pro').toUpperCase())}</span><span class="saasLicenseBadge ${escapeHtml(x.status||'active')}">${escapeHtml(saasStatusLabel(x.status))}</span><small>${saasFmtDate(x.expires_at)}</small></div><div class="saasCompanyLimits"><span>Utenti <b>${Number(x.max_users||0)||'∞'}</b></span><span>Negozi <b>${Number(x.max_stores||0)||'∞'}</b></span><small>${(x.modules||[]).length} moduli</small></div><div class="saasCompanyActions"><button class="rowAction saasEdit" type="button" data-id="${x.id}">Modifica</button><button class="rowAction saasToggle" type="button" data-id="${x.id}">${x.status==='suspended'?'Riattiva':'Sospendi'}</button></div></article>`).join(''):'<div class="emptyState">Nessuna azienda trovata.</div>';box.querySelectorAll('.saasEdit').forEach(b=>b.onclick=()=>saasEditCompany(Number(b.dataset.id)));box.querySelectorAll('.saasToggle').forEach(b=>b.onclick=()=>saasToggleCompany(Number(b.dataset.id)));}
-async function loadSaasCompanies(){if(!isSuperAdmin())return;const box=document.getElementById('saasCompaniesList');if(box)box.innerHTML='<div class="emptyState">Caricamento aziende…</div>';try{const {data,error}=await sb.from('beparytech_companies').select('*').order('created_at',{ascending:false});if(error)throw error;btSaasCompanies=Array.isArray(data)?data:[];const now=new Date(),soon=new Date(Date.now()+30*86400000);document.getElementById('saasCompanyCount').textContent=btSaasCompanies.length;document.getElementById('saasActiveCount').textContent=btSaasCompanies.filter(x=>x.status==='active'||x.status==='trial').length;document.getElementById('saasSuspendedCount').textContent=btSaasCompanies.filter(x=>x.status==='suspended').length;document.getElementById('saasExpiringCount').textContent=btSaasCompanies.filter(x=>{if(!x.expires_at)return false;const d=new Date(x.expires_at+'T23:59:59');return d>=now&&d<=soon;}).length;saasRender();}catch(e){if(box)box.innerHTML=`<div class="emptyState">${escapeHtml(e.message||'Impossibile caricare le aziende. Esegui prima 01_SETUP_SAAS_CORE.sql.')}</div>`;}}
-function saasEditCompany(id){const x=btSaasCompanies.find(v=>Number(v.id)===Number(id));if(!x)return;document.getElementById('saasCompanyId').value=x.id;document.getElementById('saasCompanyName').value=x.name||'';document.getElementById('saasOwnerId').value=x.workspace_owner_id||'';document.getElementById('saasOwnerId').disabled=true;document.getElementById('saasVat').value=x.vat_number||'';document.getElementById('saasPlan').value=x.plan||'pro';document.getElementById('saasStatus').value=x.status||'active';document.getElementById('saasExpiresAt').value=x.expires_at||'';document.getElementById('saasMaxUsers').value=x.max_users||5;document.getElementById('saasMaxStores').value=x.max_stores||2;document.getElementById('saasBillingEmail').value=x.billing_email||'';document.getElementById('saasSlug').value=x.slug||'';saasSetModules(x.modules||[]);document.getElementById('saasFormTitle').textContent=`Modifica ${x.name}`;document.getElementById('saasSaveCompanyBtn').textContent='Salva modifiche';document.getElementById('saasCancelEditBtn').hidden=false;document.querySelector('.saasEditorCard')?.scrollIntoView({behavior:'smooth',block:'start'});}
-async function saasSaveCompany(ev){ev.preventDefault();if(!isSuperAdmin())return;const msg=document.getElementById('saasFormMsg');try{const id=Number(document.getElementById('saasCompanyId').value||0),name=document.getElementById('saasCompanyName').value.trim(),owner=document.getElementById('saasOwnerId').value.trim(),slug=(document.getElementById('saasSlug').value.trim()||saasSlugify(name));if(!name||!owner)throw new Error('Ragione sociale e workspace owner UUID sono obbligatori.');const payload={name,workspace_owner_id:owner,vat_number:document.getElementById('saasVat').value.trim()||null,plan:document.getElementById('saasPlan').value,status:document.getElementById('saasStatus').value,expires_at:document.getElementById('saasExpiresAt').value||null,max_users:Number(document.getElementById('saasMaxUsers').value||5),max_stores:Number(document.getElementById('saasMaxStores').value||2),billing_email:document.getElementById('saasBillingEmail').value.trim()||null,slug,modules:saasSelectedModules(),updated_at:new Date().toISOString()};let error;if(id)({error}=await sb.from('beparytech_companies').update(payload).eq('id',id));else({error}=await sb.from('beparytech_companies').insert(payload));if(error)throw error;msg.className='createUserMsg ok';msg.textContent=id?'Azienda aggiornata.':'Azienda creata. Ora il suo workspace può usare la licenza assegnata.';saasResetForm();await loadSaasCompanies();}catch(e){msg.className='createUserMsg error';msg.textContent=e.message||'Errore salvataggio azienda.';}}
+function saasGenerateTempPassword(){
+  const lower='abcdefghijkmnopqrstuvwxyz',upper='ABCDEFGHJKLMNPQRSTUVWXYZ',nums='23456789',symbols='!@#$%*-_';const all=lower+upper+nums+symbols;
+  const pick=set=>set[crypto.getRandomValues(new Uint32Array(1))[0]%set.length];let out=pick(lower)+pick(upper)+pick(nums)+pick(symbols);
+  const rnd=crypto.getRandomValues(new Uint32Array(12));for(const n of rnd)out+=all[n%all.length];
+  {const a=[...out],r=crypto.getRandomValues(new Uint32Array(a.length));for(let i=a.length-1;i>0;i--){const j=r[i]%(i+1);[a[i],a[j]]=[a[j],a[i]];}out=a.join('');}const el=document.getElementById('saasTempPassword');if(el){el.value=out;el.focus();el.select();}
+}
+function saasRender(){
+  const box=document.getElementById('saasCompaniesList');if(!box)return;
+  const q=(document.getElementById('saasSearch')?.value||'').trim().toLowerCase(),st=document.getElementById('saasStatusFilter')?.value||'all';
+  const rows=btSaasCompanies.filter(x=>(st==='all'||x.status===st)&&(!q||[x.name,x.vat_number,x.plan,x.billing_email,x.slug].join(' ').toLowerCase().includes(q)));
+  box.innerHTML=rows.length?rows.map(x=>`<article class="saasCompanyRow" data-id="${x.id}"><div class="saasCompanyMain"><div class="saasCompanyLogo">${escapeHtml((x.name||'A').trim().charAt(0).toUpperCase())}</div><div><strong>${escapeHtml(x.name||'Azienda')}</strong><span>${escapeHtml(x.vat_number||'P.IVA non indicata')} · ${escapeHtml(x.billing_email||'email non indicata')}</span><small>Workspace separato · ${escapeHtml(x.slug||'ID interno')}</small></div></div><div class="saasCompanyMeta"><span class="saasPlanBadge">${escapeHtml(String(x.plan||'pro').toUpperCase())}</span><span class="saasLicenseBadge ${escapeHtml(x.status||'active')}">${escapeHtml(saasStatusLabel(x.status))}</span><small>${saasFmtDate(x.expires_at)}</small></div><div class="saasCompanyLimits"><span>Utenti <b>${Number(x.max_users||0)||'∞'}</b></span><span>Negozi <b>${Number(x.max_stores||0)||'∞'}</b></span><small>${(x.modules||[]).filter(m=>m!=='multi_store').length} moduli${Number(x.max_stores||1)>1?' · Multi-negozio':''}</small></div><div class="saasCompanyActions"><button class="rowAction saasEdit" type="button" data-id="${x.id}">Modifica</button><button class="rowAction saasToggle" type="button" data-id="${x.id}">${x.status==='suspended'?'Riattiva':'Sospendi'}</button></div></article>`).join(''):'<div class="emptyState">Nessuna azienda trovata.</div>';
+  box.querySelectorAll('.saasEdit').forEach(b=>b.onclick=()=>saasEditCompany(Number(b.dataset.id)));box.querySelectorAll('.saasToggle').forEach(b=>b.onclick=()=>saasToggleCompany(Number(b.dataset.id)));
+}
+async function loadSaasCompanies(){if(!isSuperAdmin())return;const box=document.getElementById('saasCompaniesList');if(box)box.innerHTML='<div class="emptyState">Caricamento aziende…</div>';try{const {data,error}=await sb.from('beparytech_companies').select('*').order('created_at',{ascending:false});if(error)throw error;btSaasCompanies=Array.isArray(data)?data:[];const now=new Date(),soon=new Date(Date.now()+30*86400000);document.getElementById('saasCompanyCount').textContent=btSaasCompanies.length;document.getElementById('saasActiveCount').textContent=btSaasCompanies.filter(x=>x.status==='active'||x.status==='trial').length;document.getElementById('saasSuspendedCount').textContent=btSaasCompanies.filter(x=>x.status==='suspended').length;document.getElementById('saasExpiringCount').textContent=btSaasCompanies.filter(x=>{if(!x.expires_at)return false;const d=new Date(x.expires_at+'T23:59:59');return d>=now&&d<=soon;}).length;saasRender();}catch(e){if(box)box.innerHTML=`<div class="emptyState">${escapeHtml(e.message||'Impossibile caricare le aziende.')}</div>`;}}
+function saasEditCompany(id){
+  const x=btSaasCompanies.find(v=>Number(v.id)===Number(id));if(!x)return;
+  document.getElementById('saasCompanyId').value=x.id;document.getElementById('saasCompanyName').value=x.name||'';document.getElementById('saasVat').value=x.vat_number||'';document.getElementById('saasPlan').value=x.plan||'pro';document.getElementById('saasStatus').value=x.status||'active';document.getElementById('saasExpiresAt').value=x.expires_at||'';document.getElementById('saasMaxUsers').value=x.max_users||5;document.getElementById('saasMaxStores').value=x.max_stores||1;document.getElementById('saasBillingEmail').value=x.billing_email||'';document.getElementById('saasSlug').value=x.slug||'';saasSetModules(x.modules||[]);saasSetCreateMode(false);
+  document.getElementById('saasFormTitle').textContent=`Modifica ${x.name}`;document.getElementById('saasSaveCompanyBtn').textContent='Salva modifiche';document.getElementById('saasCancelEditBtn').hidden=false;document.querySelector('.saasEditorCard')?.scrollIntoView({behavior:'smooth',block:'start'});
+}
+async function saasSaveCompany(ev){
+  ev.preventDefault();if(!isSuperAdmin())return;const msg=document.getElementById('saasFormMsg');const btn=document.getElementById('saasSaveCompanyBtn');
+  try{
+    const id=Number(document.getElementById('saasCompanyId').value||0),name=document.getElementById('saasCompanyName').value.trim(),slug=(document.getElementById('saasSlug').value.trim()||saasSlugify(name));
+    if(!name)throw new Error('Inserisci la ragione sociale.');if(!slug)throw new Error('Inserisci un dominio / slug valido.');
+    const payload={name,vat_number:document.getElementById('saasVat').value.trim()||null,plan:document.getElementById('saasPlan').value,status:document.getElementById('saasStatus').value,expires_at:document.getElementById('saasExpiresAt').value||null,max_users:Number(document.getElementById('saasMaxUsers').value||5),max_stores:Number(document.getElementById('saasMaxStores').value||1),billing_email:document.getElementById('saasBillingEmail').value.trim()||null,slug,modules:saasSelectedModules(),updated_at:new Date().toISOString()};
+    btn.disabled=true;msg.className='createUserMsg';msg.textContent=id?'Salvataggio modifiche…':'Creazione account, workspace e licenza…';
+    if(id){
+      const {error}=await sb.from('beparytech_companies').update(payload).eq('id',id);if(error)throw error;
+      msg.className='createUserMsg ok';msg.textContent='Azienda aggiornata.';
+    }else{
+      const admin_email=document.getElementById('saasAdminEmail').value.trim().toLowerCase(),temp_password=document.getElementById('saasTempPassword').value;
+      if(!admin_email)throw new Error('Inserisci l’email di accesso dell’amministratore.');if(!temp_password)throw new Error('Inserisci o genera una password temporanea.');
+      const {data,error}=await sb.functions.invoke('beparytech-saas-company',{body:{...payload,admin_email,temp_password}});if(error)throw error;if(!data?.ok)throw new Error(data?.error||'Creazione azienda non riuscita.');
+      msg.className='createUserMsg ok';msg.textContent=`Azienda creata. Admin: ${admin_email}. Workspace creato automaticamente.`;
+    }
+    setTimeout(()=>saasResetForm(),id?300:1600);await loadSaasCompanies();
+  }catch(e){msg.className='createUserMsg error';msg.textContent=e.message||'Errore salvataggio azienda.';}finally{btn.disabled=false;}
+}
 async function saasToggleCompany(id){if(!isSuperAdmin())return;const x=btSaasCompanies.find(v=>Number(v.id)===Number(id));if(!x)return;const next=x.status==='suspended'?'active':'suspended';if(!confirm(`${next==='suspended'?'Sospendere':'Riattivare'} la licenza di ${x.name}?`))return;const {error}=await sb.from('beparytech_companies').update({status:next,updated_at:new Date().toISOString()}).eq('id',x.id);if(error){alert(error.message);return;}await loadSaasCompanies();}
-function bindSaasUi(){const v=document.getElementById('saasCompaniesView');if(!v||v.dataset.bound==='1')return;v.dataset.bound='1';document.getElementById('saasCompanyForm')?.addEventListener('submit',saasSaveCompany);document.getElementById('saasCancelEditBtn').onclick=saasResetForm;document.getElementById('saasRefreshBtn').onclick=loadSaasCompanies;document.getElementById('saasSearch').oninput=saasRender;document.getElementById('saasStatusFilter').onchange=saasRender;document.getElementById('saasCompanyName').addEventListener('blur',()=>{const s=document.getElementById('saasSlug');if(s&&!s.value.trim())s.value=saasSlugify(document.getElementById('saasCompanyName').value);});saasResetForm();}
+function bindSaasUi(){
+  const v=document.getElementById('saasCompaniesView');if(!v||v.dataset.bound==='1')return;v.dataset.bound='1';
+  document.getElementById('saasCompanyForm')?.addEventListener('submit',saasSaveCompany);document.getElementById('saasCancelEditBtn').onclick=saasResetForm;document.getElementById('saasRefreshBtn').onclick=loadSaasCompanies;document.getElementById('saasSearch').oninput=saasRender;document.getElementById('saasStatusFilter').onchange=saasRender;document.getElementById('saasGeneratePassword').onclick=saasGenerateTempPassword;
+  document.getElementById('saasCompanyName').addEventListener('blur',()=>{const s=document.getElementById('saasSlug');if(s&&!s.value.trim())s.value=saasSlugify(document.getElementById('saasCompanyName').value);});saasResetForm();
+}
 document.addEventListener('DOMContentLoaded',bindSaasUi);setInterval(bindSaasUi,2000);
