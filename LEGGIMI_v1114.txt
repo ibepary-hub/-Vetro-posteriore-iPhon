@@ -1,0 +1,25 @@
+BeparyTech Manager v1114 · Second Security Audit
+
+DATABASE LIVE
+- Il progetto Supabase collegato e' gia stato aggiornato.
+- Non rieseguire gli SQL sul progetto attuale se non serve.
+
+PER UNA INSTALLAZIONE/CLONE NUOVO
+Eseguire nell'ordine ESATTO:
+1. 01_SETUP_SAAS_CORE.sql
+2. 02_SETUP_SAAS_SERVER_LICENSE.sql
+3. 03_SETUP_SAAS_RPC_HARDENING.sql
+4. 04_SETUP_SAAS_SECURITY_v1114.sql
+
+Correzioni del secondo audit:
+- Catalogo Bestek isolato per workspace (prima era globale tra Admin di tenant diversi).
+- Test cross-tenant completo su tutte le tabelle sensibili: 0 righe del tenant BeparyTech visibili al tenant di test.
+- RPC anonime pubbliche eseguibili: 0.
+- Licenza sospesa: profili/prodotti/storage non accessibili.
+- max_users e max_stores applicati lato server.
+- Edge Functions con JWT obbligatorio e controlli licenza.
+- SSRF da redirect bloccato nella funzione product-title.
+- Cache/PWA portata a v1114.
+- Setup SQL numerato per evitare ordine errato.
+
+Nota: Leaked Password Protection va attivata nelle impostazioni Auth di Supabase; non e' una modifica SQL del gestionale.

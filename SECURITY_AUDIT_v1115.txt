@@ -1,0 +1,30 @@
+BeparyTech Manager v1115 - Third Security Audit
+
+New findings fixed in this audit:
+1. Cross-tenant foreign-key integrity bypass:
+   - A tenant admin could create its own product using a section_id belonging to another tenant if the numeric ID was guessed.
+   - Equivalent logical risks existed for DDT -> items -> repair and sale note history -> sale.
+   - Fixed with server-side tenant relation guards.
+
+2. Hash exposure via Data API:
+   - authenticated users had table-level SELECT on beparytech_profiles and beparytech_account_operators.
+   - This allowed direct selection of operator_password_hash / code_hash from rows permitted by RLS.
+   - Fixed with column-level SELECT grants excluding all hash columns.
+
+3. Storage configuration mismatch:
+   - repair-intake allowed only JPG/PNG/WEBP and max 8 MB, while DDT accepted/generated PDF and UI stated 10 MB.
+   - Fixed: 10 MB, PDF/JPEG/PNG/WEBP/HEIC/HEIF only.
+   - Frontend now validates MIME before upload.
+
+4. Signed DDT attachment popup uses noopener/noreferrer.
+
+Retested:
+- Cross-tenant product/section reference is blocked.
+- Hash columns return permission denied to authenticated users.
+- Normal profile fields remain readable.
+- Storage bucket remains private and accepts only the documented file types.
+- Previous cross-tenant RLS, license/module gating, user/store limits and RPC hardening remain in place.
+
+Remaining recommendation:
+- Runtime JS libraries are still loaded from pinned jsDelivr URLs. Versions are pinned, but vendoring/SRI would further reduce supply-chain risk.
+- Supabase Auth advisor still reports Leaked Password Protection disabled; enable it in Auth settings when available for the project plan/configuration.

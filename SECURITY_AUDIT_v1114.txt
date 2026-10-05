@@ -1,0 +1,20 @@
+BEPARYTECH v1114 - SECOND SECURITY AUDIT
+
+NUOVA VULNERABILITA' TROVATA E CORRETTA
+1. beparytech_bestek_catalog era globale e non conteneva workspace_owner_id. Un Admin di un secondo tenant con modulo Bestek avrebbe condiviso/alterato il catalogo. Aggiunto workspace_owner_id, PK composita e RLS tenant-aware.
+
+TEST ESEGUITI
+- Secondo tenant temporaneo con tutti i moduli: 0 righe del workspace BeparyTech visibili in profili, inventario, storico, vendite, sezioni, prodotti, richieste, audit, operatori, note, vendite admin, riparazioni, Bestek, negozi, costi, preventivi fornitore, prezzi vendita, DDT, DDT items, Storage e Super Admin.
+- Scritture cross-tenant: bloccate dalle RLS/trigger.
+- Utente anonimo: 0 RPC public eseguibili.
+- SECURITY DEFINER public eseguibili da authenticated/anon: 0.
+- Licenza sospesa: workspace risolto NULL e 0 righe sensibili visibili.
+- Limiti piano utenti/negozi: BLOCKED_OK.
+- Edge Functions: verify_jwt=true.
+- Controllo HTML: nessun ID duplicato.
+- node --check app.js/sw.js: OK.
+
+RISCHI RESIDUI / HARDENING ULTERIORE
+- Supabase Auth segnala Leaked Password Protection disattivata: abilitarla dal pannello Auth.
+- Le librerie browser restano servite da jsDelivr con versioni fissate; una futura versione puo' vendorarle localmente per ridurre la supply-chain surface.
+- Nessun test puo' dimostrare sicurezza assoluta; l'audit copre le superfici analizzate.

@@ -10,10 +10,10 @@
   <meta name="apple-mobile-web-app-title" content="BeparyTech Manager">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
   <title>BeparyTech Manager</title>
-  <link rel="manifest" href="manifest.json?v=97">
+  <link rel="manifest" href="manifest.json?v=1116">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=1101">
+  <link rel="stylesheet" href="style.css?v=1116">
 
 
 
@@ -29,7 +29,7 @@
       <div id="repairMenuGroup" class="menuGroup adminOnly" hidden>
         <div class="menuGroupTitle">RIPARAZIONI</div>
         <button id="quickRepairMenuItem" class="menuItem adminOnly" type="button" data-category="AccettazioneRapida"><span class="menuIcon">⚡</span><span><strong>Accettazione rapida</strong><small>Cliente, dispositivo e lavoro</small></span></button>
-        <button id="fullRepairMenuItem" class="menuItem adminOnly" type="button" data-category="AccettazioneCompleta"><span class="menuIcon">＋</span><span><strong>Accettazione completa</strong><small>Foto, firma, IMEI e preventivo</small></span></button>
+        <button id="fullRepairMenuItem" class="menuItem adminOnly" type="button" data-category="AccettazioneCompleta"><span class="menuIcon">＋</span><span><strong>Accettazione completa</strong><small>Ritiro, firma, IMEI e preventivo</small></span></button>
         <button id="repairsMenuItem" class="menuItem adminOnly" type="button" data-category="RiparazioniAdmin"><span class="menuIcon">🛠</span><span><strong>Riparazioni / Pratiche</strong><small>In lavorazione, pronti e storico</small></span></button>
         <button id="workDdtMenuItem" class="menuItem adminOnly" type="button" data-category="ContoLavorazione"><span class="menuIcon">⇄</span><span><strong>DDT conto lavorazione</strong><small>Entrata, lavorazione e restituzione</small></span></button>
       </div>
@@ -58,6 +58,11 @@
         <button id="securityAccessMenuItem" class="menuItem adminOnly" type="button" data-category="SicurezzaAccessi"><span class="menuIcon">◉</span><span><strong>Sicurezza accessi</strong><small>Login, dispositivi e provenienza</small></span></button>
         <button id="settingsMenuItem" class="menuItem adminOnly" type="button" data-category="Impostazioni"><span class="menuIcon">⚙</span><span><strong>Impostazioni</strong><small>DYMO e preferenze gestionale</small></span></button>
         <button id="adminChangesMenuItem" class="menuItem adminOnly" type="button" data-category="ModificheImportanti"><span class="menuIcon">✦</span><span><strong>Centro modifiche</strong><small>Controllo completo Admin</small></span></button>
+      </div>
+
+      <div id="saasMenuGroup" class="menuGroup" hidden>
+        <div class="menuGroupTitle">BEPARYTECH SOFTWARE</div>
+        <button id="saasCompaniesMenuItem" class="menuItem" type="button" data-category="SaaSAziende"><span class="menuIcon">◆</span><span><strong>Clienti software</strong><small>Aziende, piani, licenze e moduli</small></span></button>
       </div>
     </nav>
     <div class="menuFooter"><span id="menuUserName">Utente</span><small id="menuUserRole">Standard</small></div>
@@ -262,7 +267,7 @@
           <label><span>Stato pratica</span><select id="workDdtStatus"><option>Ricevuto</option><option selected>In lavorazione</option><option>Pronto per restituzione</option><option>Restituzione parziale</option><option>Chiuso</option></select></label>
           <label><span>Mittente DDT uscita</span><input id="workDdtSenderName" maxlength="180" placeholder="BeparyTech"></label>
           <label><span>Indirizzo mittente</span><input id="workDdtSenderAddress" maxlength="300" placeholder="Indirizzo da stampare sul DDT di uscita"></label>
-          <label class="wide"><span>Allega DDT ricevuto</span><input id="workDdtAttachment" type="file" accept="application/pdf,image/*"><small id="workDdtAttachmentInfo">PDF o immagine, max 10 MB.</small></label>
+          <label class="wide"><span>Allega DDT ricevuto</span><input id="workDdtAttachment" type="file" accept="application/pdf,image/jpeg,image/png,image/webp,image/heic,image/heif"><small id="workDdtAttachmentInfo">PDF o immagine, max 10 MB.</small></label>
           <label class="wide"><span>Note</span><textarea id="workDdtNotes" rows="3" maxlength="1500" placeholder="Note sul carico o indicazioni del cliente"></textarea></label>
         </div>
         <div class="workDdtFormActions"><button class="primaryAction" type="submit">Salva DDT</button><div id="workDdtFormMsg" class="createUserMsg"></div></div>
@@ -418,9 +423,9 @@
     <div id="repairModeDivider" class="repairSectionDivider"><span>oppure</span></div>
 
     <form id="adminRepairForm" class="deviceSaleCard adminUniformCard" hidden>
-      <div class="deviceSaleCardHead"><div><strong>📝 Accettazione completa</strong><small>Cliente, foto, firma, preventivo, lavorazione, consegna e garanzia</small></div><div class="practicePill" id="adminRepairPracticePreview">RIP-AUTO</div></div>
+      <div class="deviceSaleCardHead"><div><strong>📝 Accettazione completa</strong><small>Cliente, ritiro, firma, preventivo, lavorazione, consegna e garanzia</small></div><div class="practicePill" id="adminRepairPracticePreview">RIP-AUTO</div></div>
       <div class="deviceSaleGrid">
-        <label><span>Data riparazione *</span><input id="adminRepairDate" type="date" required></label><label><span>Codice pratica</span><input id="adminRepairPracticeCode" maxlength="40" placeholder="Generato automaticamente"></label>
+        <label><span>Data riparazione *</span><input id="adminRepairDate" type="date" required></label><label><span>Data presunta ritiro</span><input id="adminRepairEstimatedPickup" type="date"></label><label><span>Codice pratica</span><input id="adminRepairPracticeCode" maxlength="40" placeholder="Generato automaticamente"></label>
         <label><span>Cliente *</span><select id="adminRepairClient" required><option value="">Seleziona cliente…</option><option value="RIPARALO S.R.L.">RIPARALO S.R.L.</option><option value="VR Trasporti">VR Trasporti</option><option value="ALTRO">Altro cliente</option></select></label>
         <label><span>Sede / Negozio</span><select id="adminRepairStore"><option value="">Nessuna / sede cliente</option>
 <option>VR Trasporti</option><option>RPL Piacenza</option><option>RPL Manerbio</option>
@@ -431,8 +436,17 @@
         <label class="wide"><span>Dispositivo *</span><input id="adminRepairDevice" maxlength="160" placeholder="es. iPhone 15 Pro, S21 Ultra 5G..." required></label>
         <label><span>Tipo di riparazione *</span><input id="adminRepairType" list="adminRepairTypeOptions" maxlength="240" placeholder="Seleziona o scrivi l’intervento" required><datalist id="adminRepairTypeOptions"><option value="Cambio display"><option value="Cambio batteria"><option value="Cambio connettore"><option value="Riparazione scheda madre"><option value="Altro"></datalist></label>
         <label><span>IMEI / Seriale</span><input id="adminRepairImei" maxlength="120" placeholder="Facoltativo"></label><label class="wide"><span>Difetto dichiarato dal cliente *</span><textarea id="adminRepairReportedIssue" maxlength="1000" rows="2" placeholder="es. Non carica, display rotto, non si accende…" required></textarea></label><label class="wide"><span>Stato estetico all’accettazione</span><input id="adminRepairDeviceCondition" maxlength="500" placeholder="es. Vetro posteriore graffiato, cornice segnata…"></label><label class="wide"><span>Accessori consegnati</span><input id="adminRepairAccessories" maxlength="500" placeholder="es. Custodia, SIM, caricatore · oppure Nessuno"></label>
-        <div class="wide repairMediaBox"><div class="repairMediaHead"><strong>Foto all’accettazione</strong><small>Fino a 6 foto · JPG/PNG/WEBP · max 8 MB ciascuna</small></div><input id="adminRepairPhotos" type="file" accept="image/jpeg,image/png,image/webp" multiple><div id="adminRepairPhotoPreview" class="repairPhotoPreview"></div></div>
-        <div class="wide repairSignatureBox"><div class="repairMediaHead"><strong>Firma cliente</strong><small>Firma direttamente sullo schermo. Verrà allegata alla ricevuta della pratica.</small></div><canvas id="adminRepairSignatureCanvas" width="900" height="260" aria-label="Area firma cliente"></canvas><div class="signatureActions"><button id="clearAdminRepairSignature" class="miniBtn" type="button">Cancella firma</button><span id="adminRepairSignatureState">Nessuna firma</span></div><label class="signatureConsent"><input id="adminRepairSignatureConsent" type="checkbox"><span>Il cliente conferma presa in carico, stato estetico, accessori e condizioni indicate nella ricevuta.</span></label></div>
+        <div class="wide intakeTermsBox">
+          <div class="repairMediaHead"><strong>Condizioni di presa in carico e privacy</strong><small>Semplici, chiare e valide per questa pratica.</small></div>
+          <details class="intakeTermsDetails" open><summary>Leggi le condizioni</summary>
+            <p>La data prevista per la riconsegna è indicativa e può variare in base alla diagnosi, alla disponibilità dei ricambi e alla complessità dell’intervento.</p>
+            <p>Prima della consegna il cliente è invitato, quando possibile, ad effettuare un backup. Durante diagnosi, riparazione, aggiornamento, ripristino o sostituzione di componenti può verificarsi la perdita totale o parziale dei dati. Salvo uno specifico servizio di recupero dati concordato, il laboratorio non garantisce conservazione, recupero o integrità dei dati presenti sul dispositivo.</p>
+            <p>Il cliente prende atto che durante la lavorazione possono emergere guasti, difetti o fragilità preesistenti non rilevabili alla consegna, in particolare su dispositivi già danneggiati, manomessi, ossidati, piegati o precedentemente riparati. Eventuali danni direttamente causati da una lavorazione eseguita in modo non corretto restano a carico del laboratorio nei limiti previsti dalla normativa applicabile.</p>
+            <p>Se sono necessari interventi ulteriori con costi aggiuntivi, il cliente verrà informato prima di procedere. I dati personali forniti sono trattati esclusivamente per la gestione della pratica, della riparazione, delle comunicazioni con il cliente e degli obblighi amministrativi connessi.</p>
+          </details>
+          <label class="signatureConsent intakeTermsConsent"><input id="adminRepairSignatureConsent" type="checkbox" required><span>Ho letto e accetto le condizioni di presa in carico e dichiaro di aver preso visione dell’informativa privacy.</span></label>
+        </div>
+        <div class="wide repairSignatureBox"><div class="repairMediaHead"><strong>Firma cliente</strong><small>Firma direttamente sullo schermo. Verrà allegata alla ricevuta della pratica.</small></div><canvas id="adminRepairSignatureCanvas" width="900" height="260" aria-label="Area firma cliente"></canvas><div class="signatureActions"><button id="clearAdminRepairSignature" class="miniBtn" type="button">Cancella firma</button><span id="adminRepairSignatureState">Nessuna firma</span></div></div>
         <label><span>Stato</span><select id="adminRepairStatus"><option>Da completare</option><option>Da diagnosticare</option><option>Da riparare</option><option>In lavorazione</option><option>Attesa ricambio</option><option>Attesa cliente</option><option selected>Riparato</option><option>Pronto</option><option>Consegnato</option></select></label><label><span>Preventivo</span><select id="adminRepairQuoteStatus"><option>Da diagnosticare</option><option>Preventivo da inviare</option><option>In attesa cliente</option><option>Accettato</option><option>Rifiutato</option></select></label><label><span>Importo preventivo</span><div class="moneyInput"><span>€</span><input id="adminRepairQuoteAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></div></label><label><span>Garanzia intervento</span><select id="adminRepairWarrantyMonths"><option value="0">Nessuna</option><option value="3" selected>3 mesi</option><option value="6">6 mesi</option><option value="12">12 mesi</option><option value="24">24 mesi</option></select></label>
         <label class="wide"><span>Riferimento e-Share</span><input id="adminRepairEShareRef" maxlength="120" placeholder="Facoltativo"></label>
         <label><span>Costo ricambio (solo Admin)</span><div class="moneyInput"><span>€</span><input id="adminRepairPartCost" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0,00"></div></label>
@@ -549,6 +563,53 @@
 
 
 
+
+<section id="saasCompaniesView" class="catalogView saasCompaniesView" hidden>
+  <div class="adminHero saasHero"><div><span class="usersKicker">BEPARYTECH SOFTWARE · SUPER ADMIN</span><h2>Clienti del gestionale</h2><p>Gestisci aziende, licenze, scadenze e moduli da un unico pannello. Ogni azienda usa un workspace separato.</p></div><span class="adminBadge">OWNER</span></div>
+
+  <div class="saasStatsGrid">
+    <div class="saasStat"><span>Aziende</span><strong id="saasCompanyCount">0</strong></div>
+    <div class="saasStat"><span>Licenze attive</span><strong id="saasActiveCount">0</strong></div>
+    <div class="saasStat"><span>In scadenza 30 gg</span><strong id="saasExpiringCount">0</strong></div>
+    <div class="saasStat"><span>Sospese</span><strong id="saasSuspendedCount">0</strong></div>
+  </div>
+
+  <section class="saasEditorCard">
+    <div class="saasEditorHead"><div><strong id="saasFormTitle">Nuova azienda cliente</strong><small>Per collegare il cliente inserisci l'UUID del suo account Auth come proprietario workspace.</small></div><button id="saasCancelEditBtn" class="miniBtn" type="button" hidden>Annulla modifica</button></div>
+    <form id="saasCompanyForm" autocomplete="off">
+      <input id="saasCompanyId" type="hidden">
+      <div class="saasFormGrid">
+        <label><span>Ragione sociale *</span><input id="saasCompanyName" required maxlength="160" placeholder="es. Rossi Tech S.r.l."></label>
+        <label><span>Workspace owner UUID *</span><input id="saasOwnerId" required maxlength="64" placeholder="UUID Supabase Auth"></label>
+        <label><span>P.IVA</span><input id="saasVat" maxlength="16" placeholder="IT01234567890"></label>
+        <label><span>Piano</span><select id="saasPlan"><option value="base">Base</option><option value="pro" selected>Pro</option><option value="business">Business</option><option value="owner">Owner</option></select></label>
+        <label><span>Stato licenza</span><select id="saasStatus"><option value="active">Attiva</option><option value="trial">Trial</option><option value="suspended">Sospesa</option><option value="expired">Scaduta</option></select></label>
+        <label><span>Scadenza</span><input id="saasExpiresAt" type="date"></label>
+        <label><span>Utenti max</span><input id="saasMaxUsers" type="number" min="1" max="999" value="5"></label>
+        <label><span>Negozi max</span><input id="saasMaxStores" type="number" min="1" max="999" value="2"></label>
+        <label><span>Email amministrativa</span><input id="saasBillingEmail" type="email" maxlength="180" placeholder="cliente@email.it"></label>
+        <label><span>Dominio / slug</span><input id="saasSlug" maxlength="80" placeholder="rossitech"></label>
+      </div>
+      <div class="saasModulesBox"><strong>Moduli abilitati</strong><div id="saasModulesGrid" class="saasModulesGrid">
+        <label><input type="checkbox" value="inventory" checked> Magazzino</label>
+        <label><input type="checkbox" value="sales" checked> Vendite</label>
+        <label><input type="checkbox" value="repairs" checked> Riparazioni</label>
+        <label><input type="checkbox" value="ddt" checked> DDT conto lavorazione</label>
+        <label><input type="checkbox" value="invoicing" checked> Fatturazione XML</label>
+        <label><input type="checkbox" value="dymo" checked> DYMO / QR</label>
+        <label><input type="checkbox" value="hours"> Orari</label>
+        <label><input type="checkbox" value="bestek"> Catalogo Bestek</label>
+        <label><input type="checkbox" value="multi_store"> Multi-negozio</label>
+        <label><input type="checkbox" value="backup" checked> Backup</label>
+      </div></div>
+      <div class="saasEditorActions"><button id="saasSaveCompanyBtn" class="primaryAction animatedBtn" type="submit">Crea azienda</button><div id="saasFormMsg" class="createUserMsg"></div></div>
+    </form>
+  </section>
+
+  <div class="saasToolbar"><input id="saasSearch" type="search" placeholder="Cerca azienda, P.IVA, piano…"><select id="saasStatusFilter"><option value="all">Tutti gli stati</option><option value="active">Attive</option><option value="trial">Trial</option><option value="suspended">Sospese</option><option value="expired">Scadute</option></select><button id="saasRefreshBtn" class="miniBtn animatedBtn" type="button">↻ Aggiorna</button></div>
+  <div id="saasCompaniesList" class="saasCompaniesList"><div class="emptyState">Caricamento aziende…</div></div>
+  <div class="saasSecurityNote"><strong>Separazione dati</strong><span>Le aziende sono identificate da <code>workspace_owner_id</code>. Il file SQL incluso aggiunge il livello licenza/Super Admin senza condividere i dati operativi tra clienti.</span></div>
+</section>
 
 <section id="adminChangesView" class="catalogView adminChangesView" hidden>
   <div class="adminHero adminChangesHero"><div><span class="usersKicker">CONTROLLO ADMIN</span><h2>Centro modifiche</h2><p>Un unico posto per raggiungere tutte le aree modificabili del gestionale. Le operazioni delicate restano tracciate e richiedono conferma.</p></div><span class="adminBadge">FULL ADMIN</span></div>
@@ -851,7 +912,7 @@
  <button type="button" data-smart-action="menu"><b>☰</b><span>Menu</span></button>
 </nav>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
-<script src="app.js?v=1101"></script>
+<script src="app.js?v=1116"></script>
 
 
 

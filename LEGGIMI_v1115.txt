@@ -1,0 +1,15 @@
+BeparyTech Manager v1115
+
+For a NEW installation, run the SQL files in this exact order:
+1) 01_SETUP_SAAS_CORE.sql
+2) 02_SETUP_SAAS_SERVER_LICENSE.sql
+3) 03_SETUP_SAAS_RPC_HARDENING.sql
+4) 04_SETUP_SAAS_SECURITY_v1114.sql
+5) 05_SETUP_SAAS_SECURITY_v1115.sql
+
+The live Supabase project used by this BeparyTech installation has already received the v1115 database hardening.
+
+Important:
+- Do not expose service_role keys in the frontend.
+- Keep the repair-intake bucket private.
+- Enable Supabase Leaked Password Protection if/when available in Auth settings.

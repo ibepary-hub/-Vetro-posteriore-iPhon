@@ -1,0 +1,17 @@
+BeparyTech v1116
+
+Novità pratica riparazione:
+- Foto rimosse dalla nuova Accettazione completa (le eventuali foto storiche non vengono cancellate dal database).
+- Nuovo campo "Data presunta ritiro".
+- Condizioni di presa in carico + informativa privacy in un unico riquadro semplice.
+- Una sola checkbox obbligatoria di accettazione/presa visione.
+- Firma cliente mantenuta.
+- La ricevuta PDF mostra la data presunta di ritiro e registra data/ora + versione delle condizioni accettate.
+- La lista riparazioni mostra il ritiro previsto.
+
+Versioni registrate:
+- Condizioni: BT-INTAKE-2026-10-v1
+- Privacy: BT-PRIVACY-2026-10-v1
+
+Database live già aggiornato. Per una nuova installazione eseguire anche:
+06_SETUP_REPAIR_TERMS_v1116.sql
