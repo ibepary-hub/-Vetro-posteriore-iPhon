@@ -1,0 +1,9 @@
+BeparyTech v1122
+
+FIX HOME / DASHBOARD
+- Dashboard mostrata immediatamente prima delle chiamate Supabase.
+- loadMyProfile non può più lasciare la UI ferma sul markup BackGlass.
+- Fallback indipendente che nasconde inventario e apre Dashboard se la catena di navigazione fallisce.
+- Guard di avvio one-shot per sessioni già valide.
+- Tasto Home rinforzato in capture phase.
+- Cache/PWA aggiornata a v1122.

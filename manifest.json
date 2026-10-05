@@ -1,7 +1,7 @@
 {
   "name": "BeparyTech Manager",
   "short_name": "BT Manager",
-  "start_url": "./",
+  "start_url": "./?app=1123",
   "scope": "./",
   "display": "standalone",
   "background_color": "#0a0a0b",
@@ -18,5 +18,5 @@
       "type": "image/png"
     }
   ],
-  "version": "1119"
+  "version": "1123"
 }

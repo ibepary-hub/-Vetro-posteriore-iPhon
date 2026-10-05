@@ -1,0 +1,8 @@
+BeparyTech v1123 — Router atomico Home + fault hardening
+
+- Dashboard iniziale fail-safe anche nel markup HTML: BackGlass non è più la vista predefinita.
+- Router Dashboard atomico: Home bypassa i wrapper storici e ripulisce tutte le viste residue.
+- Guard di coerenza per i primi 5 secondi di boot.
+- Timeout su getSession, profilo, caricamenti iniziali e realtime: rete lenta/bloccata non congela l’avvio.
+- Cache/PWA aggiornata a v1123; manifest aggiornato.
+- Build marker html[data-bt-build=1123] per verificare subito la versione realmente caricata.

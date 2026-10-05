@@ -10,10 +10,10 @@
   <meta name="apple-mobile-web-app-title" content="BeparyTech Manager">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
   <title>BeparyTech Manager</title>
-  <link rel="manifest" href="manifest.json?v=1121">
+  <link rel="manifest" href="manifest.json?v=1123">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=1121">
+  <link rel="stylesheet" href="style.css?v=1123">
 
 
 
@@ -93,7 +93,7 @@
       <div id="globalSearchResults" class="globalSearchResults" hidden></div>
     </section>
 
-    <section class="stats">
+    <section class="stats" hidden>
       <div class="card"><span>Pezzi totali</span><strong id="totalPieces">0</strong></div>
       <div class="card"><span>Tipi disponibili</span><strong id="availableTypes">0</strong></div>
       <div class="card warning"><span>Scorte basse</span><strong id="lowStock">0</strong></div>
@@ -106,9 +106,9 @@
       <button type="button" id="usersTab" class="categoryTab" hidden><strong>Utenti</strong><span>Gestione accessi</span><b class="openHint">Apri ›</b></button>
     </section>
 
-    <section class="categoryTitle"><strong id="categoryName">BackGlass</strong><span id="categoryDescription">Vetro posteriore</span></section>
+    <section class="categoryTitle"><strong id="categoryName">Dashboard</strong><span id="categoryDescription">Riepilogo generale</span></section>
 
-    <section class="tools">
+    <section class="tools" hidden>
       <input id="search" type="search" placeholder="Cerca iPhone o colore…">
       <select id="filter">
         <option value="all">Tutti</option>
@@ -194,7 +194,7 @@
         </aside>
       </div>
     </section>
-    <main id="inventory"></main>
+    <main id="inventory" hidden></main>
     <section id="auditView" class="salesView" hidden><div class="salesHeader"><div><strong>Cronologia completa</strong><span>Movimenti, richieste e modifiche</span></div><button id="refreshAuditBtn" class="miniBtn animatedBtn" type="button">Aggiorna</button></div><div id="auditList"></div></section>
 
     <section id="bestekCatalogView" class="catalogView bestekCatalogView" hidden>
@@ -915,7 +915,7 @@
  <button type="button" data-smart-action="menu"><b>☰</b><span>Menu</span></button>
 </nav>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
-<script src="app.js?v=1121"></script>
+<script src="app.js?v=1123"></script>
 
 
 

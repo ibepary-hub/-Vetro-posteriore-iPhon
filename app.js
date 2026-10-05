@@ -11,6 +11,14 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   }
 });
 
+const BT_BUILD = "1123";
+try{ document.documentElement.dataset.btBuild=BT_BUILD; }catch(_){}
+function btWithTimeout(promise,ms,label="Operazione"){
+  let timer;
+  const timeout=new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error(`${label}: timeout`)),ms);});
+  return Promise.race([Promise.resolve(promise),timeout]).finally(()=>clearTimeout(timer));
+}
+
 let stock = {};
 let currentUser = null;
 let currentProfile = null;
@@ -486,6 +494,21 @@ async function loadMyProfile(){
   applyRoleVisibility();
   applyLicenseVisibility();
 }
+function btForceDashboardShellV1122(){
+  // Fallback indipendente dalla catena storica di wrapper setCategory.
+  // Serve solo per la Home: rende impossibile restare bloccati sul markup BackGlass all'avvio.
+  try{ currentCategory="Dashboard"; }catch(_){}
+  try{ localStorage.setItem("beparytech-last-category","Dashboard"); }catch(_){}
+  const hideSel=["#inventory",".tools",".stats","#salesView","#auditView","#usersView","#catalogView","#zeroStockView","#backupView","#hoursView","#deviceSalesView","#bestekCatalogView","#dymoNotesView","#workDdtView","#saasCompaniesView","#settingsView","#securityAccessView","#adminChangesView"];
+  hideSel.forEach(sel=>document.querySelectorAll(sel).forEach(el=>el.hidden=true));
+  const dash=document.getElementById("dashboardView"); if(dash) dash.hidden=false;
+  const n=document.getElementById("categoryName"); if(n)n.textContent="Dashboard";
+  const d=document.getElementById("categoryDescription"); if(d)d.textContent="Riepilogo generale";
+  document.querySelectorAll('.menuItem[data-category]').forEach(b=>b.classList.toggle('active',b.dataset.category==='Dashboard'));
+  try{ updateSmartNavigation(); }catch(_){}
+  try{ loadDashboard(); }catch(_){}
+}
+
 async function showAuth(user){
   currentUser=user||null; currentProfile=null; workspaceOwnerId=user?.id||null; document.body.classList.toggle("logged-in",!!user);
   document.getElementById("signedOut").hidden=!!user; document.getElementById("signedIn").hidden=!user;
@@ -495,18 +518,24 @@ async function showAuth(user){
   if(user){
     setTimeout(btScheduleIdleLogout,0);
     document.getElementById("userEmail").textContent=user.email;
-    await loadMyProfile();
 
-    // v1121: mostra subito la Dashboard. Il caricamento di catalogo/magazzino non deve
-    // poter lasciare l'app bloccata sulla vecchia schermata BackGlass se una query fallisce.
+    // v1122: la Home viene mostrata PRIMA di qualunque richiesta al cloud.
+    // In v1121 loadMyProfile() poteva tenere visibile il markup iniziale BackGlass
+    // finché Supabase non aveva finito di rispondere (o per sempre se una richiesta restava appesa).
     document.getElementById("globalSearchBar").hidden=false;
     try{ localStorage.setItem("beparytech-last-category","Dashboard"); }catch(_){}
-    btNavStack.length=0;
-    setCategory("Dashboard");
+    try{ btNavStack.length=0; }catch(_){}
+    try{ setCategory("Dashboard"); }catch(e){ console.warn("Apertura Dashboard iniziale:",e); btForceDashboardShellV1122(); }
 
-    const bootLoads=await Promise.allSettled([loadCloud(),loadCustomCatalog(),loadAdminCosts(),loadSalePrices(),loadStores()]);
+    // Il profilo può arrivare dopo: non deve decidere quale pagina l'utente vede all'avvio.
+    try{ await btWithTimeout(loadMyProfile(),5000,"Profilo"); }catch(e){ console.warn("Profilo non disponibile all'avvio:",e); }
+
+    // Ridisegna con ruolo/licenza appena caricati.
+    try{ setCategory("Dashboard"); }catch(e){ btForceDashboardShellV1122(); }
+
+    const bootLoads=await Promise.allSettled([loadCloud(),loadCustomCatalog(),loadAdminCosts(),loadSalePrices(),loadStores()].map((p,i)=>btWithTimeout(p,6500,`Boot ${i+1}`)));
     bootLoads.forEach(r=>{ if(r.status==="rejected") console.warn("Caricamento iniziale parziale:",r.reason); });
-    try{ await startInventoryRealtime(); }catch(e){ console.warn("Realtime non disponibile:",e); }
+    try{ await btWithTimeout(startInventoryRealtime(),4500,"Realtime"); }catch(e){ console.warn("Realtime non disponibile:",e); }
 
     // Ridisegna la Home con i dati appena caricati e chiude eventuali viste residue.
     setCategory("Dashboard");
@@ -1269,9 +1298,9 @@ document.getElementById("refreshSalesBtn").onclick=loadSales;
 search.oninput=()=>String(currentCategory).startsWith("custom:")?renderCustomSection():render();
 filter.onchange=()=>String(currentCategory).startsWith("custom:")?renderCustomSection():render();
 let btAuthBootReady=false;
-(async function btBootAuthV1121(){
+(async function btBootAuthV1122(){
   try{
-    const {data}=await sb.auth.getSession();
+    const {data}=await btWithTimeout(sb.auth.getSession(),4500,"Controllo sessione");
     const session=data?.session||null;
     if(session?.user){
       let last=0;
@@ -1971,7 +2000,7 @@ try {
 } catch(_) {}
 
 sb.auth.onAuthStateChange((event,session)=>{
-  // v1121: durante il controllo iniziale decide btBootAuthV1121, così una sessione
+  // v1122: durante il controllo iniziale decide btBootAuthV1122, così una sessione
   // persistita non può saltare il controllo dei 30 minuti e non crea il flash login.
   if(!btAuthBootReady && event!=="PASSWORD_RECOVERY") return;
   if(event==="PASSWORD_RECOVERY"){
@@ -2039,11 +2068,11 @@ document.getElementById("saveRecoveryPassword").onclick=async()=>{
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1121", { updateViaCache: "none" });
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1123", { updateViaCache: "none" });
       await reg.update();
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (!sessionStorage.getItem("bt-cache-reloaded-v1121")) {
-          sessionStorage.setItem("bt-cache-reloaded-v1121", "1");
+        if (!sessionStorage.getItem("bt-cache-reloaded-v1123")) {
+          sessionStorage.setItem("bt-cache-reloaded-v1123", "1");
           location.reload();
         }
       });
@@ -3326,3 +3355,78 @@ function bindSaasUi(){
   document.getElementById('saasCompanyName').addEventListener('blur',()=>{const s=document.getElementById('saasSlug');if(s&&!s.value.trim())s.value=saasSlugify(document.getElementById('saasCompanyName').value);});saasResetForm();
 }
 document.addEventListener('DOMContentLoaded',bindSaasUi);setInterval(bindSaasUi,2000);
+
+
+/* ===== v1122 · HOME HARD GUARD =====
+   Il tasto Home deve funzionare anche se un vecchio wrapper di navigazione genera un errore. */
+document.addEventListener("click",e=>{
+  const home=e.target.closest?.('[data-smart-action="home"],.menuItem[data-category="Dashboard"]');
+  if(!home || !currentUser) return;
+  e.preventDefault();
+  try{ setCategory("Dashboard"); }catch(err){ console.warn("Home fallback:",err); btForceDashboardShellV1122(); }
+},true);
+
+// Guard di avvio: se la sessione è già valida, entro pochi istanti la vista deve essere Home.
+// Non continua a forzare la Home dopo l'avvio, quindi non disturba la navigazione normale.
+(function btHomeBootGuardV1122(){
+  let tries=0;
+  const timer=setInterval(()=>{
+    tries++;
+    if(currentUser){
+      const dash=document.getElementById("dashboardView");
+      const inv=document.getElementById("inventory");
+      const wrong=!dash || dash.hidden || (inv && !inv.hidden) || currentCategory!=="Dashboard";
+      if(wrong){ try{ setCategory("Dashboard"); }catch(_){ btForceDashboardShellV1122(); } }
+      if(tries>=8) clearInterval(timer);
+    }else if(btAuthBootReady || tries>=20){
+      clearInterval(timer);
+    }
+  },250);
+})();
+
+
+/* ===== v1123 · ROUTER ATOMICO HOME + FAULT HARDENING =====
+   Dashboard non passa più attraverso la catena storica di wrapper.
+   Evita che un wrapper vecchio, un caricamento cloud lento o una vista residua
+   possano lasciare BackGlass visibile mentre currentCategory è Home. */
+function btApplyDashboardInvariantV1123(){
+  currentCategory="Dashboard";
+  try{ localStorage.setItem("beparytech-last-category","Dashboard"); }catch(_){}
+  const hideIds=[
+    "inventory","salesView","auditView","usersView","catalogView","zeroStockView","backupView","hoursView",
+    "deviceSalesView","bestekCatalogView","dymoNotesView","workDdtView","saasCompaniesView","settingsView",
+    "securityAccessView","adminChangesView"
+  ];
+  hideIds.forEach(id=>{const el=document.getElementById(id);if(el)el.hidden=true;});
+  document.querySelectorAll(".tools,.stats").forEach(el=>el.hidden=true);
+  const dash=document.getElementById("dashboardView");if(dash)dash.hidden=false;
+  const n=document.getElementById("categoryName");if(n)n.textContent="Dashboard";
+  const d=document.getElementById("categoryDescription");if(d)d.textContent="Riepilogo generale";
+  document.querySelectorAll('.menuItem[data-category]').forEach(b=>b.classList.toggle('active',b.dataset.category==='Dashboard'));
+  try{ closeMainMenu(); }catch(_){}
+  try{ btNavStack.length=0; }catch(_){}
+  try{ updateSmartNavigation(); }catch(_){}
+  try{ loadDashboard(); }catch(e){ console.warn("Dashboard dati parziali:",e); }
+}
+
+const btLegacySetCategoryV1123=setCategory;
+setCategory=function(category,fromBack=false){
+  if(category==="Dashboard"){
+    btApplyDashboardInvariantV1123();
+    return;
+  }
+  return btLegacySetCategoryV1123(category,fromBack);
+};
+
+// Se qualcosa altera il DOM nei primissimi secondi del boot, ripristina SOLO Home.
+// Dopo 5 secondi il guard si spegne e non interferisce con la navigazione normale.
+(function btDashboardInvariantGuardV1123(){
+  const started=Date.now();
+  const timer=setInterval(()=>{
+    if(Date.now()-started>5000){clearInterval(timer);return;}
+    if(!currentUser||currentCategory!=="Dashboard")return;
+    const dash=document.getElementById("dashboardView"),inv=document.getElementById("inventory"),tools=document.querySelector(".tools"),stats=document.querySelector(".stats");
+    const broken=!dash||dash.hidden||(inv&&!inv.hidden)||(tools&&!tools.hidden)||(stats&&!stats.hidden);
+    if(broken)btApplyDashboardInvariantV1123();
+  },200);
+})();

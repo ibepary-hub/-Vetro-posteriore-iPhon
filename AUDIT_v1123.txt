@@ -1,0 +1,48 @@
+AUDIT v1123 — test di rottura/fault injection statico
+
+Controlli: 33 | OK: 33 | FAIL: 0
+
+[OK] Nessun ID HTML duplicato
+[OK] Markup iniziale non espone BackGlass
+[OK] Dashboard parte nascosta prima auth
+[OK] Router atomico v1123 presente
+[OK] Router atomico è l’ultimo override setCategory
+[OK] Home nasconde inventory
+[OK] Home nasconde salesView
+[OK] Home nasconde auditView
+[OK] Home nasconde usersView
+[OK] Home nasconde catalogView
+[OK] Home nasconde zeroStockView
+[OK] Home nasconde backupView
+[OK] Home nasconde hoursView
+[OK] Home nasconde deviceSalesView
+[OK] Home nasconde bestekCatalogView
+[OK] Home nasconde dymoNotesView
+[OK] Home nasconde workDdtView
+[OK] Home nasconde saasCompaniesView
+[OK] Home nasconde settingsView
+[OK] Home nasconde securityAccessView
+[OK] Home nasconde adminChangesView
+[OK] Home mostra dashboardView
+[OK] Timeout sessione
+[OK] Timeout profilo
+[OK] Timeout boot cloud
+[OK] Timeout realtime
+[OK] Service worker v1123
+[OK] Index carica v1123
+[OK] Manifest v1123
+[OK] Niente eval/new Function
+[OK] CSP blocca script inline
+[OK] RLS presente negli script SQL
+[OK] Revoche anon/public presenti
+
+Scenari coperti:
+- avvio con markup residuo BackGlass
+- wrapper di navigazione storici sovrapposti
+- profilo cloud lento/bloccato
+- caricamenti iniziali parzialmente falliti
+- realtime non disponibile
+- cache/PWA vecchia
+- Home premuta mentre una vista residua è ancora visibile
+
+Nota: i test statici/fault-hardening non sostituiscono un test end-to-end contro il progetto Supabase reale e le sue Edge Functions.
