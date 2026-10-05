@@ -1,0 +1,8 @@
+BeparyTech v1121
+
+- Corretto il flash della pagina login durante il ripristino di una sessione valida.
+- Il logout automatico a 30 minuti ora vale anche se app/browser restano chiusi: all'apertura viene verificata l'ultima attività prima di ripristinare la sessione.
+- La Dashboard viene mostrata subito e non resta più bloccata su BackGlass se un caricamento iniziale fallisce.
+- Il caricamento iniziale usa Promise.allSettled: un errore in una singola query non blocca la Home.
+- loadCloud non ridisegna più BackGlass/Housing mentre si è sulla Dashboard.
+- Cache/PWA aggiornata a v1121.

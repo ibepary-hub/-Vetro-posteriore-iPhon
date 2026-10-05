@@ -167,7 +167,7 @@ async function loadCloud(options={}){
   (data||[]).forEach(r=>next[r.item_key]=Number(r.quantity||0));
   const changed=Object.keys(next).length!==Object.keys(stock).length || Object.keys(next).some(k=>Number(stock[k]||0)!==next[k]);
   stock=next;
-  if(changed || !silent) render();
+  if((changed || !silent) && (currentCategory==="BackGlass" || currentCategory==="Housing")) render();
   if(!silent) document.getElementById("cloudStatus").textContent="☁︎ Online";
   return changed;
 }
@@ -493,19 +493,22 @@ async function showAuth(user){
   const headerLogout=document.getElementById("headerLogoutBtn"); if(headerLogout) headerLogout.hidden=!user;
   const headerCloud=document.getElementById("headerCloudPill"); if(headerCloud) headerCloud.hidden=!user;
   if(user){
-    try{ localStorage.setItem(BT_LAST_ACTIVITY_KEY,String(Date.now())); }catch(_){}
     setTimeout(btScheduleIdleLogout,0);
     document.getElementById("userEmail").textContent=user.email;
     await loadMyProfile();
-    await Promise.all([loadCloud(),loadCustomCatalog(),loadAdminCosts(),loadSalePrices(),loadStores()]);
-    await startInventoryRealtime();
+
+    // v1121: mostra subito la Dashboard. Il caricamento di catalogo/magazzino non deve
+    // poter lasciare l'app bloccata sulla vecchia schermata BackGlass se una query fallisce.
     document.getElementById("globalSearchBar").hidden=false;
-    // v1119: dopo login/refresh si apre sempre la Dashboard.
-    // L'ultima sezione resta utile durante la sessione, ma non decide più la schermata iniziale.
     try{ localStorage.setItem("beparytech-last-category","Dashboard"); }catch(_){}
     btNavStack.length=0;
-    // v1120: forza davvero la Home dopo login/refresh anche se un vecchio override
-    // di navigazione o un render asincrono prova a ripristinare una sezione precedente.
+    setCategory("Dashboard");
+
+    const bootLoads=await Promise.allSettled([loadCloud(),loadCustomCatalog(),loadAdminCosts(),loadSalePrices(),loadStores()]);
+    bootLoads.forEach(r=>{ if(r.status==="rejected") console.warn("Caricamento iniziale parziale:",r.reason); });
+    try{ await startInventoryRealtime(); }catch(e){ console.warn("Realtime non disponibile:",e); }
+
+    // Ridisegna la Home con i dati appena caricati e chiude eventuali viste residue.
     setCategory("Dashboard");
     requestAnimationFrame(()=>{
       if(currentUser){
@@ -513,7 +516,7 @@ async function showAuth(user){
         setCategory("Dashboard");
       }
     });
-    setTimeout(()=>{ if(currentUser && currentCategory!=="Dashboard") setCategory("Dashboard"); },120);
+    setTimeout(()=>{ if(currentUser && currentCategory!=="Dashboard") setCategory("Dashboard"); },180);
   }else{
     clearTimeout(btIdleTimer); clearTimeout(btIdleWarningTimer); btHideIdleWarning();
     await stopInventoryRealtime();
@@ -528,7 +531,10 @@ document.getElementById("loginBtn").onclick=async()=>{
   authMsg.textContent="";
   const email=document.getElementById("email").value.trim(), password=document.getElementById("password").value;
   const {data,error}=await sb.auth.signInWithPassword({email,password});
-  if(error) authMsg.textContent=error.message; else { await showAuth(data.user); recordLoginEventV95().catch(()=>{}); }
+  if(error) authMsg.textContent=error.message; else {
+    try{ localStorage.setItem(BT_LAST_ACTIVITY_KEY,String(Date.now())); }catch(_){}
+    await showAuth(data.user); recordLoginEventV95().catch(()=>{});
+  }
 };
 
 document.getElementById("forgotPasswordBtn").onclick=async()=>{
@@ -1262,7 +1268,34 @@ document.getElementById("refreshSalesBtn").onclick=loadSales;
 
 search.oninput=()=>String(currentCategory).startsWith("custom:")?renderCustomSection():render();
 filter.onchange=()=>String(currentCategory).startsWith("custom:")?renderCustomSection():render();
-sb.auth.getUser().then(({data})=>showAuth(data.user));
+let btAuthBootReady=false;
+(async function btBootAuthV1121(){
+  try{
+    const {data}=await sb.auth.getSession();
+    const session=data?.session||null;
+    if(session?.user){
+      let last=0;
+      try{ last=Number(localStorage.getItem(BT_LAST_ACTIVITY_KEY)||0)||0; }catch(_){}
+      const expired=last>0 && (Date.now()-last)>=BT_IDLE_TIMEOUT_MS;
+      if(expired){
+        try{ await sb.auth.signOut({scope:"local"}); }catch(_) { btClearPersistedAuthFallback(); }
+        try{ localStorage.removeItem(BT_LAST_ACTIVITY_KEY); }catch(_){}
+        await showAuth(null);
+      }else{
+        // Migrazione da versioni precedenti: se non esiste ancora il timestamp, parte da ora.
+        if(!last){ try{ localStorage.setItem(BT_LAST_ACTIVITY_KEY,String(Date.now())); }catch(_){} }
+        await showAuth(session.user);
+      }
+    }else{
+      await showAuth(null);
+    }
+  }catch(e){
+    console.warn("Controllo sessione non riuscito:",e);
+    await showAuth(null);
+  }finally{
+    btAuthBootReady=true;
+  }
+})();
 
 
 // ===== Menu, sezioni personalizzate e catalogo Admin =====
@@ -1938,6 +1971,9 @@ try {
 } catch(_) {}
 
 sb.auth.onAuthStateChange((event,session)=>{
+  // v1121: durante il controllo iniziale decide btBootAuthV1121, così una sessione
+  // persistita non può saltare il controllo dei 30 minuti e non crea il flash login.
+  if(!btAuthBootReady && event!=="PASSWORD_RECOVERY") return;
   if(event==="PASSWORD_RECOVERY"){
     openPasswordRecovery();
     return;
@@ -2003,11 +2039,11 @@ document.getElementById("saveRecoveryPassword").onclick=async()=>{
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1119", { updateViaCache: "none" });
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1121", { updateViaCache: "none" });
       await reg.update();
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (!sessionStorage.getItem("bt-cache-reloaded-v1116")) {
-          sessionStorage.setItem("bt-cache-reloaded-v1116", "1");
+        if (!sessionStorage.getItem("bt-cache-reloaded-v1121")) {
+          sessionStorage.setItem("bt-cache-reloaded-v1121", "1");
           location.reload();
         }
       });
