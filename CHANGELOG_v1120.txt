@@ -1,0 +1,8 @@
+BeparyTech v1120
+
+- Dashboard/Home: forzata in modo affidabile dopo login e refresh, anche in presenza di vecchi override di navigazione.
+- Logout manuale: fallback più forte per evitare il rientro automatico se signOut fallisce.
+- Logout automatico: dopo 30 minuti di inattività.
+- Avviso 1 minuto prima del logout automatico; qualsiasi attività azzera il timer.
+- Timer sincronizzato tra schede dello stesso browser.
+- Cache/PWA aggiornata a v1120.

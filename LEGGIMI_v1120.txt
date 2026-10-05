@@ -1,0 +1,8 @@
+BEPARYTECH v1120 - DASHBOARD + LOGOUT FIX
+
+Carica su GitHub i file di questa cartella sostituendo quelli della versione precedente.
+Dopo il login o un refresh si apre sempre la Dashboard.
+La sessione viene chiusa automaticamente dopo 30 minuti senza attività, con avviso 1 minuto prima.
+Il pulsante Esci esegue anche una pulizia di sicurezza locale se il logout Supabase non riesce.
+
+Dopo la pubblicazione, chiudi e riapri la PWA/browser una volta per far prendere il nuovo Service Worker v1120.

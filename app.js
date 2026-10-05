@@ -493,6 +493,8 @@ async function showAuth(user){
   const headerLogout=document.getElementById("headerLogoutBtn"); if(headerLogout) headerLogout.hidden=!user;
   const headerCloud=document.getElementById("headerCloudPill"); if(headerCloud) headerCloud.hidden=!user;
   if(user){
+    try{ localStorage.setItem(BT_LAST_ACTIVITY_KEY,String(Date.now())); }catch(_){}
+    setTimeout(btScheduleIdleLogout,0);
     document.getElementById("userEmail").textContent=user.email;
     await loadMyProfile();
     await Promise.all([loadCloud(),loadCustomCatalog(),loadAdminCosts(),loadSalePrices(),loadStores()]);
@@ -502,8 +504,18 @@ async function showAuth(user){
     // L'ultima sezione resta utile durante la sessione, ma non decide più la schermata iniziale.
     try{ localStorage.setItem("beparytech-last-category","Dashboard"); }catch(_){}
     btNavStack.length=0;
+    // v1120: forza davvero la Home dopo login/refresh anche se un vecchio override
+    // di navigazione o un render asincrono prova a ripristinare una sezione precedente.
     setCategory("Dashboard");
+    requestAnimationFrame(()=>{
+      if(currentUser){
+        try{ closeMainMenu(); }catch(_){}
+        setCategory("Dashboard");
+      }
+    });
+    setTimeout(()=>{ if(currentUser && currentCategory!=="Dashboard") setCategory("Dashboard"); },120);
   }else{
+    clearTimeout(btIdleTimer); clearTimeout(btIdleWarningTimer); btHideIdleWarning();
     await stopInventoryRealtime();
     document.getElementById("globalSearchBar").hidden=true;
     document.getElementById("globalSearchResults").hidden=true;
@@ -548,11 +560,15 @@ async function performLogout(event){
     // scope local rende il logout affidabile anche se il PC ha una connessione lenta/bloccata.
     const {error}=await sb.auth.signOut({scope:"local"});
     if(error) throw error;
+    try{ localStorage.removeItem(BT_LAST_ACTIVITY_KEY); }catch(_){}
     stock={};
     await showAuth(null);
   }catch(err){
     console.error("Logout non riuscito:",err);
-    // Fallback: forza comunque la schermata di accesso; al prossimo avvio Supabase rivaluterà la sessione.
+    // Fallback: elimina anche l'eventuale token persistito, così il browser non rientra
+    // automaticamente dopo un logout fallito per problemi di rete.
+    btClearPersistedAuthFallback();
+    try{ localStorage.removeItem(BT_LAST_ACTIVITY_KEY); }catch(_){}
     stock={};
     await showAuth(null);
   }finally{
@@ -562,6 +578,57 @@ async function performLogout(event){
 }
 document.getElementById("logoutBtn")?.addEventListener("click",performLogout);
 document.getElementById("headerLogoutBtn")?.addEventListener("click",performLogout);
+
+// ===== v1120 · logout automatico per inattività =====
+const BT_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+const BT_IDLE_WARNING_MS = 60 * 1000;
+const BT_LAST_ACTIVITY_KEY = "beparytech-last-activity-v1120";
+let btIdleTimer=null, btIdleWarningTimer=null, btIdleWarningEl=null, btActivityWriteAt=0;
+
+function btClearPersistedAuthFallback(){
+  // Supabase salva la sessione in localStorage. Normalmente signOut la rimuove;
+  // questo fallback evita il rientro automatico dopo un errore di rete/browser.
+  try{
+    Object.keys(localStorage).forEach(k=>{
+      if(/^sb-.*-auth-token$/i.test(k) || k.includes("supabase.auth.token")) localStorage.removeItem(k);
+    });
+  }catch(_){}
+}
+function btHideIdleWarning(){
+  if(btIdleWarningEl){btIdleWarningEl.remove();btIdleWarningEl=null;}
+}
+function btShowIdleWarning(){
+  if(!currentUser || btIdleWarningEl) return;
+  const el=document.createElement("div");
+  el.id="btIdleWarning";
+  el.setAttribute("role","status");
+  el.style.cssText="position:fixed;z-index:99999;left:50%;bottom:24px;transform:translateX(-50%);background:#102235;color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:14px;padding:12px 16px;box-shadow:0 12px 35px rgba(0,0,0,.28);font:600 14px/1.35 system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:min(92vw,520px);text-align:center";
+  el.textContent="Sessione inattiva: logout automatico tra 1 minuto. Tocca o usa il gestionale per restare collegato.";
+  document.body.appendChild(el); btIdleWarningEl=el;
+}
+function btScheduleIdleLogout(){
+  clearTimeout(btIdleTimer); clearTimeout(btIdleWarningTimer); btHideIdleWarning();
+  if(!currentUser) return;
+  let last=Date.now();
+  try{ last=Number(localStorage.getItem(BT_LAST_ACTIVITY_KEY)||last)||last; }catch(_){}
+  const elapsed=Math.max(0,Date.now()-last);
+  const warnIn=Math.max(0,BT_IDLE_TIMEOUT_MS-BT_IDLE_WARNING_MS-elapsed);
+  const logoutIn=Math.max(0,BT_IDLE_TIMEOUT_MS-elapsed);
+  btIdleWarningTimer=setTimeout(btShowIdleWarning,warnIn);
+  btIdleTimer=setTimeout(()=>{ if(currentUser) performLogout(); },logoutIn);
+}
+function btRegisterActivity(){
+  if(!currentUser) return;
+  const now=Date.now();
+  if(now-btActivityWriteAt>5000){
+    btActivityWriteAt=now;
+    try{ localStorage.setItem(BT_LAST_ACTIVITY_KEY,String(now)); }catch(_){}
+  }
+  btScheduleIdleLogout();
+}
+["pointerdown","keydown","touchstart","wheel"].forEach(ev=>window.addEventListener(ev,btRegisterActivity,{passive:true}));
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) btRegisterActivity(); });
+window.addEventListener("storage",e=>{ if(e.key===BT_LAST_ACTIVITY_KEY && currentUser) btScheduleIdleLogout(); });
 
 
 function setCategory(category){
