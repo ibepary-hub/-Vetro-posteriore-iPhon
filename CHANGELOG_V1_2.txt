@@ -1,0 +1,19 @@
+BeparyTech V1.2 - DYMO + VR fatturazione + cache fix
+
+1. DYMO universale
+- Prova automaticamente il formato moderno DYMO Connect.
+- Se fallisce, prova il formato legacy DieCutLabel per PC con software/servizio DYMO meno recente.
+- Memorizza sul singolo PC il formato che ha funzionato.
+- Rileva di nuovo porta e stampante se cambiano.
+- Messaggio di errore piu chiaro se nessuno dei due formati viene accettato.
+
+2. VR Trasporti fatturazione
+- Include pratiche non fatturate con invoiced=false e pratiche storiche con invoiced=NULL.
+- Riconosce varianti del nome: VR Trasporti, VR Trasporti SRL, VR TRASPORTI S.R.L. ecc.
+- Mantiene isolamento per workspace.
+- Limite anteprima aumentato a 2000 righe.
+
+3. Aggiornamento PC / cache
+- Cache Service Worker portata a v1200.
+- app.js, style.css, manifest.json e sw.js hanno cache-busting v1200.
+- Alla nuova installazione/aggiornamento il browser sostituisce le vecchie cache 1101.

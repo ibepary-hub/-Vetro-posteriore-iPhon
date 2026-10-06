@@ -2069,11 +2069,11 @@ document.getElementById("saveRecoveryPassword").onclick=async()=>{
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1", { updateViaCache: "none" });
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1200", { updateViaCache: "none" });
       await reg.update();
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (!sessionStorage.getItem("bt-cache-reloaded-v1")) {
-          sessionStorage.setItem("bt-cache-reloaded-v1", "1");
+        if (!sessionStorage.getItem("bt-cache-reloaded-v1200")) {
+          sessionStorage.setItem("bt-cache-reloaded-v1200", "1");
           location.reload();
         }
       });
@@ -2443,10 +2443,18 @@ async function buildBusinessInvoicePreview(){
     const lines=[];
     if(mode==="vr"){
       const ctx=await btGetWorkspaceOwnerId();
-      const {data,error}=await sb.from("beparytech_admin_repairs").select("id,repaired_at,client_name,store,device,repair_type,imei_serial,price_ex_vat,vat_rate,note,invoiced,repair_status,workspace_owner_id").eq("workspace_owner_id",ctx.owner).gte("repaired_at",from).lte("repaired_at",to).eq("invoiced",false).order("repaired_at",{ascending:true}).limit(1000);if(error)throw error;
-      const norm=v=>String(v||"").trim().toLocaleLowerCase("it-IT").replace(/[^a-z0-9]+/g," ").trim();
-      const isVr=r=>{const c=norm(r.client_name),s=norm(r.store);return c==="vr trasporti"||s==="vr trasporti"||c.includes("vr trasport")||s.includes("vr trasport");};
-      (data||[]).filter(isVr).forEach(r=>lines.push({selected:true,date:invoiceLineDate(r.repaired_at),store:r.store||r.client_name||"VR Trasporti",source:"Riparazione",description:`${r.repair_type||"Riparazione"} · ${r.device||"dispositivo"}${r.imei_serial?` · IMEI/Seriale ${r.imei_serial}`:""}`,qty:1,unitNet:Number(r.price_ex_vat||0),vatRate:Number(r.vat_rate??22),ref:`RIP-${r.id}`,repairId:Number(r.id)}));
+      // VR FIX V1.2: include sia invoiced=false sia le pratiche storiche con invoiced=NULL.
+      // Il filtro cliente viene fatto lato browser perché i nomi possono essere stati salvati
+      // come "VR Trasporti", "VR Trasporti Srl", "VR TRASPORTI S.R.L." ecc.
+      const {data,error}=await sb.from("beparytech_admin_repairs")
+        .select("id,repaired_at,client_name,store,device,repair_type,imei_serial,price_ex_vat,vat_rate,note,invoiced,repair_status,workspace_owner_id")
+        .eq("workspace_owner_id",ctx.owner)
+        .gte("repaired_at",from).lte("repaired_at",to)
+        .or("invoiced.is.null,invoiced.eq.false")
+        .order("repaired_at",{ascending:true}).limit(2000);if(error)throw error;
+      const norm=v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().toLocaleLowerCase("it-IT").replace(/[^a-z0-9]+/g," ").trim();
+      const isVr=r=>{const c=norm(r.client_name),s=norm(r.store),n=`${c} ${s}`.trim();return /(^| )vr( |$)/.test(n)&&/trasport/.test(n);};
+      (data||[]).filter(isVr).forEach(r=>lines.push({selected:true,date:invoiceLineDate(r.repaired_at),store:r.client_name||r.store||"VR Trasporti",source:"Riparazione",description:`${r.repair_type||"Riparazione"} · ${r.device||"dispositivo"}${r.imei_serial?` · IMEI/Seriale ${r.imei_serial}`:""}`,qty:1,unitNet:Number(r.price_ex_vat||0),vatRate:Number(r.vat_rate??22),ref:`RIP-${r.id}`,repairId:Number(r.id)}));
     }else{
       const includeStock=document.getElementById("invoiceIncludeStock")?.checked,includeParts=document.getElementById("invoiceIncludeParts")?.checked,includeRepairs=document.getElementById("invoiceIncludeRepairs")?.checked,includeHours=document.getElementById("invoiceIncludeHours")?.checked;
       const jobs=[],tsRange=invoiceTimestampRange(from,to);jobs.push(includeStock?sb.from("beparytech_sales").select("id,customer,category,item_key,model,color,quantity,sold_at,is_archived,restored_to_inventory,delivered_at,delete_reason").gte("sold_at",tsRange.start).lt("sold_at",tsRange.endExclusive).limit(2000):Promise.resolve({data:[],error:null}));jobs.push(includeParts?sb.from("beparytech_admin_device_sales").select("id,sold_at,store,device_name,sale_price,net_amount,vat_rate,vat_amount,note").gte("sold_at",from).lte("sold_at",to).limit(1000):Promise.resolve({data:[],error:null}));jobs.push(includeRepairs?sb.from("beparytech_admin_repairs").select("id,repaired_at,client_name,store,device,repair_type,price_ex_vat,vat_rate,note,invoiced").gte("repaired_at",from).lte("repaired_at",to).eq("invoiced",false).limit(1000):Promise.resolve({data:[],error:null}));jobs.push(includeHours?sb.from("beparytech_work_hours").select("id,work_date,morning_in,morning_out,afternoon_in,afternoon_out,company,total_minutes_override,note").gte("work_date",from).lte("work_date",to).limit(1000):Promise.resolve({data:[],error:null}));jobs.push(includeHours?sb.from("beparytech_work_extras").select("id,work_date,description,minutes,amount,company,note").gte("work_date",from).lte("work_date",to).limit(1000):Promise.resolve({data:[],error:null}));
@@ -3053,43 +3061,69 @@ async function btDymoLabelXml({title,meta,note,qrText}){
   const labelX=margin,labelY=margin,labelW=Math.max(0.2,W-margin*2),labelH=Math.max(0.2,H-margin*2);
   return `<?xml version="1.0" encoding="utf-8"?><DesktopLabel Version="1"><DYMOLabel Version="4"><Description>BeparyTech DYMO</Description><Orientation>Landscape</Orientation><LabelName>${btXmlEscape(paper.name||'Custom')}</LabelName><InitialLength>0</InitialLength><BorderStyle>SolidLine</BorderStyle><DYMORect><DYMOPoint><X>${num(labelX)}</X><Y>${num(labelY)}</Y></DYMOPoint><Size><Width>${num(labelW)}</Width><Height>${num(labelH)}</Height></Size></DYMORect><BorderColor><SolidColorBrush><Color A="1" R="0" G="0" B="0"></Color></SolidColorBrush></BorderColor><BorderThickness>1</BorderThickness><Show_Border>False</Show_Border><HasFixedLength>False</HasFixedLength><FixedLengthValue>0</FixedLengthValue><DynamicLayoutManager><RotationBehavior>ClearObjects</RotationBehavior><LabelObjects>${objects}</LabelObjects></DynamicLayoutManager></DYMOLabel><LabelApplication>Blank</LabelApplication><DataTable><Columns></Columns><Rows></Rows></DataTable></DesktopLabel>`;
 }
+function btDymoLegacyLabelXml({title,meta,note,qrText}){
+  // Fallback per DYMO Label Software / Web Service meno recenti.
+  // Usa il formato classico DieCutLabel in twips accettato dalle versioni legacy.
+  const st=getRepairLabelSettingsV92(),paper=btDymoPaper(st);
+  const landscape=(paper.w>=paper.h),W=Math.round((landscape?paper.w:paper.h)/25.4*1440),H=Math.round((landscape?paper.h:paper.w)/25.4*1440);
+  const margin=Math.max(45,Math.round(Math.min(W,H)*0.04)),hasQr=!!String(qrText||'').trim();
+  const qr=Math.round(Math.min(H-margin*2,980)),gap=hasQr?55:0,textW=Math.max(300,W-margin*2-(hasQr?qr+gap:0));
+  const titleH=Math.round((H-margin*2)*0.28),metaH=String(meta||'').trim()?Math.round((H-margin*2)*0.22):0,noteH=Math.max(180,H-margin*2-titleH-metaH);
+  const font=(size,bold=false)=>`<Font Family="Arial" Size="${size}" Bold="${bold?'True':'False'}" Italic="False" Underline="False" Strikeout="False" />`;
+  const textObj=(name,value,x,y,w,h,size,bold=false)=>`<ObjectInfo><TextObject><Name>${name}</Name><ForeColor Alpha="255" Red="0" Green="0" Blue="0" /><BackColor Alpha="0" Red="255" Green="255" Blue="255" /><LinkedObjectName></LinkedObjectName><Rotation>Rotation0</Rotation><IsMirrored>False</IsMirrored><IsVariable>False</IsVariable><HorizontalAlignment>Left</HorizontalAlignment><VerticalAlignment>Center</VerticalAlignment><TextFitMode>ShrinkToFit</TextFitMode><UseFullFontHeight>True</UseFullFontHeight><Verticalized>False</Verticalized><StyledText><Element><String>${btXmlEscape(String(value||''))}</String><Attributes>${font(size,bold)}<ForeColor Alpha="255" Red="0" Green="0" Blue="0" /></Attributes></Element></StyledText></TextObject><Bounds X="${x}" Y="${y}" Width="${w}" Height="${h}" /></ObjectInfo>`;
+  let objects='';
+  objects+=textObj('TITLE',title||'BEPARYTECH',margin,margin,textW,titleH,13,true);
+  if(metaH)objects+=textObj('META',meta,margin,margin+titleH,textW,metaH,10,false);
+  objects+=textObj('NOTE',note||'',margin,margin+titleH+metaH,textW,noteH,10,false);
+  if(hasQr){
+    const x=W-margin-qr,y=Math.max(margin,Math.round((H-qr)/2));
+    objects+=`<ObjectInfo><BarcodeObject><Name>QRCODE</Name><ForeColor Alpha="255" Red="0" Green="0" Blue="0" /><BackColor Alpha="255" Red="255" Green="255" Blue="255" /><LinkedObjectName></LinkedObjectName><Rotation>Rotation0</Rotation><IsMirrored>False</IsMirrored><IsVariable>False</IsVariable><Text>${btXmlEscape(String(qrText))}</Text><Type>QRCode</Type><Size>AutoFit</Size><TextPosition>None</TextPosition><TextFont Family="Arial" Size="8" Bold="False" Italic="False" Underline="False" Strikeout="False" /><CheckSumFont Family="Arial" Size="8" Bold="False" Italic="False" Underline="False" Strikeout="False" /><TextEmbedding>None</TextEmbedding><ECLevel>0</ECLevel><HorizontalAlignment>Center</HorizontalAlignment><QuietZonesPadding Left="0" Top="0" Right="0" Bottom="0" /></BarcodeObject><Bounds X="${x}" Y="${y}" Width="${qr}" Height="${qr}" /></ObjectInfo>`;
+  }
+  return `<?xml version="1.0" encoding="utf-8"?><DieCutLabel Version="8.0" Units="twips"><PaperOrientation>Landscape</PaperOrientation><Id>Custom</Id><PaperName>${btXmlEscape(paper.name||'Custom')}</PaperName><DrawCommands><RoundRectangle X="0" Y="0" Width="${W}" Height="${H}" Rx="0" Ry="0" /></DrawCommands>${objects}</DieCutLabel>`;
+}
+function btDymoPrintErrorText(txt,status){
+  const t=String(txt||'').trim();return `Errore DYMO${status?` (${status})`:''}: ${t||'risposta non valida dal servizio di stampa'}`;
+}
 async function btDymoDirectPrint(data){
   let cfg=btGetDymoConfig();if(!cfg.enabled)throw new Error("La stampa diretta DYMO è disattivata nelle Impostazioni.");
   let base=await btFindDymoService(false),printer=cfg.printer;
-  // Ogni stampa verifica le DYMO disponibili: se l'utente cambia modello/USB,
-  // la nuova stampante viene scelta automaticamente senza configurazione manuale.
   try{
     const current=await btGetDymoPrintersFromBase(base);
     const connected=(current.devices||[]).filter(x=>x.connected).map(x=>x.name);
     if(connected.length && !connected.includes(printer)){
-      printer=connected[0];
-      cfg=btSaveDymoConfig({printer,endpoint:base});
-      const sel=document.getElementById("dymoPrinterSelect");
-      if(sel){sel.innerHTML=current.printers.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");sel.value=printer;}
-    }else if(!printer){
-      const printers=await btDetectDymoPrinters(false);cfg=btGetDymoConfig();base=btDymoEndpoint||cfg.endpoint||base;printer=cfg.printer||printers[0];
-    }
-  }catch(_){
-    const printers=await btDetectDymoPrinters(true);cfg=btGetDymoConfig();base=btDymoEndpoint||cfg.endpoint||base;printer=cfg.printer||printers[0];
-  }
+      printer=connected[0];cfg=btSaveDymoConfig({printer,endpoint:base});
+      const sel=document.getElementById("dymoPrinterSelect");if(sel){sel.innerHTML=current.printers.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");sel.value=printer;}
+    }else if(!printer){const printers=await btDetectDymoPrinters(false);cfg=btGetDymoConfig();base=btDymoEndpoint||cfg.endpoint||base;printer=cfg.printer||printers[0];}
+  }catch(_){const printers=await btDetectDymoPrinters(true);cfg=btGetDymoConfig();base=btDymoEndpoint||cfg.endpoint||base;printer=cfg.printer||printers[0];}
   if(!printer)throw new Error("Nessuna stampante DYMO collegata.");
-  const send=async()=>{
-    // Il DYMO Web Service non interpreta sempre "+" come spazio nel printerName.
-    // URLSearchParams converte gli spazi in "+", causando nomi come
-    // "DYMO+LabelWriter+450+(Copia+3)" e quindi "Printer not found".
-    // Usiamo encodeURIComponent, che invia gli spazi come %20.
-    const formEncode=o=>Object.entries(o).map(([k,v])=>`${encodeURIComponent(k)}=${encodeURIComponent(String(v??""))}`).join("&");
-    const body=formEncode({printerName:printer,printParamsXml:"",labelXml:await btDymoLabelXml(data),labelSetXml:""});
-    const r=await btFetchTimeout(`${base}/PrintLabel`,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},body},9000);
-    const txt=await r.text();if(!r.ok)throw new Error(`Errore DYMO: ${txt||r.status}`);return txt;
+
+  const formEncode=o=>Object.entries(o).map(([k,v])=>`${encodeURIComponent(k)}=${encodeURIComponent(String(v??""))}`).join("&");
+  const sendXml=async(labelXml,mode)=>{
+    const body=formEncode({printerName:printer,printParamsXml:"",labelXml,labelSetXml:""});
+    const r=await btFetchTimeout(`${base}/PrintLabel`,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},body},10000);
+    const txt=await r.text();
+    if(!r.ok || /error|exception|not declared|invalid/i.test(String(txt||'')))throw new Error(btDymoPrintErrorText(txt,r.status));
+    btSaveDymoConfig({printer,endpoint:base,labelMode:mode});return txt;
   };
-  try{await send();}
+  const tryFormats=async()=>{
+    // Ricorda l'ultimo formato riuscito su questo PC, ma mantiene sempre il fallback opposto.
+    const preferred=btGetDymoConfig().labelMode==="legacy"?"legacy":"modern";
+    const modes=preferred==="legacy"?["legacy","modern"]:["modern","legacy"];
+    let lastErr=null;
+    for(const mode of modes){
+      try{const xml=mode==="legacy"?btDymoLegacyLabelXml(data):await btDymoLabelXml(data);await sendXml(xml,mode);return mode;}catch(e){lastErr=e;}
+    }
+    throw lastErr||new Error("La DYMO non ha accettato nessuno dei formati di etichetta supportati.");
+  };
+  let usedMode;
+  try{usedMode=await tryFormats();}
   catch(firstErr){
-    // Autoriparazione: se porta/stampante è cambiata, rileva di nuovo e ritenta una volta.
-    btDymoEndpoint="";await btDetectDymoPrinters(true);cfg=btGetDymoConfig();base=btDymoEndpoint||cfg.endpoint;printer=cfg.printer;
-    if(!base||!printer)throw firstErr;await send();
+    // Porta o stampante possono essere cambiate: nuova scansione + secondo tentativo completo.
+    btDymoEndpoint="";
+    try{await btDetectDymoPrinters(true);cfg=btGetDymoConfig();base=btDymoEndpoint||cfg.endpoint;printer=cfg.printer;if(!base||!printer)throw firstErr;usedMode=await tryFormats();}
+    catch(secondErr){throw new Error(`${secondErr?.message||firstErr?.message||"Impossibile stampare sulla DYMO."}\nCompatibilità automatica provata: DYMO Connect recente + DYMO legacy.`);}
   }
-  btSetDymoStatus(`Stampata direttamente · ${printer}`,"Ok");return true;
+  btSetDymoStatus(`Stampata direttamente · ${printer} · ${usedMode==="legacy"?"compatibilità legacy":"formato moderno"}`,"Ok");return true;
 }
 function bindDymoDirectV98(){
   const btn=document.getElementById("dymoDetectBtn"),sel=document.getElementById("dymoPrinterSelect"),enabled=document.getElementById("dymoDirectEnabled");
