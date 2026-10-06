@@ -1,0 +1,12 @@
+BeparyTech V1.1
+
+- Correzione fatturazione VR Trasporti: riconoscimento sia da Cliente sia da Sede, tollerante a maiuscole/spazi/varianti del nome e filtrato per workspace.
+- Nuova sezione Clienti: Privato e Partita IVA/Azienda.
+- Clienti: aggiunta, modifica, eliminazione logica, ricerca e filtro tipo.
+- Dati azienda: P.IVA, codice destinatario, PEC, indirizzo e contatti.
+- I clienti salvati vengono aggiunti automaticamente al menu Cliente delle riparazioni.
+- Mantiene le modifiche V1 di ieri: acconto, residuo, cronologia pratica, ritiro previsto, accessori, ricevuta aggiornata e ottimizzazioni mobile.
+- Mantiene gli hardening v1123 e i due fix Supabase applicabili da codice/SQL. Leaked Password Protection resta una funzione del piano Supabase che non può essere attivata dal pacchetto frontend.
+
+IMPORTANTE
+Eseguire 08_SETUP_CLIENTS_V1.sql in Supabase prima di usare la nuova anagrafica Clienti.

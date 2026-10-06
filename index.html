@@ -9,11 +9,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="BeparyTech Manager">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
-  <title>BeparyTech V1</title>
+  <title>BeparyTech V1.1</title>
   <link rel="manifest" href="manifest.json?v=1">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=1">
+  <link rel="stylesheet" href="style.css?v=1101">
 
 
 
@@ -21,7 +21,7 @@
 <body>
   <div id="menuOverlay" class="menuOverlay" hidden></div>
   <aside id="mainMenu" class="mainMenu" aria-hidden="true">
-    <div class="menuHead"><div class="menuBrand"><img src="icon-192.png" alt=""><div><strong>BeparyTech V1</strong><span>Gestionale riparazioni & magazzino</span></div></div><button id="menuClose" class="menuClose animatedBtn" type="button">×</button></div>
+    <div class="menuHead"><div class="menuBrand"><img src="icon-192.png" alt=""><div><strong>BeparyTech V1.1</strong><span>Gestionale riparazioni & magazzino</span></div></div><button id="menuClose" class="menuClose animatedBtn" type="button">×</button></div>
     <nav class="menuNav">
       <button class="menuItem active" type="button" data-category="Dashboard"><span class="menuIcon">⌂</span><span><strong>Dashboard</strong><small>Riepilogo magazzino</small></span></button>
       <div id="customMenuSections" class="customMenuSections"></div>
@@ -52,6 +52,7 @@
 
       <div id="adminMenuGroup" class="menuGroup adminOnly" hidden>
         <div class="menuGroupTitle">AMMINISTRAZIONE</div>
+        <button id="clientsMenuItem" class="menuItem adminOnly" type="button" data-category="Clienti"><span class="menuIcon">♧</span><span><strong>Clienti</strong><small>Privati e Partita IVA</small></span></button>
         <button id="hoursMenuItem" class="menuItem adminOnly" type="button" data-category="Orari"><span class="menuIcon">◷</span><span><strong>Orari</strong><small>Ore lavorate ed extra</small></span></button>
         <button id="backupMenuItem" class="menuItem adminOnly" type="button" data-category="Backup"><span class="menuIcon">⇩</span><span><strong>Backup</strong><small>Esporta dati</small></span></button>
         <button id="usersMenuItem" class="menuItem adminOnly" type="button" data-category="Utenti"><span class="menuIcon">♙</span><span><strong>Utenti</strong><small>Accessi e password</small></span></button>
@@ -570,6 +571,37 @@
 
 
 
+<section id="clientsView" class="catalogView clientsView" hidden>
+  <div class="adminHero clientsHero"><div><span class="usersKicker">ANAGRAFICA CLIENTI</span><h2>Clienti</h2><p>Aggiungi e gestisci clienti privati e aziende con Partita IVA. I dati restano separati per workspace.</p></div><span class="adminBadge">ADMIN</span></div>
+
+  <section class="clientEditorCard">
+    <div class="clientEditorHead"><div><strong id="clientFormTitle">Nuovo cliente</strong><small>Per i privati basta il nome. Per le aziende puoi salvare anche i dati di fatturazione.</small></div><button id="clientCancelEditBtn" class="miniBtn" type="button" hidden>Annulla modifica</button></div>
+    <form id="clientForm" autocomplete="off">
+      <input id="clientId" type="hidden">
+      <div class="clientFormGrid">
+        <label><span>Tipo cliente *</span><select id="clientType"><option value="private">Privato</option><option value="business">Partita IVA / Azienda</option></select></label>
+        <label class="wide"><span>Nome / Ragione sociale *</span><input id="clientName" maxlength="160" required placeholder="Nome cliente o ragione sociale"></label>
+        <label><span>Telefono</span><input id="clientPhone" type="tel" maxlength="40" placeholder="+39 ..."></label>
+        <label><span>Email</span><input id="clientEmail" type="email" maxlength="180"></label>
+        <label class="privateField"><span>Codice fiscale</span><input id="clientTaxCode" maxlength="16"></label>
+        <label class="businessField" hidden><span>Partita IVA *</span><input id="clientVat" maxlength="13" placeholder="IT01234567890"></label>
+        <label class="businessField" hidden><span>Codice destinatario</span><input id="clientRecipient" maxlength="7" placeholder="7 caratteri"></label>
+        <label class="businessField" hidden><span>PEC</span><input id="clientPec" type="email" maxlength="180"></label>
+        <label class="wide"><span>Indirizzo</span><input id="clientAddress" maxlength="180"></label>
+        <label><span>CAP</span><input id="clientZip" maxlength="5"></label>
+        <label><span>Città</span><input id="clientCity" maxlength="100"></label>
+        <label><span>Provincia</span><input id="clientProvince" maxlength="2" placeholder="PC"></label>
+        <label class="wide"><span>Note</span><textarea id="clientNotes" maxlength="1000" rows="2" placeholder="Note facoltative"></textarea></label>
+      </div>
+      <div class="clientEditorActions"><button id="clientSaveBtn" class="primaryAction animatedBtn" type="submit">Salva cliente</button><div id="clientFormMsg" class="createUserMsg"></div></div>
+    </form>
+  </section>
+
+  <div class="clientsToolbar"><input id="clientsSearch" type="search" placeholder="Cerca nome, telefono, email, P.IVA…"><select id="clientsTypeFilter"><option value="all">Tutti</option><option value="private">Privati</option><option value="business">Partita IVA</option></select><button id="clientsRefreshBtn" class="miniBtn animatedBtn" type="button">↻ Aggiorna</button></div>
+  <div id="clientsSummary" class="deviceSalesSummary"><div><span>Totale</span><strong>0</strong></div><div><span>Privati</span><strong>0</strong></div><div><span>Partita IVA</span><strong>0</strong></div></div>
+  <div id="clientsList" class="clientsList"><div class="emptyState">Caricamento clienti…</div></div>
+</section>
+
 <section id="saasCompaniesView" class="catalogView saasCompaniesView" hidden>
   <div class="adminHero saasHero"><div><span class="usersKicker">BEPARYTECH SOFTWARE · SUPER ADMIN</span><h2>Clienti del gestionale</h2><p>Gestisci aziende, licenze, scadenze e moduli da un unico pannello. Ogni azienda usa un workspace separato.</p></div><span class="adminBadge">OWNER</span></div>
 
@@ -926,7 +958,7 @@
  <button type="button" data-smart-action="menu"><b>☰</b><span>Menu</span></button>
 </nav>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
-<script src="app.js?v=1"></script>
+<script src="app.js?v=1101"></script>
 
 
 

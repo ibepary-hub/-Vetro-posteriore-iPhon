@@ -1,6 +1,6 @@
 {
-  "name": "BeparyTech V1",
-  "short_name": "BeparyTech V1",
+  "name": "BeparyTech V1.1",
+  "short_name": "BeparyTech V1.1",
   "start_url": "./?app=1",
   "scope": "./",
   "display": "standalone",

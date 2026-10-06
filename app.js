@@ -436,7 +436,7 @@ function applyRoleVisibility(){
     document.getElementById("hoursView").hidden=true;
     const dsv=document.getElementById("deviceSalesView"); if(dsv) dsv.hidden=true;
     const sv=document.getElementById("settingsView"); if(sv) sv.hidden=true;
-    if(["Utenti","GestioneMagazzino","ScorteZero","Backup","Orari","VenditeAdmin","Fatturazione","CatalogoBestek","RiparazioniAdmin","AccettazioneRapida","AccettazioneCompleta","ContoLavorazione","Impostazioni"].includes(currentCategory)) setCategory("Dashboard");
+    if(["Utenti","GestioneMagazzino","ScorteZero","Backup","Orari","VenditeAdmin","Fatturazione","CatalogoBestek","RiparazioniAdmin","AccettazioneRapida","AccettazioneCompleta","ContoLavorazione","Clienti","Impostazioni"].includes(currentCategory)) setCategory("Dashboard");
   }
   const menuUser=document.getElementById("menuUserName"), menuRole=document.getElementById("menuUserRole");
   if(menuUser) menuUser.textContent=currentProfile?.username||currentUser?.email||"Utente";
@@ -667,12 +667,12 @@ window.addEventListener("storage",e=>{ if(e.key===BT_LAST_ACTIVITY_KEY && curren
 
 
 function setCategory(category){
-  const isDashboard=category==="Dashboard", isSales=category==="Vendite", isAudit=category==="Cronologia", isUsers=category==="Utenti", isCatalog=category==="GestioneMagazzino", isZeroStock=category==="ScorteZero", isBackup=category==="Backup", isHours=category==="Orari", isDeviceSales=(category==="VenditeAdmin" || category==="Fatturazione"), isBestekCatalog=category==="CatalogoBestek", isDymoNotes=category==="NoteDymo", isWorkDdt=category==="ContoLavorazione", isSaasCompanies=category==="SaaSAziende";
+  const isDashboard=category==="Dashboard", isSales=category==="Vendite", isAudit=category==="Cronologia", isUsers=category==="Utenti", isCatalog=category==="GestioneMagazzino", isZeroStock=category==="ScorteZero", isBackup=category==="Backup", isHours=category==="Orari", isDeviceSales=(category==="VenditeAdmin" || category==="Fatturazione"), isBestekCatalog=category==="CatalogoBestek", isDymoNotes=category==="NoteDymo", isWorkDdt=category==="ContoLavorazione", isClients=category==="Clienti", isSaasCompanies=category==="SaaSAziende";
   const isCustom=String(category).startsWith("custom:");
-  if((isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog||isWorkDdt)&&!isAdmin()) return;
+  if((isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog||isWorkDdt||isClients)&&!isAdmin()) return;
   if(isSaasCompanies&&!isSuperAdmin()) return;
   if(!isSuperAdmin()){
-    const requiredModule=isCustom?'inventory':({Vendite:'sales',GestioneMagazzino:'inventory',ScorteZero:'inventory',VenditeAdmin:'sales',Fatturazione:'invoicing',RiparazioniAdmin:'repairs',AccettazioneRapida:'repairs',AccettazioneCompleta:'repairs',ContoLavorazione:'ddt',Orari:'hours',Backup:'backup',CatalogoBestek:'bestek',NoteDymo:'dymo'}[category]);
+    const requiredModule=isCustom?'inventory':({Vendite:'sales',GestioneMagazzino:'inventory',ScorteZero:'inventory',VenditeAdmin:'sales',Fatturazione:'invoicing',RiparazioniAdmin:'repairs',AccettazioneRapida:'repairs',AccettazioneCompleta:'repairs',ContoLavorazione:'ddt',Clienti:'repairs',Orari:'hours',Backup:'backup',CatalogoBestek:'bestek',NoteDymo:'dymo'}[category]);
     if(!btLicenseActive()){ if(category!=="Dashboard") return; }
     if(requiredModule&&!btHasModule(requiredModule)) return;
   }
@@ -680,13 +680,13 @@ function setCategory(category){
   try{ localStorage.setItem("beparytech-last-category",String(category)); }catch(_){}
   currentCustomSectionId=isCustom?Number(String(category).split(":")[1]):null;
   const sec=isCustom?customSections.find(s=>Number(s.id)===currentCustomSectionId):null;
-  const title=isDashboard?"Dashboard":isAudit?"Cronologia":isSales?"Vendute":isUsers?"Utenti":isCatalog?"Gestione magazzino":isZeroStock?"Scorte a zero":isBackup?"Backup":isHours?"I miei orari":isDeviceSales?"Vendite ricambi":isBestekCatalog?"Catalogo Bestek":isDymoNotes?"Note DYMO":isWorkDdt?"DDT conto lavorazione":isSaasCompanies?"Clienti software":sec?.name||category;
-  const desc=isDashboard?"Riepilogo generale":isAudit?"Tutte le attività del gestionale":isSales?"Vendite, note, stampa DYMO e rientri":isUsers?"Gestione accessi":isCatalog?"Crea e gestisci sezioni e prodotti":isZeroStock?"BackGlass e Housing esauriti, separati":isBackup?"Esporta una copia dei dati":isHours?"Area privata Admin · ore lavorate ed extra":isDeviceSales?"Area privata Admin · ricambi elettronici, IVA e acquisti":isBestekCatalog?"Area privata Admin · codici e accessori Bestek":isDymoNotes?"Scrivi una nota libera e stampala direttamente sulla DYMO":isWorkDdt?"DDT in entrata, lavorazioni e restituzioni al cliente":isSaasCompanies?"Aziende, piani, licenze e moduli":sec?.description||"Sezione magazzino";
+  const title=isDashboard?"Dashboard":isAudit?"Cronologia":isSales?"Vendute":isUsers?"Utenti":isCatalog?"Gestione magazzino":isZeroStock?"Scorte a zero":isBackup?"Backup":isHours?"I miei orari":isDeviceSales?"Vendite ricambi":isBestekCatalog?"Catalogo Bestek":isDymoNotes?"Note DYMO":isWorkDdt?"DDT conto lavorazione":isClients?"Clienti":isSaasCompanies?"Clienti software":sec?.name||category;
+  const desc=isDashboard?"Riepilogo generale":isAudit?"Tutte le attività del gestionale":isSales?"Vendite, note, stampa DYMO e rientri":isUsers?"Gestione accessi":isCatalog?"Crea e gestisci sezioni e prodotti":isZeroStock?"BackGlass e Housing esauriti, separati":isBackup?"Esporta una copia dei dati":isHours?"Area privata Admin · ore lavorate ed extra":isDeviceSales?"Area privata Admin · ricambi elettronici, IVA e acquisti":isBestekCatalog?"Area privata Admin · codici e accessori Bestek":isDymoNotes?"Scrivi una nota libera e stampala direttamente sulla DYMO":isWorkDdt?"DDT in entrata, lavorazioni e restituzioni al cliente":isClients?"Anagrafica privati e Partita IVA":isSaasCompanies?"Aziende, piani, licenze e moduli":sec?.description||"Sezione magazzino";
   document.getElementById("categoryName").textContent=title;
   document.getElementById("categoryDescription").textContent=desc;
-  document.querySelector(".tools").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog||isDymoNotes||isWorkDdt||isSaasCompanies;
-  document.querySelector(".stats").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog||isDymoNotes||isWorkDdt||isSaasCompanies;
-  inventory.hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog||isDymoNotes||isWorkDdt||isSaasCompanies;
+  document.querySelector(".tools").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog||isDymoNotes||isWorkDdt||isClients||isSaasCompanies;
+  document.querySelector(".stats").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog||isDymoNotes||isWorkDdt||isClients||isSaasCompanies;
+  inventory.hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog||isDymoNotes||isWorkDdt||isClients||isSaasCompanies;
   document.getElementById("dashboardView").hidden=!isDashboard;
   document.getElementById("salesView").hidden=!isSales;
   document.getElementById("auditView").hidden=!isAudit;
@@ -695,6 +695,7 @@ function setCategory(category){
   const bestekView=document.getElementById("bestekCatalogView"); if(bestekView) bestekView.hidden=!isBestekCatalog;
   const dymoNotesView=document.getElementById("dymoNotesView"); if(dymoNotesView) dymoNotesView.hidden=!isDymoNotes;
   const workDdtView=document.getElementById("workDdtView"); if(workDdtView) workDdtView.hidden=!isWorkDdt;
+  const clientsView=document.getElementById("clientsView"); if(clientsView) clientsView.hidden=!isClients;
   const saasView=document.getElementById("saasCompaniesView"); if(saasView) saasView.hidden=!isSaasCompanies;
   document.getElementById("zeroStockView").hidden=!isZeroStock;
   document.getElementById("backupView").hidden=!isBackup;
@@ -709,7 +710,7 @@ function setCategory(category){
     },0);
   }
   search.value=""; filter.value="all"; closeMainMenu();
-  if(isDashboard) loadDashboard(); else if(isAudit) loadAudit(); else if(isSales) loadSales(); else if(isUsers) loadUsers(); else if(isCatalog) renderCatalogAdmin(); else if(isZeroStock) renderZeroStock(); else if(isBackup){} else if(isHours) loadHours(); else if(isDeviceSales) loadDeviceSales(); else if(isBestekCatalog) renderBestekCatalog(); else if(isWorkDdt) loadWorkDdts(); else if(isSaasCompanies) loadSaasCompanies(); else if(isCustom) renderCustomSection(); else if(category==="BackGlass"||category==="Housing") render();
+  if(isDashboard) loadDashboard(); else if(isAudit) loadAudit(); else if(isSales) loadSales(); else if(isUsers) loadUsers(); else if(isCatalog) renderCatalogAdmin(); else if(isZeroStock) renderZeroStock(); else if(isBackup){} else if(isHours) loadHours(); else if(isDeviceSales) loadDeviceSales(); else if(isBestekCatalog) renderBestekCatalog(); else if(isWorkDdt) loadWorkDdts(); else if(isClients) loadClients(); else if(isSaasCompanies) loadSaasCompanies(); else if(isCustom) renderCustomSection(); else if(category==="BackGlass"||category==="Housing") render();
 }
 
 
@@ -2185,7 +2186,7 @@ function startAdminRepairEdit(id){
   const form=document.getElementById("adminRepairForm"); if(form)form.dataset.editing="1";
   document.getElementById("adminRepairDate").value=r.repaired_at||"";
   document.getElementById("adminRepairStore").value=r.store||"";
-  const knownClient=["RIPARALO S.R.L.","VR Trasporti"].includes(r.client_name);document.getElementById("adminRepairClient").value=knownClient?r.client_name:"ALTRO";document.getElementById("adminRepairCustomClient").disabled=knownClient;document.getElementById("adminRepairCustomClient").value=knownClient?"":(r.client_name||"");const customClientWrap=document.getElementById("adminRepairCustomClientWrap");if(customClientWrap)customClientWrap.hidden=knownClient;
+  const clientSelect=document.getElementById("adminRepairClient"),hasClientOption=[...clientSelect.options].some(o=>o.value===r.client_name),knownClient=["RIPARALO S.R.L.","VR Trasporti"].includes(r.client_name)||hasClientOption;clientSelect.value=knownClient?r.client_name:"ALTRO";document.getElementById("adminRepairCustomClient").disabled=knownClient;document.getElementById("adminRepairCustomClient").value=knownClient?"":(r.client_name||"");const customClientWrap=document.getElementById("adminRepairCustomClientWrap");if(customClientWrap)customClientWrap.hidden=knownClient;
   document.getElementById("adminRepairDevice").value=r.device||"";
   document.getElementById("adminRepairType").value=r.repair_type||"";
   document.getElementById("adminRepairPrice").value=Number(r.price_ex_vat||0);
@@ -2441,8 +2442,11 @@ async function buildBusinessInvoicePreview(){
   try{
     const lines=[];
     if(mode==="vr"){
-      const {data,error}=await sb.from("beparytech_admin_repairs").select("id,repaired_at,client_name,store,device,repair_type,imei_serial,price_ex_vat,vat_rate,note,invoiced,repair_status").gte("repaired_at",from).lte("repaired_at",to).eq("client_name","VR Trasporti").eq("invoiced",false).order("repaired_at",{ascending:true}).limit(1000);if(error)throw error;
-      (data||[]).forEach(r=>lines.push({selected:true,date:invoiceLineDate(r.repaired_at),store:"VR Trasporti",source:"Riparazione",description:`${r.repair_type||"Riparazione"} · ${r.device||"dispositivo"}${r.imei_serial?` · IMEI/Seriale ${r.imei_serial}`:""}`,qty:1,unitNet:Number(r.price_ex_vat||0),vatRate:Number(r.vat_rate??22),ref:`RIP-${r.id}`,repairId:Number(r.id)}));
+      const ctx=await btGetWorkspaceOwnerId();
+      const {data,error}=await sb.from("beparytech_admin_repairs").select("id,repaired_at,client_name,store,device,repair_type,imei_serial,price_ex_vat,vat_rate,note,invoiced,repair_status,workspace_owner_id").eq("workspace_owner_id",ctx.owner).gte("repaired_at",from).lte("repaired_at",to).eq("invoiced",false).order("repaired_at",{ascending:true}).limit(1000);if(error)throw error;
+      const norm=v=>String(v||"").trim().toLocaleLowerCase("it-IT").replace(/[^a-z0-9]+/g," ").trim();
+      const isVr=r=>{const c=norm(r.client_name),s=norm(r.store);return c==="vr trasporti"||s==="vr trasporti"||c.includes("vr trasport")||s.includes("vr trasport");};
+      (data||[]).filter(isVr).forEach(r=>lines.push({selected:true,date:invoiceLineDate(r.repaired_at),store:r.store||r.client_name||"VR Trasporti",source:"Riparazione",description:`${r.repair_type||"Riparazione"} · ${r.device||"dispositivo"}${r.imei_serial?` · IMEI/Seriale ${r.imei_serial}`:""}`,qty:1,unitNet:Number(r.price_ex_vat||0),vatRate:Number(r.vat_rate??22),ref:`RIP-${r.id}`,repairId:Number(r.id)}));
     }else{
       const includeStock=document.getElementById("invoiceIncludeStock")?.checked,includeParts=document.getElementById("invoiceIncludeParts")?.checked,includeRepairs=document.getElementById("invoiceIncludeRepairs")?.checked,includeHours=document.getElementById("invoiceIncludeHours")?.checked;
       const jobs=[],tsRange=invoiceTimestampRange(from,to);jobs.push(includeStock?sb.from("beparytech_sales").select("id,customer,category,item_key,model,color,quantity,sold_at,is_archived,restored_to_inventory,delivered_at,delete_reason").gte("sold_at",tsRange.start).lt("sold_at",tsRange.endExclusive).limit(2000):Promise.resolve({data:[],error:null}));jobs.push(includeParts?sb.from("beparytech_admin_device_sales").select("id,sold_at,store,device_name,sale_price,net_amount,vat_rate,vat_amount,note").gte("sold_at",from).lte("sold_at",to).limit(1000):Promise.resolve({data:[],error:null}));jobs.push(includeRepairs?sb.from("beparytech_admin_repairs").select("id,repaired_at,client_name,store,device,repair_type,price_ex_vat,vat_rate,note,invoiced").gte("repaired_at",from).lte("repaired_at",to).eq("invoiced",false).limit(1000):Promise.resolve({data:[],error:null}));jobs.push(includeHours?sb.from("beparytech_work_hours").select("id,work_date,morning_in,morning_out,afternoon_in,afternoon_out,company,total_minutes_override,note").gte("work_date",from).lte("work_date",to).limit(1000):Promise.resolve({data:[],error:null}));jobs.push(includeHours?sb.from("beparytech_work_extras").select("id,work_date,description,minutes,amount,company,note").gte("work_date",from).lte("work_date",to).limit(1000):Promise.resolve({data:[],error:null}));
@@ -3111,7 +3115,7 @@ document.addEventListener("DOMContentLoaded",bindDymoDirectV98);setTimeout(bindD
       document.getElementById('inventory').hidden=true;
       document.querySelector('.tools').hidden=true;
       document.querySelector('.stats').hidden=true;
-      document.querySelectorAll('#salesView,#auditView,#usersView,#catalogView,#zeroStockView,#backupView,#hoursView,#deviceSalesView,#settingsView,#securityAccessView').forEach(x=>{if(x)x.hidden=true});
+      document.querySelectorAll('#salesView,#auditView,#usersView,#catalogView,#zeroStockView,#backupView,#hoursView,#deviceSalesView,#clientsView,#settingsView,#securityAccessView').forEach(x=>{if(x)x.hidden=true});
       if(adminChanges) adminChanges.hidden=false;
       document.getElementById('categoryName').textContent='Centro modifiche';
       document.getElementById('categoryDescription').textContent='Controllo completo Admin';
@@ -3434,7 +3438,7 @@ function btApplyDashboardInvariantV1123(){
   try{ localStorage.setItem("beparytech-last-category","Dashboard"); }catch(_){}
   const hideIds=[
     "inventory","salesView","auditView","usersView","catalogView","zeroStockView","backupView","hoursView",
-    "deviceSalesView","bestekCatalogView","dymoNotesView","workDdtView","saasCompaniesView","settingsView",
+    "deviceSalesView","bestekCatalogView","dymoNotesView","workDdtView","clientsView","saasCompaniesView","settingsView",
     "securityAccessView","adminChangesView"
   ];
   hideIds.forEach(id=>{const el=document.getElementById(id);if(el)el.hidden=true;});
@@ -3470,3 +3474,61 @@ setCategory=function(category,fromBack=false){
     if(broken)btApplyDashboardInvariantV1123();
   },200);
 })();
+
+
+// ===== V1.1 · Anagrafica clienti Privati / Partita IVA =====
+let btClients=[];
+function btNormalizeVat(v){return String(v||"").trim().replace(/^IT/i,"").replace(/\D/g,"");}
+function btClientTypeUi(){
+  const business=document.getElementById("clientType")?.value==="business";
+  document.querySelectorAll(".businessField").forEach(x=>x.hidden=!business);
+  document.querySelectorAll(".privateField").forEach(x=>x.hidden=business);
+  const vat=document.getElementById("clientVat");if(vat)vat.required=business;
+}
+function btResetClientForm(){
+  const f=document.getElementById("clientForm");if(!f)return;f.reset();
+  document.getElementById("clientId").value="";document.getElementById("clientType").value="private";
+  document.getElementById("clientFormTitle").textContent="Nuovo cliente";document.getElementById("clientSaveBtn").textContent="Salva cliente";document.getElementById("clientCancelEditBtn").hidden=true;
+  const m=document.getElementById("clientFormMsg");if(m){m.textContent="";m.className="createUserMsg";}btClientTypeUi();
+}
+function btClientPayload(){
+  const get=id=>String(document.getElementById(id)?.value||"").trim();const type=get("clientType")||"private",name=get("clientName");
+  const p={client_type:type,display_name:name,phone:get("clientPhone")||null,email:get("clientEmail")||null,tax_code:get("clientTaxCode").toUpperCase()||null,vat_number:btNormalizeVat(get("clientVat"))||null,recipient_code:get("clientRecipient").toUpperCase()||null,pec:get("clientPec")||null,address:get("clientAddress")||null,zip_code:get("clientZip")||null,city:get("clientCity")||null,province:get("clientProvince").toUpperCase()||null,country:"IT",notes:get("clientNotes")||null,updated_at:new Date().toISOString()};
+  if(!name)throw new Error("Inserisci nome o ragione sociale.");
+  if(type==="business"&&!/^\d{11}$/.test(p.vat_number||""))throw new Error("Per una Partita IVA inserisci 11 cifre valide.");
+  if(p.recipient_code&&!/^[A-Z0-9]{7}$/.test(p.recipient_code))throw new Error("Il codice destinatario deve avere 7 caratteri.");
+  if(p.zip_code&&!/^\d{5}$/.test(p.zip_code))throw new Error("Il CAP deve avere 5 cifre.");
+  if(p.province&&!/^[A-Z]{2}$/.test(p.province))throw new Error("La provincia deve avere 2 lettere.");
+  return p;
+}
+function btRenderClients(){
+  const list=document.getElementById("clientsList"),summary=document.getElementById("clientsSummary");if(!list)return;
+  const q=String(document.getElementById("clientsSearch")?.value||"").trim().toLowerCase(),filter=document.getElementById("clientsTypeFilter")?.value||"all";
+  const rows=btClients.filter(r=>(filter==="all"||r.client_type===filter)&&(!q||[r.display_name,r.phone,r.email,r.vat_number,r.tax_code,r.city].some(v=>String(v||"").toLowerCase().includes(q))));
+  const priv=btClients.filter(x=>x.client_type==="private").length,bus=btClients.filter(x=>x.client_type==="business").length;
+  if(summary)summary.innerHTML=`<div><span>Totale</span><strong>${btClients.length}</strong></div><div><span>Privati</span><strong>${priv}</strong></div><div><span>Partita IVA</span><strong>${bus}</strong></div>`;
+  list.innerHTML=rows.length?rows.map(r=>`<article class="clientRow" data-id="${r.id}"><div class="clientRowMain"><div class="clientRowBadges"><span>${r.client_type==="business"?"Partita IVA":"Privato"}</span>${r.client_type==="business"&&r.vat_number?`<span>P.IVA ${escapeHtml(r.vat_number)}</span>`:""}</div><strong>${escapeHtml(r.display_name)}</strong><small>${[r.phone,r.email,[r.address,r.zip_code,r.city,r.province].filter(Boolean).join(" ")].filter(Boolean).map(escapeHtml).join(" · ")||"Nessun contatto aggiunto"}</small>${r.notes?`<p>${escapeHtml(r.notes)}</p>`:""}</div><div class="clientRowActions"><button class="miniBtn editClientBtn" type="button">Modifica</button><button class="miniBtn danger deleteClientBtn" type="button">Elimina</button></div></article>`).join(""):'<div class="emptyState">Nessun cliente trovato.</div>';
+  list.querySelectorAll(".editClientBtn").forEach(b=>b.onclick=()=>btEditClient(Number(b.closest("[data-id]").dataset.id)));
+  list.querySelectorAll(".deleteClientBtn").forEach(b=>b.onclick=()=>btDeleteClient(Number(b.closest("[data-id]").dataset.id)));
+}
+async function btSyncRepairClientSelect(){
+  const sel=document.getElementById("adminRepairClient");if(!sel)return;const previous=sel.value;
+  [...sel.querySelectorAll('option[data-saved-client="1"]')].forEach(o=>o.remove());
+  btClients.filter(x=>x.active!==false).sort((a,b)=>a.display_name.localeCompare(b.display_name,"it")).forEach(c=>{if(["RIPARALO S.R.L.","VR Trasporti"].includes(c.display_name))return;const o=document.createElement("option");o.value=c.display_name;o.textContent=c.display_name;o.dataset.savedClient="1";sel.insertBefore(o,sel.querySelector('option[value="ALTRO"]'));});
+  if([...sel.options].some(o=>o.value===previous))sel.value=previous;
+}
+async function loadClients(){
+  if(!isAdmin())return;const list=document.getElementById("clientsList");if(list)list.innerHTML='<div class="emptyState">Caricamento clienti…</div>';
+  try{const ctx=await btGetWorkspaceOwnerId();const {data,error}=await sb.from("beparytech_clients").select("*").eq("workspace_owner_id",ctx.owner).eq("active",true).order("display_name",{ascending:true}).limit(2000);if(error)throw error;btClients=data||[];btRenderClients();await btSyncRepairClientSelect();}
+  catch(e){if(list)list.innerHTML=`<div class="emptyState errorState">${escapeHtml(e.message||"Impossibile caricare i clienti.")}<br><small>Se è il primo avvio, esegui 08_SETUP_CLIENTS_V1.sql su Supabase.</small></div>`;}
+}
+async function btSaveClient(e){
+  e?.preventDefault();const msg=document.getElementById("clientFormMsg"),btn=document.getElementById("clientSaveBtn");try{btn.disabled=true;const ctx=await btGetWorkspaceOwnerId(),id=Number(document.getElementById("clientId")?.value||0),payload=btClientPayload();payload.workspace_owner_id=ctx.owner;payload.created_by=currentUser.id;
+    let error;if(id){delete payload.created_by;({error}=await sb.from("beparytech_clients").update(payload).eq("id",id).eq("workspace_owner_id",ctx.owner));}else({error}=await sb.from("beparytech_clients").insert(payload));if(error)throw error;
+    if(msg){msg.className="createUserMsg ok";msg.textContent=id?"Cliente aggiornato.":"Cliente aggiunto.";}await loadClients();setTimeout(btResetClientForm,350);
+  }catch(err){if(msg){msg.className="createUserMsg error";msg.textContent=err.message||"Impossibile salvare il cliente.";}}finally{if(btn)btn.disabled=false;}
+}
+function btEditClient(id){const r=btClients.find(x=>Number(x.id)===Number(id));if(!r)return;const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v??"";};set("clientId",r.id);set("clientType",r.client_type||"private");set("clientName",r.display_name);set("clientPhone",r.phone);set("clientEmail",r.email);set("clientTaxCode",r.tax_code);set("clientVat",r.vat_number);set("clientRecipient",r.recipient_code);set("clientPec",r.pec);set("clientAddress",r.address);set("clientZip",r.zip_code);set("clientCity",r.city);set("clientProvince",r.province);set("clientNotes",r.notes);document.getElementById("clientFormTitle").textContent="Modifica cliente";document.getElementById("clientSaveBtn").textContent="Salva modifiche";document.getElementById("clientCancelEditBtn").hidden=false;btClientTypeUi();document.getElementById("clientForm")?.scrollIntoView({behavior:"smooth",block:"start"});}
+async function btDeleteClient(id){const r=btClients.find(x=>Number(x.id)===Number(id));if(!r||!confirm(`Eliminare ${r.display_name} dall’anagrafica clienti?`))return;try{const ctx=await btGetWorkspaceOwnerId();const {error}=await sb.from("beparytech_clients").update({active:false,updated_at:new Date().toISOString()}).eq("id",id).eq("workspace_owner_id",ctx.owner);if(error)throw error;await loadClients();}catch(e){alert(e.message||"Impossibile eliminare il cliente.");}}
+function bindClientsV11(){const f=document.getElementById("clientForm");if(!f||f.dataset.bound==="1")return;f.dataset.bound="1";f.addEventListener("submit",btSaveClient);document.getElementById("clientType")?.addEventListener("change",btClientTypeUi);document.getElementById("clientCancelEditBtn")?.addEventListener("click",btResetClientForm);document.getElementById("clientsSearch")?.addEventListener("input",btRenderClients);document.getElementById("clientsTypeFilter")?.addEventListener("change",btRenderClients);document.getElementById("clientsRefreshBtn")?.addEventListener("click",loadClients);btClientTypeUi();}
+document.addEventListener("DOMContentLoaded",()=>{bindClientsV11();setTimeout(()=>{if(isAdmin())loadClients();},1200);});
