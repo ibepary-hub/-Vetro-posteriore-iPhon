@@ -50,7 +50,7 @@ let inventoryRealtimeChannel = null;
 let inventoryRealtimeDebounce = null;
 let inventoryFallbackTimer = null;
 let inventorySyncBusy = false;
-const INVENTORY_FALLBACK_MS = 12000;
+const INVENTORY_FALLBACK_MS = 13000;
 
 const inventory = document.getElementById("inventory");
 const modelTemplate = document.getElementById("modelTemplate");
@@ -810,7 +810,7 @@ function renderBestekCatalog(){
     const hasPrice=x.price_ex_vat!==null&&x.price_ex_vat!==""&&Number.isFinite(Number(x.price_ex_vat));
     return `<article class="bestekCard premiumBestekCard"><div class="bestekCodeWrap"><div class="bestekCode">${escapeHtml(x.code)}</div><span class="bestekPrivateBadge">ADMIN</span></div><div class="bestekInfo"><strong>${escapeHtml(x.name)}</strong><span>${escapeHtml(x.category)}</span></div><div class="bestekPrice ${hasPrice?"hasPrice":"noPrice"}"><strong>${hasPrice?bestekPriceText(x.price_ex_vat):"Da impostare"}</strong>${hasPrice?`<small>${bestekGrossText(x.price_ex_vat)}</small>`:`<small>Nessun prezzo salvato</small>`}</div><div class="bestekCardActions"><button type="button" class="miniBtn bestekCopy" data-code="${escapeHtml(x.code)}">Copia</button><button type="button" class="miniBtn bestekEdit" data-code="${escapeHtml(x.code)}">Modifica</button><button type="button" class="miniBtn danger bestekDelete" data-code="${escapeHtml(x.code)}">Rimuovi</button></div></article>`;
   }).join(""):'<div class="emptyState">Nessun prodotto trovato</div>';
-  list.querySelectorAll(".bestekCopy").forEach(b=>b.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(b.dataset.code);const old=b.textContent;b.textContent="Copiato ✓";setTimeout(()=>b.textContent=old,1200)}catch(e){}}));
+  list.querySelectorAll(".bestekCopy").forEach(b=>b.addEventListener("click",async()=>{try{await navigator.clipboard.writeText(b.dataset.code);const old=b.textContent;b.textContent="Copiato ✓";setTimeout(()=>b.textContent=old,1300)}catch(e){}}));
   list.querySelectorAll(".bestekEdit").forEach(b=>b.addEventListener("click",()=>editBestekProduct(b.dataset.code)));
   list.querySelectorAll(".bestekDelete").forEach(b=>b.addEventListener("click",()=>deleteBestekProduct(b.dataset.code)));
 }
@@ -2069,11 +2069,11 @@ document.getElementById("saveRecoveryPassword").onclick=async()=>{
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1200", { updateViaCache: "none" });
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1300", { updateViaCache: "none" });
       await reg.update();
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (!sessionStorage.getItem("bt-cache-reloaded-v1200")) {
-          sessionStorage.setItem("bt-cache-reloaded-v1200", "1");
+        if (!sessionStorage.getItem("bt-cache-reloaded-v1300")) {
+          sessionStorage.setItem("bt-cache-reloaded-v1300", "1");
           location.reload();
         }
       });
@@ -2622,7 +2622,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 
 
 // v89 · deep link QR pratica
-(function(){let done=false;async function openPracticeFromUrl(){if(done||!isAdmin?.())return;const code=new URLSearchParams(location.search).get('practice');if(!code)return;done=true;try{setCategory('RiparazioniAdmin');setTimeout(async()=>{await loadAdminRepairs();const q=document.getElementById('adminRepairSearch');if(q){q.value=code;q.dispatchEvent(new Event('input',{bubbles:true}));}setTimeout(()=>document.querySelector('#adminRepairsList .businessRepairRow:not([hidden])')?.scrollIntoView({behavior:'smooth',block:'center'}),250);},250);}catch(e){done=false;}}setInterval(openPracticeFromUrl,1200);})();
+(function(){let done=false;async function openPracticeFromUrl(){if(done||!isAdmin?.())return;const code=new URLSearchParams(location.search).get('practice');if(!code)return;done=true;try{setCategory('RiparazioniAdmin');setTimeout(async()=>{await loadAdminRepairs();const q=document.getElementById('adminRepairSearch');if(q){q.value=code;q.dispatchEvent(new Event('input',{bubbles:true}));}setTimeout(()=>document.querySelector('#adminRepairsList .businessRepairRow:not([hidden])')?.scrollIntoView({behavior:'smooth',block:'center'}),250);},250);}catch(e){done=false;}}setInterval(openPracticeFromUrl,1300);})();
 
 
 // ===== v92: Accettazione separata, rapida, QR affidabile e DYMO configurabile =====
@@ -2873,6 +2873,15 @@ async function btFindDymoService(force=false){
   for(const host of ["localhost","127.0.0.1"]){
     candidates.push(btDymoBase(host,41951));
     for(let port=41952;port<=41960;port++)candidates.push(btDymoBase(host,port));
+    // Alcune installazioni DYMO Connect/LabelWriter 5xx espongono il servizio su 62170.
+    candidates.push(btDymoBase(host,62170));
+  }
+  // DYMO Label Software molto vecchio può essere configurato senza TLS.
+  // Un sito HTTPS non può chiamare HTTP (mixed content), quindi questo fallback
+  // viene provato soltanto quando BeparyTech è aperto anch'esso in HTTP/localhost.
+  if(location.protocol!=="https:")for(const host of ["localhost","127.0.0.1"]){
+    candidates.push(`http://${host}:41951/DYMO/DLS/Printing`);
+    for(let port=41952;port<=41960;port++)candidates.push(`http://${host}:${port}/DYMO/DLS/Printing`);
   }
   const unique=[...new Set(candidates)];
   for(const base of unique){
@@ -3084,6 +3093,27 @@ function btDymoLegacyLabelXml({title,meta,note,qrText}){
 function btDymoPrintErrorText(txt,status){
   const t=String(txt||'').trim();return `Errore DYMO${status?` (${status})`:''}: ${t||'risposta non valida dal servizio di stampa'}`;
 }
+async function btDymoBrowserCompatPrint(data){
+  // Ultima compatibilità: non richiede il Web Service DYMO. Usa il driver
+  // installato in Windows/macOS e apre il dialogo di stampa già nel formato etichetta.
+  const st=getRepairLabelSettingsV92(),paper=btDymoPaper(st);
+  const w=Math.max(Number(paper.w)||57,Number(paper.h)||32),h=Math.min(Number(paper.w)||57,Number(paper.h)||32);
+  let qrData="";
+  if(String(data?.qrText||"").trim() && typeof QRCode==="function"){
+    const host=document.createElement("div");host.style.cssText="position:fixed;left:-10000px;top:-10000px;width:180px;height:180px;background:#fff";document.body.appendChild(host);
+    try{new QRCode(host,{text:String(data.qrText),width:180,height:180,correctLevel:QRCode.CorrectLevel?.M});await new Promise(r=>setTimeout(r,80));const c=host.querySelector("canvas");const img=host.querySelector("img");qrData=c?.toDataURL?.("image/png")||img?.src||"";}catch(_){}finally{host.remove();}
+  }
+  const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const qr=qrData?`<img class="qr" src="${qrData}" alt="QR">`:"";
+  const html=`<!doctype html><html><head><meta charset="utf-8"><title>Etichetta DYMO</title><style>
+  @page{size:${w}mm ${h}mm;margin:0}*{box-sizing:border-box}html,body{margin:0;padding:0;width:${w}mm;height:${h}mm;background:#fff;color:#000;font-family:Arial,sans-serif;overflow:hidden}.label{width:${w}mm;height:${h}mm;padding:2mm;display:flex;gap:1.2mm;align-items:stretch}.txt{min-width:0;flex:1;display:flex;flex-direction:column;justify-content:flex-start}.title{font-weight:700;font-size:10pt;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta{font-size:7pt;line-height:1.1;margin-top:.6mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.note{font-size:8pt;line-height:1.08;margin-top:1mm;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden}.qr{width:18mm;height:18mm;object-fit:contain;align-self:center;flex:none}@media print{html,body{width:${w}mm!important;height:${h}mm!important}}
+  </style></head><body><main class="label"><div class="txt"><div class="title">${esc(data?.title||"BEPARYTECH")}</div>${String(data?.meta||"").trim()?`<div class="meta">${esc(data.meta)}</div>`:""}<div class="note">${esc(data?.note||"")}</div></div>${qr}</main></body></html>`;
+  const iframe=document.createElement("iframe");iframe.setAttribute("aria-hidden","true");iframe.style.cssText="position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none";document.body.appendChild(iframe);
+  const doc=iframe.contentDocument||iframe.contentWindow?.document;if(!doc){iframe.remove();throw new Error("Impossibile preparare la stampa di compatibilità.");}
+  doc.open();doc.write(html);doc.close();
+  await new Promise((resolve,reject)=>{const run=()=>{try{iframe.contentWindow.focus();iframe.contentWindow.print();btSetDymoStatus("Modalità compatibilità · scegli la stampante DYMO nel dialogo di stampa","Wait");resolve(true);}catch(e){reject(e);}finally{setTimeout(()=>iframe.remove(),2500);}};if(doc.readyState==="complete")setTimeout(run,120);else iframe.onload=()=>setTimeout(run,120);});
+  return true;
+}
 async function btDymoDirectPrint(data){
   let cfg=btGetDymoConfig();if(!cfg.enabled)throw new Error("La stampa diretta DYMO è disattivata nelle Impostazioni.");
   let base=await btFindDymoService(false),printer=cfg.printer;
@@ -3100,10 +3130,17 @@ async function btDymoDirectPrint(data){
   const formEncode=o=>Object.entries(o).map(([k,v])=>`${encodeURIComponent(k)}=${encodeURIComponent(String(v??""))}`).join("&");
   const sendXml=async(labelXml,mode)=>{
     const body=formEncode({printerName:printer,printParamsXml:"",labelXml,labelSetXml:""});
-    const r=await btFetchTimeout(`${base}/PrintLabel`,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},body},10000);
-    const txt=await r.text();
-    if(!r.ok || /error|exception|not declared|invalid/i.test(String(txt||'')))throw new Error(btDymoPrintErrorText(txt,r.status));
-    btSaveDymoConfig({printer,endpoint:base,labelMode:mode});return txt;
+    let lastErr=null;
+    // Alcune release accettano PrintLabel, altre risultano più affidabili con PrintLabel2.
+    for(const action of ["PrintLabel","PrintLabel2"]){
+      try{
+        const r=await btFetchTimeout(`${base}/${action}`,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},body},13000);
+        const txt=await r.text();
+        if(!r.ok || /error|exception|not declared|invalid|failed/i.test(String(txt||'')))throw new Error(btDymoPrintErrorText(txt,r.status));
+        btSaveDymoConfig({printer,endpoint:base,labelMode:mode,printAction:action});return txt;
+      }catch(e){lastErr=e;}
+    }
+    throw lastErr||new Error("Il servizio DYMO ha rifiutato il comando di stampa.");
   };
   const tryFormats=async()=>{
     // Ricorda l'ultimo formato riuscito su questo PC, ma mantiene sempre il fallback opposto.
@@ -3121,7 +3158,12 @@ async function btDymoDirectPrint(data){
     // Porta o stampante possono essere cambiate: nuova scansione + secondo tentativo completo.
     btDymoEndpoint="";
     try{await btDetectDymoPrinters(true);cfg=btGetDymoConfig();base=btDymoEndpoint||cfg.endpoint;printer=cfg.printer;if(!base||!printer)throw firstErr;usedMode=await tryFormats();}
-    catch(secondErr){throw new Error(`${secondErr?.message||firstErr?.message||"Impossibile stampare sulla DYMO."}\nCompatibilità automatica provata: DYMO Connect recente + DYMO legacy.`);}
+    catch(secondErr){
+      // Se il Web Service/certificato locale è troppo vecchio o non raggiungibile,
+      // non lasciare il pulsante morto: passa al driver di sistema.
+      try{return await btDymoBrowserCompatPrint(data);}
+      catch(browserErr){throw new Error(`${secondErr?.message||firstErr?.message||"Impossibile stampare sulla DYMO."}\nProvati: porte DYMO, PrintLabel/PrintLabel2, formato moderno/legacy e stampa di compatibilità.\n${browserErr?.message||""}`.trim());}
+    }
   }
   btSetDymoStatus(`Stampata direttamente · ${printer} · ${usedMode==="legacy"?"compatibilità legacy":"formato moderno"}`,"Ok");return true;
 }
@@ -3565,4 +3607,4 @@ async function btSaveClient(e){
 function btEditClient(id){const r=btClients.find(x=>Number(x.id)===Number(id));if(!r)return;const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v??"";};set("clientId",r.id);set("clientType",r.client_type||"private");set("clientName",r.display_name);set("clientPhone",r.phone);set("clientEmail",r.email);set("clientTaxCode",r.tax_code);set("clientVat",r.vat_number);set("clientRecipient",r.recipient_code);set("clientPec",r.pec);set("clientAddress",r.address);set("clientZip",r.zip_code);set("clientCity",r.city);set("clientProvince",r.province);set("clientNotes",r.notes);document.getElementById("clientFormTitle").textContent="Modifica cliente";document.getElementById("clientSaveBtn").textContent="Salva modifiche";document.getElementById("clientCancelEditBtn").hidden=false;btClientTypeUi();document.getElementById("clientForm")?.scrollIntoView({behavior:"smooth",block:"start"});}
 async function btDeleteClient(id){const r=btClients.find(x=>Number(x.id)===Number(id));if(!r||!confirm(`Eliminare ${r.display_name} dall’anagrafica clienti?`))return;try{const ctx=await btGetWorkspaceOwnerId();const {error}=await sb.from("beparytech_clients").update({active:false,updated_at:new Date().toISOString()}).eq("id",id).eq("workspace_owner_id",ctx.owner);if(error)throw error;await loadClients();}catch(e){alert(e.message||"Impossibile eliminare il cliente.");}}
 function bindClientsV11(){const f=document.getElementById("clientForm");if(!f||f.dataset.bound==="1")return;f.dataset.bound="1";f.addEventListener("submit",btSaveClient);document.getElementById("clientType")?.addEventListener("change",btClientTypeUi);document.getElementById("clientCancelEditBtn")?.addEventListener("click",btResetClientForm);document.getElementById("clientsSearch")?.addEventListener("input",btRenderClients);document.getElementById("clientsTypeFilter")?.addEventListener("change",btRenderClients);document.getElementById("clientsRefreshBtn")?.addEventListener("click",loadClients);btClientTypeUi();}
-document.addEventListener("DOMContentLoaded",()=>{bindClientsV11();setTimeout(()=>{if(isAdmin())loadClients();},1200);});
+document.addEventListener("DOMContentLoaded",()=>{bindClientsV11();setTimeout(()=>{if(isAdmin())loadClients();},1300);});

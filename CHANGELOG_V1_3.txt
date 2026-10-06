@@ -1,0 +1,9 @@
+BeparyTech V1.3 — DYMO UNIVERSAL PRINT FIX
+
+- Ricerca servizio DYMO estesa: 41951-41960 + 62170.
+- Supporto HTTP legacy quando il gestionale non gira in HTTPS.
+- Tentativo automatico PrintLabel e PrintLabel2.
+- Mantiene doppio XML: DYMO Connect moderno + DieCutLabel legacy.
+- Se servizio/certificato DYMO locale non è raggiungibile, fallback automatico al driver di sistema con etichetta 32x57 pronta per la stampa.
+- Fallback compatibile anche con QR quando qrcodejs è disponibile.
+- Cache/PWA portata a v1300 per evitare che un PC continui a usare app.js vecchio.
