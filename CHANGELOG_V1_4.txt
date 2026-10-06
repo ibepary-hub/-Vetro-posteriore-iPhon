@@ -1,8 +1,13 @@
-BeparyTech V1.4 — DYMO DIRECT PRINT FIX
+BeparyTech V1.4 DYMO UNIVERSAL
 
-- Eliminato il fallback automatico alla pagina di stampa del browser: non apre più A4 o formati carta errati.
-- La stampa DYMO rimane diretta tramite DYMO Connect / DYMO Web Service.
-- Ricerca del servizio estesa anche agli endpoint HTTP locali su localhost e 127.0.0.1, incluse porte 41951-41960 e 62170.
-- Mantiene tentativi PrintLabel e PrintLabel2 e formato moderno + legacy.
-- Se il servizio locale non è raggiungibile, mostra un errore chiaro invece di aprire la stampa del browser.
-- Cache/PWA aggiornata a v1400 per forzare i PC a caricare il nuovo app.js.
+- Stampa DYMO adattata al PC e al driver locale.
+- Dimensioni reali etichetta configurabili (default 57 x 32 mm).
+- Orientamento automatico, verticale o orizzontale.
+- Margini, scala e offset X/Y configurabili per calibrazione.
+- Rilevamento automatico stampante/servizio DYMO e salvataggio locale per PC.
+- Prova parametri driver DYMO con selezione rotolo automatica, poi fallback legacy.
+- Fallback browser corretto con @page delle dimensioni reali, non A4.
+- Pulsante etichetta test e reset impostazioni.
+- Cache PWA portata a v1400 per evitare file vecchi dopo upload GitHub.
+
+Nota: il taglio fisico viene demandato al driver/firmware DYMO, che e' l'unico livello che conosce il supporto realmente caricato.

@@ -1,0 +1,9 @@
+BeparyTech V1.5 — Ricambi Hub + Ritiro Usato
+
+- Nuova sezione Ricambi: Marca > Modello > Versione > Categoria.
+- BackGlass e Housing diventano categorie di ricambio.
+- Giacenze aggiornate in tempo reale via Supabase Realtime.
+- Aggiunta/modifica ricambi con prezzi, fornitore, IVA, codici e soglia minima.
+- Import CSV / Excel con anteprima, rilevamento articoli esistenti e modalità aggiungi/sostituisci quantità.
+- Nuova sezione Ritiro Usato con IMEI, checkbox blacklist, dichiarazioni, valutazione e storico.
+- Nuovo SQL: 09_SETUP_PARTS_USED_V1.sql (necessario una volta).

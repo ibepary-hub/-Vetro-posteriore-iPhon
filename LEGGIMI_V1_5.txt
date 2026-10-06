@@ -1,0 +1,8 @@
+PRIMA ATTIVAZIONE V1.5
+1. Apri Supabase > SQL Editor.
+2. Esegui tutto il file 09_SETUP_PARTS_USED_V1.sql UNA SOLA VOLTA.
+3. Carica i file del pacchetto su GitHub.
+4. Aggiorna la pagina con cache svuotata.
+5. Apri Ricambi dal menu.
+
+NOTA BLACKLIST: il checkbox registra che il controllo IMEI/seriale è stato effettuato e ne salva l'esito. Non interroga automaticamente banche dati esterne, perché serve un servizio/API specifico autorizzato.

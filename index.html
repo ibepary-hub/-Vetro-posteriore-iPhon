@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="BeparyTech Manager">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
-  <title>BeparyTech V1.1</title>
+  <title>BeparyTech V1.5</title>
   <link rel="manifest" href="manifest.json?v=1">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
@@ -21,7 +21,7 @@
 <body>
   <div id="menuOverlay" class="menuOverlay" hidden></div>
   <aside id="mainMenu" class="mainMenu" aria-hidden="true">
-    <div class="menuHead"><div class="menuBrand"><img src="icon-192.png" alt=""><div><strong>BeparyTech V1.1</strong><span>Gestionale riparazioni & magazzino</span></div></div><button id="menuClose" class="menuClose animatedBtn" type="button">×</button></div>
+    <div class="menuHead"><div class="menuBrand"><img src="icon-192.png" alt=""><div><strong>BeparyTech V1.5</strong><span>Gestionale riparazioni & magazzino</span></div></div><button id="menuClose" class="menuClose animatedBtn" type="button">×</button></div>
     <nav class="menuNav">
       <button class="menuItem active" type="button" data-category="Dashboard"><span class="menuIcon">⌂</span><span><strong>Dashboard</strong><small>Riepilogo magazzino</small></span></button>
       <div id="customMenuSections" class="customMenuSections"></div>
@@ -36,6 +36,8 @@
 
       <div class="menuGroup">
         <div class="menuGroupTitle">MAGAZZINO</div>
+        <button id="partsHubMenuItem" class="menuItem" type="button" data-category="RicambiHub"><span class="menuIcon">▣</span><span><strong>Ricambi</strong><small>Marca, modello, versione e giacenze live</small></span></button>
+        <button id="usedIntakeMenuItem" class="menuItem adminOnly" type="button" data-category="RitiroUsato"><span class="menuIcon">♻</span><span><strong>Ritiro usato</strong><small>IMEI, blacklist, valutazione e dichiarazioni</small></span></button>
         <button class="menuItem" type="button" data-category="Cronologia"><span class="menuIcon">≋</span><span><strong>Cronologia magazzino</strong><small>Tutte le attività</small></span></button>
         <button class="menuItem" type="button" data-category="Vendite"><span class="menuIcon">✓</span><span><strong>Uscite magazzino</strong><small>Scarichi, note e rientri</small></span></button>
         <button class="menuItem" type="button" data-category="NoteDymo"><span class="menuIcon">✎</span><span><strong>Note DYMO</strong><small>Scrivi e stampa etichette libere</small></span></button>
@@ -680,20 +682,31 @@
     <div id="storeAdminList" class="storeAdminList"></div>
   </section>
   <section class="deviceSaleCard adminUniformCard repairLabelSettings">
-      <div class="deviceSaleCardHead"><div><strong>🏷 Etichette DYMO</strong><small>Scegli una volta il formato. Verrà ricordato su questo dispositivo.</small></div><span id="dymoRepairSizeBadge" class="practicePill">32 × 57 mm</span></div>
+      <div class="deviceSaleCardHead"><div><strong>🏷 Etichette DYMO</strong><small>Scegli una volta il formato. Verrà ricordato su questo dispositivo.</small></div><span id="dymoRepairSizeBadge" class="practicePill">57 × 32 mm</span></div>
       <div class="labelConfigGrid">
         <label><span>Formato etichetta</span><select id="repairLabelPreset">
-          <option value="32x57" selected>32 × 57 mm · Durable / piccola</option>
+          <option value="32x57">32 × 57 mm · Durable / piccola</option>
           <option value="25x54">25 × 54 mm</option>
           <option value="36x89">36 × 89 mm</option>
           <option value="19x51">19 × 51 mm · stretta</option>
           <option value="54x101">54 × 101 mm · grande</option>
-          <option value="57x32">57 × 32 mm · orizzontale</option>
+          <option value="57x32" selected>57 × 32 mm · orizzontale</option>
           <option value="custom">Personalizzata</option>
         </select></label>
         <label><span>Larghezza mm</span><input id="repairLabelWidth" type="number" min="10" max="120" step="1" value="57"></label>
         <label><span>Altezza mm</span><input id="repairLabelHeight" type="number" min="10" max="200" step="1" value="32"></label>
+        <label><span>Orientamento</span><select id="repairLabelOrientation"><option value="auto" selected>Automatico</option><option value="landscape">Orizzontale</option><option value="portrait">Verticale</option></select></label>
+        <label><span>Margine interno mm</span><input id="repairLabelMargin" type="number" min="0" max="8" step="0.5" value="1.5"></label>
+        <label><span>Scala contenuto %</span><input id="repairLabelScale" type="number" min="70" max="120" step="1" value="100"></label>
+        <label><span>Offset X mm</span><input id="repairLabelOffsetX" type="number" min="-10" max="10" step="0.5" value="0"></label>
+        <label><span>Offset Y mm</span><input id="repairLabelOffsetY" type="number" min="-10" max="10" step="0.5" value="0"></label>
+        <label><span>Taglio / avanzamento</span><select id="repairLabelCutMode"><option value="auto" selected>Automatico (driver DYMO)</option><option value="continuous">Rotolo continuo / adatta lunghezza</option><option value="fixed">Etichetta pretagliata / misura fissa</option></select></label>
         <label class="labelQrToggle"><span>Contenuto</span><label class="inlineCheck"><input id="repairLabelIncludeQr" type="checkbox" checked> QR pratica</label></label>
+      </div>
+      <div class="dymoUniversalTools">
+        <button id="dymoTestPrintBtn" class="secondaryAction" type="button">Stampa etichetta test</button>
+        <button id="dymoResetPrintBtn" class="secondaryAction" type="button">Ripristina impostazioni DYMO</button>
+        <small>Le impostazioni vengono salvate solo su questo PC. La misura inviata alla DYMO è quella qui sopra: niente A4 e niente ridimensionamento automatico del browser.</small>
       </div>
       <div class="dymoDirectPanel">
         <div><strong>Stampa diretta DYMO</strong><span id="dymoDirectStatus">Verifica servizio DYMO…</span></div>
@@ -701,7 +714,7 @@
         <button id="dymoDetectBtn" class="secondaryAction" type="button">Rileva DYMO</button>
         <label class="inlineCheck dymoDirectToggle"><input id="dymoDirectEnabled" type="checkbox" checked> Stampa diretta senza finestra del browser</label>
       </div>
-      <div class="labelConfigHint">Con DYMO Connect installato sul PC, il gestionale invia l’etichetta direttamente alla LabelWriter e non apre più la finestra di stampa del browser.</div>
+      <div class="labelConfigHint">Modalità universale: rileva automaticamente la DYMO di questo PC, usa la misura scelta, orientamento, margini e correzioni locali. Il taglio resta gestito dal driver DYMO quando disponibile.</div>
   </section>
 
 
@@ -910,6 +923,72 @@
     </div>
   </template>
 
+
+  <section id="partsHubView" class="partsHubView btNewView" hidden>
+    <div class="partsTopbar">
+      <div><span class="partsEyebrow">MAGAZZINO RICAMBI</span><h2>Ricambi</h2><p>BackGlass, Housing e tutti i componenti in un unico catalogo.</p></div>
+      <div class="partsTopActions"><button id="partsAddBtn" class="primaryAction" type="button">＋ Aggiungi ricambio</button><button id="partsImportBtn" class="greenAction" type="button">⇩ Importa da file</button><button id="partsPrintBtn" class="secondaryAction" type="button">▣ Stampa etichetta</button></div>
+    </div>
+    <div class="partsLiveBar"><span class="liveDot"></span><strong>Giacenze in tempo reale</strong><span id="partsLiveStatus">Sincronizzazione attiva</span><button id="partsRefreshBtn" type="button">↻ Aggiorna</button></div>
+    <div class="partsWorkspace">
+      <div class="partsSelectors">
+        <section class="partsSelector"><div class="selectorTitle"><b>1</b><strong>Marca</strong></div><input id="partsBrandSearch" placeholder="Cerca marca…"><div id="partsBrandList" class="selectorList"></div></section>
+        <section class="partsSelector"><div class="selectorTitle"><b>2</b><strong>Modello</strong></div><input id="partsModelSearch" placeholder="Cerca modello…"><div id="partsModelList" class="selectorList"></div></section>
+        <section class="partsSelector"><div class="selectorTitle"><b>3</b><strong>Versione</strong></div><input id="partsVersionSearch" placeholder="Cerca versione…"><div id="partsVersionList" class="selectorList"></div></section>
+        <section class="partsSelector"><div class="selectorTitle"><b>4</b><strong>Categoria ricambi</strong></div><div id="partsCategoryList" class="selectorList categories"></div></section>
+      </div>
+      <aside id="partEditorPanel" class="partEditorPanel">
+        <div class="panelTitle"><strong id="partEditorTitle">Aggiungi / Modifica Ricambio</strong><button id="partEditorClear" type="button">Pulisci</button></div>
+        <form id="partEditorForm" class="partEditorForm">
+          <input id="partEditId" type="hidden">
+          <div class="formGrid3"><label><span>Marca *</span><input id="partBrand" required placeholder="Apple"></label><label><span>Modello *</span><input id="partModel" required placeholder="iPhone 16 Pro Max"></label><label><span>Versione</span><input id="partVersion" placeholder="A3296 (Global)"></label></div>
+          <div class="formGrid2"><label><span>Categoria *</span><select id="partCategory" required><option>Display / Touch</option><option>BackGlass</option><option>Housing / Scocca</option><option>Batteria</option><option>Connettore di ricarica</option><option>Fotocamera</option><option>Flat / Flex</option><option>Altoparlante / Cassa</option><option>Microfono</option><option>Tasti / Pulsanti</option><option>SIM Tray</option><option>Altri Ricambi</option></select></label><label><span>Nome ricambio *</span><input id="partName" required placeholder="BackGlass senza logo"></label></div>
+          <div class="formGrid2"><label><span>Codice ricambio</span><input id="partSku" placeholder="BG-16PM-NOLOGO"></label><label><span>Fornitore</span><input id="partSupplier" placeholder="Fornitore"></label></div>
+          <div class="formGrid3"><label><span>Prezzo acquisto</span><input id="partCost" type="number" min="0" step="0.01" placeholder="25,00"></label><label><span>Prezzo vendita</span><input id="partPrice" type="number" min="0" step="0.01" placeholder="45,00"></label><label><span>IVA %</span><input id="partVat" type="number" min="0" max="100" step="0.1" value="22"></label></div>
+          <div class="formGrid3"><label><span>Codice a barre / QR</span><input id="partBarcode"></label><label><span>Quantità</span><input id="partQuantity" type="number" min="0" step="1" value="0"></label><label><span>Scorta minima</span><input id="partLow" type="number" min="0" step="1" value="2"></label></div>
+          <label><span>Note / compatibilità</span><textarea id="partNotes" rows="2" placeholder="Compatibilità, qualità, colore, posizione scaffale…"></textarea></label>
+          <button class="primaryAction full" type="submit">Salva ricambio</button><div id="partEditorMsg" class="createUserMsg"></div>
+        </form>
+      </aside>
+    </div>
+    <section class="partsListPanel">
+      <div class="partsListHead"><div><strong>Lista Ricambi</strong><span id="partsResultCount">0 risultati</span></div><input id="partsTableSearch" placeholder="Cerca nella lista…"><label class="checkInline"><input id="partsLowOnly" type="checkbox"> Solo scorte basse</label></div>
+      <div class="partsTableWrap"><table class="partsTable"><thead><tr><th>Marca</th><th>Modello</th><th>Versione</th><th>Ricambio</th><th>Codice</th><th>Fornitore</th><th>Acq.</th><th>Vend.</th><th>Q.tà</th><th>Min.</th><th>Azioni</th></tr></thead><tbody id="partsTableBody"></tbody></table></div>
+    </section>
+    <section class="partsImportPanel"><div><strong>⇩ Importa Ricambi da File</strong><p>Excel (.xlsx/.xls) o CSV. Anteprima, controllo duplicati e scelta tra aggiungere o sostituire la giacenza.</p></div><div class="partsImportActions"><button id="partsDownloadTemplate" class="secondaryAction" type="button">Scarica modello CSV</button><button id="partsOpenImport" class="greenAction" type="button">Seleziona file</button><input id="partsImportFile" type="file" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" hidden></div></section>
+  </section>
+
+  <section id="usedIntakeView" class="usedIntakeView btNewView" hidden>
+    <div class="partsTopbar"><div><span class="partsEyebrow">RITIRO USATO DISPOSITIVI</span><h2>Ritiro Usato</h2><p>Acquisizione dispositivo, controlli, valutazione e dichiarazioni.</p></div><button id="usedNewBtn" class="primaryAction" type="button">＋ Nuovo ritiro</button></div>
+    <div class="usedLayout">
+      <form id="usedIntakeForm" class="usedCard">
+        <div class="usedTabs"><span class="active">1 · Dispositivo</span><span>2 · Controlli</span><span>3 · Valutazione</span><span>4 · Cliente</span></div>
+        <input id="usedEditId" type="hidden">
+        <div class="usedSectionTitle">Dati dispositivo</div>
+        <div class="formGrid3"><label><span>Marca *</span><input id="usedBrand" required></label><label><span>Modello *</span><input id="usedModel" required></label><label><span>Versione</span><input id="usedVersion"></label></div>
+        <div class="formGrid3"><label><span>Capacità</span><input id="usedCapacity" placeholder="256 GB"></label><label><span>Colore</span><input id="usedColor"></label><label><span>Valutazione €</span><input id="usedValue" type="number" min="0" step="0.01"></label></div>
+        <div class="formGrid2"><label><span>IMEI 1 *</span><input id="usedImei1" required inputmode="numeric"></label><label><span>IMEI 2</span><input id="usedImei2" inputmode="numeric"></label></div>
+        <label><span>Seriale</span><input id="usedSerial"></label>
+        <div class="usedSectionTitle">Controlli e dichiarazioni</div>
+        <div class="usedChecks">
+          <label class="blacklistCheck"><input id="usedBlacklistChecked" type="checkbox"><span><strong>Controllo blacklist IMEI effettuato</strong><small>Confermo di aver verificato manualmente IMEI/seriale.</small></span></label>
+          <label><input id="usedNotStolen" type="checkbox" required> Dispositivo non rubato / non segnalato secondo dichiarazione del cedente</label>
+          <label><input id="usedOwnership" type="checkbox" required> Il cedente dichiara di essere proprietario o autorizzato alla vendita</label>
+          <label><input id="usedAccountsRemoved" type="checkbox"> iCloud / Find My / account di blocco disattivati</label>
+          <label><input id="usedDataErased" type="checkbox"> Dispositivo resettato / dati personali cancellati</label>
+          <label><input id="usedConditionAccepted" type="checkbox" required> Stato estetico e funzionale verificato e accettato</label>
+          <label><input id="usedTermsAccepted" type="checkbox" required> Informativa e dichiarazioni di ritiro usato accettate</label>
+        </div>
+        <div class="formGrid3"><label><span>Esito blacklist</span><select id="usedBlacklistResult"><option value="Da verificare">Da verificare</option><option value="Pulito">Pulito</option><option value="Segnalato">Segnalato</option></select></label><label><span>Cliente / Cedente *</span><input id="usedCustomerName" required></label><label><span>Documento / Rif.</span><input id="usedCustomerDocument"></label></div>
+        <label><span>Note</span><textarea id="usedNotes" rows="3"></textarea></label>
+        <button class="greenAction full" type="submit">Salva ritiro usato</button><div id="usedIntakeMsg" class="createUserMsg"></div>
+      </form>
+      <section class="usedCard usedHistory"><div class="panelTitle"><strong>Ritiri registrati</strong><input id="usedSearch" placeholder="Cerca IMEI, modello o cliente…"></div><div id="usedList" class="usedList"></div></section>
+    </div>
+  </section>
+
+  <div id="partsImportModal" class="saleModal" hidden><div class="saleDialog partsImportDialog"><div class="saleDialogHead"><div><span class="saleKicker">IMPORTA RICAMBI</span><h2>Anteprima importazione</h2></div><button id="partsImportClose" class="closeBtn" type="button">×</button></div><p id="partsImportSummary"></p><div class="importMode"><label><input type="radio" name="partsImportMode" value="add" checked> Aggiungi quantità alla giacenza esistente</label><label><input type="radio" name="partsImportMode" value="replace"> Sostituisci quantità esistente</label></div><div class="partsImportPreview"><table class="partsTable"><thead><tr><th>Marca</th><th>Modello</th><th>Versione</th><th>Categoria</th><th>Ricambio</th><th>Codice</th><th>Q.tà</th><th>Esito</th></tr></thead><tbody id="partsImportPreviewBody"></tbody></table></div><div class="saleActions"><button id="partsImportCancel" class="secondaryAction" type="button">Annulla</button><button id="partsImportConfirm" class="greenAction" type="button">Importa adesso</button></div><div id="partsImportMsg" class="createUserMsg"></div></div></div>
+
   <div id="scannerModal" class="saleModal scannerModal" hidden><div class="saleDialog scannerDialog"><div class="saleDialogHead"><div><span class="saleKicker">SCANNER</span><h2>QR / Codice a barre</h2></div><button id="scannerClose" class="closeBtn" type="button">×</button></div><div class="scannerStage"><video id="scannerVideo" class="scannerVideo" playsinline muted></video><div class="scannerFrame"><i></i><i></i><i></i><i></i><span class="scannerLaser"></span></div><div class="scannerHint">Inquadra il codice</div></div><p id="scannerMsg" class="scannerMsg">Apertura fotocamera…</p><div class="scannerManualDivider"><span>oppure</span></div><label class="fieldLabel">Inserisci il codice manualmente</label><div class="scannerManual"><input id="scannerManualCode" class="modalInput" type="text" placeholder="Es. BK76587"><button id="scannerManualSearch" class="primaryAction" type="button">Cerca</button></div></div></div>
   <div id="accountOperatorsModal" class="saleModal" hidden>
     <div class="saleDialog accountOperatorsDialog" role="dialog" aria-modal="true" aria-labelledby="accountOperatorsTitle">
@@ -958,7 +1037,8 @@
  <button type="button" data-smart-action="menu"><b>☰</b><span>Menu</span></button>
 </nav>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
-<script src="app.js?v=1400"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="app.js?v=1500"></script>
 
 
 
