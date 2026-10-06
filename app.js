@@ -2069,11 +2069,11 @@ document.getElementById("saveRecoveryPassword").onclick=async()=>{
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1300", { updateViaCache: "none" });
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1400", { updateViaCache: "none" });
       await reg.update();
       navigator.serviceWorker.addEventListener("controllerchange", () => {
-        if (!sessionStorage.getItem("bt-cache-reloaded-v1300")) {
-          sessionStorage.setItem("bt-cache-reloaded-v1300", "1");
+        if (!sessionStorage.getItem("bt-cache-reloaded-v1400")) {
+          sessionStorage.setItem("bt-cache-reloaded-v1400", "1");
           location.reload();
         }
       });
@@ -2876,12 +2876,14 @@ async function btFindDymoService(force=false){
     // Alcune installazioni DYMO Connect/LabelWriter 5xx espongono il servizio su 62170.
     candidates.push(btDymoBase(host,62170));
   }
-  // DYMO Label Software molto vecchio può essere configurato senza TLS.
-  // Un sito HTTPS non può chiamare HTTP (mixed content), quindi questo fallback
-  // viene provato soltanto quando BeparyTech è aperto anch'esso in HTTP/localhost.
-  if(location.protocol!=="https:")for(const host of ["localhost","127.0.0.1"]){
+  // Compatibilità con installazioni DYMO vecchie che espongono solo HTTP sul loopback.
+  // Proviamo comunque localhost/127.0.0.1 anche se BeparyTech gira in HTTPS: i browser
+  // moderni possono consentire il loopback locale; se viene bloccato, il fetch fallisce
+  // semplicemente e si passa al candidato successivo.
+  for(const host of ["localhost","127.0.0.1"]){
     candidates.push(`http://${host}:41951/DYMO/DLS/Printing`);
     for(let port=41952;port<=41960;port++)candidates.push(`http://${host}:${port}/DYMO/DLS/Printing`);
+    candidates.push(`http://${host}:62170/DYMO/DLS/Printing`);
   }
   const unique=[...new Set(candidates)];
   for(const base of unique){
@@ -3159,10 +3161,13 @@ async function btDymoDirectPrint(data){
     btDymoEndpoint="";
     try{await btDetectDymoPrinters(true);cfg=btGetDymoConfig();base=btDymoEndpoint||cfg.endpoint;printer=cfg.printer;if(!base||!printer)throw firstErr;usedMode=await tryFormats();}
     catch(secondErr){
-      // Se il Web Service/certificato locale è troppo vecchio o non raggiungibile,
-      // non lasciare il pulsante morto: passa al driver di sistema.
-      try{return await btDymoBrowserCompatPrint(data);}
-      catch(browserErr){throw new Error(`${secondErr?.message||firstErr?.message||"Impossibile stampare sulla DYMO."}\nProvati: porte DYMO, PrintLabel/PrintLabel2, formato moderno/legacy e stampa di compatibilità.\n${browserErr?.message||""}`.trim());}
+      // V1.4: niente fallback al dialogo di stampa del browser. Quel percorso può
+      // trasformare l'etichetta in A4 o usare un formato carta diverso su alcuni PC.
+      // La stampa DYMO deve essere diretta tramite il servizio locale, così il formato
+      // fisico dell'etichetta resta sotto controllo del driver DYMO.
+      const reason=secondErr?.message||firstErr?.message||"Impossibile stampare sulla DYMO.";
+      btSetDymoStatus("DYMO non raggiungibile · apri DYMO Connect e riprova","Err");
+      throw new Error(`${reason}\n\nStampa browser disattivata per evitare etichette in formato A4. Apri DYMO Connect / DYMO Web Service su questo PC, attendi qualche secondo e riprova.`);
     }
   }
   btSetDymoStatus(`Stampata direttamente · ${printer} · ${usedMode==="legacy"?"compatibilità legacy":"formato moderno"}`,"Ok");return true;

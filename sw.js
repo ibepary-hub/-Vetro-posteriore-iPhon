@@ -1,6 +1,6 @@
-const CACHE="beparytech-v1-1300";
-const RUNTIME="beparytech-v1-runtime-1300";
-const SHELL=["./","./index.html","./style.css?v=1300","./app.js?v=1300","./manifest.json?v=1300","./beparytech-logo.png","./icon-192.png","./icon-512.png","./apple-touch-icon.png","./favicon-64.png"];
+const CACHE="beparytech-v1-1400";
+const RUNTIME="beparytech-v1-runtime-1400";
+const SHELL=["./","./index.html","./style.css?v=1400","./app.js?v=1400","./manifest.json?v=1400","./beparytech-logo.png","./icon-192.png","./icon-512.png","./apple-touch-icon.png","./favicon-64.png"];
 self.addEventListener("install",event=>{
   self.skipWaiting();
   event.waitUntil(caches.open(CACHE).then(cache=>Promise.all(SHELL.map(url=>cache.add(url)))));
