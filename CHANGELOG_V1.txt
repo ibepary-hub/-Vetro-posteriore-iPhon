@@ -1,0 +1,22 @@
+BeparyTech V1 — prima release consolidata
+
+Base tecnica: v1123 STRESS_HARDENED.
+
+Riparazioni V1
+- acconto ricevuto e residuo automatico
+- margine stimato in tempo reale
+- accessori consegnati con checkbox mobile-friendly
+- pratiche scadute evidenziate quando supera la data presunta
+- cronologia per singola pratica con snapshot essenziale
+- ricevuta PDF aggiornata con acconto e residuo
+- nuovo riepilogo economico riparazioni
+- interfaccia responsive affinata per smartphone
+
+Compatibilità
+- mantenute le funzioni della v1123
+- mantenuto router atomico Home/Dashboard
+- mantenuti timeout e hardening sessione/realtime
+- mantenuti magazzino, vendite, XML, DDT, DYMO, utenti, backup, orari e sicurezza accessi
+
+Database
+- richiede l'esecuzione di 07_SETUP_REPAIR_V1.sql per deposit_amount e cronologia pratica

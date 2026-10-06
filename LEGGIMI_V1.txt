@@ -1,0 +1,20 @@
+BeparyTech V1
+
+Base: v1123 STRESS_HARDENED.
+
+NOVITA V1 RIPARAZIONI
+- Acconto ricevuto e residuo cliente.
+- Margine stimato (imponibile - costo ricambio).
+- Accessori in accettazione con checkbox ottimizzate per smartphone.
+- Evidenza pratiche con data prevista superata.
+- Cronologia modifiche per singola pratica.
+- Ricevuta PDF con acconto e residuo.
+- Responsive mobile rifinito.
+- Mantiene Dashboard, magazzino, vendite, fatturazione, DDT, DYMO, ruoli e hardening v1123.
+
+IMPORTANTE - SUPABASE
+Prima di usare Acconto/Cronologia, eseguire 07_SETUP_REPAIR_V1.sql nel SQL Editor del progetto Supabase.
+Non sostituisce gli script precedenti: e una migrazione aggiuntiva.
+
+SICUREZZA
+V1 non aggiunge memorizzazione in chiaro di PIN/password di sblocco del cliente. È una scelta intenzionale: quei dati richiedono cifratura/server-side dedicata.
