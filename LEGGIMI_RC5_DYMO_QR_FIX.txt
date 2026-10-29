@@ -1,0 +1,7 @@
+BeparyTech V2.2 RC5 - DYMO QR FIX
+
+Corretto XML BarcodeObject: rimossi EQRCodeType e TextDataHolder, che provocavano HTTP 400 Invalid label file durante stampa riparazioni con QR.
+Conservato Data/DataString del QR, layout e template originale gestionale.dymo.
+Aggiornati cache e riferimenti risorse a 2204.
+
+Test di stampa reale richiesto su DYMO LabelWriter 450 / DYMO Connect Web Service: non eseguibile qui.

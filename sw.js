@@ -1,6 +1,6 @@
-const CACHE="beparytech-v2203";
-const RUNTIME="beparytech-v2-runtime-2203";
-const SHELL=["./","./index.html","./style.css?v=2203","./studio.css?v=2203","./studio.js?v=2203","./data-export.js?v=2203","./app.js?v=2203","./dymo-engine.js?v=2203","./dymo-native.js?v=2203","./manifest.json?v=2203","./beparytech-logo.png","./icon-192.png","./icon-512.png","./apple-touch-icon.png","./favicon-64.png"];
+const CACHE="beparytech-v2204";
+const RUNTIME="beparytech-v2-runtime-2204";
+const SHELL=["./","./index.html","./style.css?v=2204","./studio.css?v=2204","./studio.js?v=2204","./data-export.js?v=2204","./app.js?v=2204","./dymo-engine.js?v=2204","./dymo-native.js?v=2204","./manifest.json?v=2204","./beparytech-logo.png","./icon-192.png","./icon-512.png","./apple-touch-icon.png","./favicon-64.png"];
 self.addEventListener("install",event=>{
   self.skipWaiting();
   event.waitUntil(caches.open(CACHE).then(cache=>Promise.all(SHELL.map(url=>cache.add(url)))));
