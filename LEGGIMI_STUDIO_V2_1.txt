@@ -1,0 +1,51 @@
+BEPARYTECH STUDIO V2.1
+Nuovo look verde approvato, applicato al gestionale completo.
+
+COSA CAMBIA
+- Menu laterale verde profondo su desktop, raggruppato per attività.
+- Il mio spazio, Riparazioni, Magazzino ricambi, Acquisti e scorte,
+  Uscite e rientri, Vendite ricambi, Fatture clienti, Clienti e sistema.
+- Accettazioni e strumenti amministrativi avanzati in gruppi espandibili.
+- Nuova dashboard con pratiche effettivamente caricate dal gestionale.
+- Schede, moduli, tabelle, finestre, ricerca e pulsanti uniformati.
+- Tema chiaro e scuro; adattamento a telefono e tablet.
+- Navigazione mobile con accessi coerenti con il ruolo dell'utente.
+- Indicatori e lista pratiche gestiscono anche caricamenti non riusciti.
+- Nessuna modifica alle tabelle o migrazione database richiesta.
+
+CORREZIONI INCLUSE
+- XML VR: il salvataggio dati non cancella più le righe della fattura.
+- Ricerca partita IVA: prima anagrafica, poi servizio VIES autenticato.
+- DYMO: motore diretto senza ripiego automatico sulla stampa browser,
+  diagnostica e compatibilità moderne/legacy già incluse nella V2.0.3.
+- Corretto catalogRealtimeDebounce non dichiarato, che generava un errore
+  durante la gestione della sessione/catalogo in avvio.
+
+DATI E PERMESSI
+La nuova lista Sul banco di lavoro usa le riparazioni caricate dalle query
+esistenti e viene mostrata solo agli amministratori. I ruoli e i controlli
+esistenti restano attivi. ID HTML e route esistenti sono stati conservati.
+I dati dimostrativi sono visibili soltanto premendo Anteprima gestionale,
+come nella versione precedente; non vengono salvati nel database.
+Il valore mensile indicato è il valore delle vendite e lavorazioni caricate,
+IVA inclusa: non rappresenta una verifica contabile delle fatture emesse.
+
+AGGIORNAMENTO
+Caricare il contenuto del pacchetto nel repository esistente, nella stessa
+posizione dei file attuali. Includere studio.css e studio.js: sono necessari.
+Sostituire anche index.html, app.js e sw.js; mantenere dymo-engine.js.
+Cache applicazione aggiornata a 2100. Le impostazioni locali sono preservate.
+Prima dell'aggiornamento conservare una copia della versione attualmente online.
+Per rivedere il look senza accesso, aprire Anteprima gestionale dalla schermata
+iniziale della nuova versione. Le schermate operative richiedono l'accesso.
+
+VERIFICHE ESEGUITE
+- Sintassi JavaScript di app, motore DYMO, Studio e service worker.
+- Test automatici XML VR, lookup P.IVA e motore DYMO.
+- Test nuova lista pratiche: filtri, limite righe, escaping, vuoto ed errore.
+- Tutti gli ID precedenti e le route del menu conservati, nessun ID duplicato.
+- Controlli admin nascosti per impostazione predefinita e CSS hidden prioritario.
+- Controllo visuale browser: dashboard demo, temi, modulo clienti e impostazioni.
+- Dashboard a larghezza telefono: nessuno scorrimento orizzontale.
+Non eseguito collaudo completo con la sessione reale dell'utente o stampa fisica
+sulla sua stampante. Il sito pubblico non è stato aggiornato in questa sessione.

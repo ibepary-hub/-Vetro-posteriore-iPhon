@@ -11,7 +11,7 @@ const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   }
 });
 
-const BT_BUILD = "V1";
+const BT_BUILD = "V2.2-RC1";
 try{ document.documentElement.dataset.btBuild=BT_BUILD; }catch(_){}
 function btWithTimeout(promise,ms,label="Operazione"){
   let timer;
@@ -48,6 +48,7 @@ let salesStoreFilter = "ALL";
 // se la pubblicazione Realtime di Supabase non e' disponibile o il telefono perde rete.
 let inventoryRealtimeChannel = null;
 let inventoryRealtimeDebounce = null;
+let catalogRealtimeDebounce = null;
 let inventoryFallbackTimer = null;
 let inventorySyncBusy = false;
 const INVENTORY_FALLBACK_MS = 13000;
@@ -255,7 +256,7 @@ async function startInventoryRealtime(){
     .on("postgres_changes",{event:"*",schema:"public",table:"backglass_inventory"},scheduleInventoryRealtimeRefresh)
     .on("postgres_changes",{event:"*",schema:"public",table:"beparytech_products"},()=>{scheduleInventoryRealtimeRefresh();scheduleCatalogRealtimeRefresh();})
     .on("postgres_changes",{event:"*",schema:"public",table:"beparytech_sections"},scheduleCatalogRealtimeRefresh)
-    .on("postgres_changes",{event:"*",schema:"public",table:"beparytech_parts"},()=>{if(currentCategory==="RicambiHub")loadPartsHub(true);})
+    .on("postgres_changes",{event:"*",schema:"public",table:"beparytech_parts"},()=>{if(currentCategory==="RicambiHub")loadPartsHub(true);if(currentCategory==="DaOrdinareAuto")loadAutoOrders(true);if(currentCategory==="Dashboard")loadDashboard();})
     .on("postgres_changes",{event:"*",schema:"public",table:"beparytech_used_intakes"},()=>{if(currentCategory==="RitiroUsato")loadUsedIntakes(true);})
     .subscribe(status=>{
       if(status==="SUBSCRIBED"){
@@ -568,6 +569,68 @@ document.getElementById("loginBtn").onclick=async()=>{
   }
 };
 
+
+// ===== V2.0 · Anteprima reale senza accesso =====
+let btPreviewMode=false;
+function btRenderPreviewDashboard(){
+  const cards=document.getElementById("dashboardCards");
+  if(cards)cards.innerHTML=`<button class="dashCard"><span>In laboratorio</span><strong>12</strong><small>Pratiche aperte · esempio</small></button><button class="dashCard"><span>Pronte al ritiro</span><strong>3</strong><small>Lavorazione completata</small></button><button class="dashCard"><span>Scorte da riordinare</span><strong>4</strong><small>Ricambi sotto soglia</small></button><button class="dashCard"><span>Valore lavorazioni mese</span><strong>€ 4.860</strong><small>Dati dimostrativi · IVA inclusa</small></button>`;
+  if(typeof btStudioRepairRows==="function")btStudioRepairRows([{id:"demo-1",practice_code:"DEMO-0048",device:"iPhone 15 Pro",repair_type:"Sostituzione display",client_name:"VR Trasporti",repair_status:"In lavorazione"},{id:"demo-2",practice_code:"DEMO-0047",device:"Samsung A05s",repair_type:"Display e controllo touch",client_name:"MELA Piacenza",repair_status:"Da diagnosticare"},{id:"demo-3",practice_code:"DEMO-0046",device:"iPhone 13",repair_type:"Sostituzione batteria",client_name:"Cliente dimostrativo",repair_status:"Riparato"}]);
+  const studioPanel=document.getElementById("studioRepairsPanel");if(studioPanel)studioPanel.hidden=false;
+  const low=document.getElementById("dashboardLowStock");
+  if(low) low.innerHTML=`<button class="dashboardLine"><span><strong>Display OLED</strong><small>Apple · iPhone 16 Pro Max</small></span><b>1 / 3</b></button><button class="dashboardLine"><span><strong>BackGlass senza logo</strong><small>Apple · iPhone 15 Pro</small></span><b>2 / 5</b></button><button class="dashboardLine"><span><strong>Housing completo</strong><small>Apple · iPhone 14 Pro</small></span><b>1 / 4</b></button><button class="dashboardLine"><span><strong>Batteria</strong><small>Samsung · Galaxy S23 FE</small></span><b>1 / 3</b></button>`;
+  const act=document.getElementById("dashboardActivity");
+  if(act) act.innerHTML=`<div class="dashboardLine"><span><strong>−1 BackGlass iPhone 16 Pro Max</strong><small>Vendita · 17:42</small></span></div><div class="dashboardLine"><span><strong>+3 Display Samsung S23 FE</strong><small>Carico magazzino · 16:18</small></span></div><div class="dashboardLine"><span><strong>Riparazione PR-4251 aggiornata</strong><small>In lavorazione · 15:32</small></span></div><div class="dashboardLine"><span><strong>Ritiro usato iPhone 14 Pro</strong><small>Blacklist: pulito · 14:55</small></span></div>`;
+  const chart=document.getElementById("dashboardMiniChart");
+  if(chart) chart.innerHTML=`<div class="chartBars"><div class="chartCol"><div class="chartBar h30"></div><small>mag</small></div><div class="chartCol"><div class="chartBar h50"></div><small>giu</small></div><div class="chartCol"><div class="chartBar h60"></div><small>lug</small></div><div class="chartCol"><div class="chartBar h50"></div><small>ago</small></div><div class="chartCol"><div class="chartBar h70"></div><small>set</small></div><div class="chartCol"><div class="chartBar h80"></div><small>ott</small></div></div><div class="chartLegend"><span><i></i> Attività gestionale</span><b>21 oggi</b></div>`;
+  const mix=document.getElementById("dashboardCategoryMix");
+  if(mix) mix.innerHTML=`<div class="mixDonut"><div><strong>228</strong><small>pezzi</small></div></div><div class="mixLegend"><span><i class="bgDot"></i>BackGlass <b>80%</b></span><span><i class="hsDot"></i>Housing <b>11%</b></span><span><i class="reqDot"></i>Altri ricambi <b>9%</b></span></div>`;
+}
+function btEnterPreview(){
+  btPreviewMode=true;
+  document.body.classList.add("logged-in","preview-mode");
+  document.getElementById("signedOut").hidden=true;
+  document.getElementById("signedIn").hidden=true;
+  document.getElementById("authPanel").hidden=true;
+  document.getElementById("globalSearchBar").hidden=false;
+  document.getElementById("globalSearchResults").hidden=true;
+  document.getElementById("dashboardView").hidden=false;
+  document.getElementById("previewBanner").hidden=false;
+  document.getElementById("headerCloudPill").hidden=false;
+  document.getElementById("headerCloudPill").textContent="● Demo locale";
+  document.getElementById("headerLogoutBtn").hidden=true;
+  document.getElementById("categoryName").textContent="Dashboard";
+  document.getElementById("categoryDescription").textContent="Anteprima reale V2.0";
+  const g=document.getElementById("dashboardGreetingName"); if(g) g.textContent="Admin";
+  const n=document.getElementById("dashUserName"); if(n) n.textContent="BeparyTech";
+  const r=document.getElementById("dashUserRole"); if(r) r.textContent="Amministratore · Anteprima";
+  const i=document.getElementById("dashUserInitials"); if(i) i.textContent="BT";
+  const mn=document.getElementById("menuUserName"); if(mn) mn.textContent="BeparyTech";
+  const mr=document.getElementById("menuUserRole"); if(mr) mr.textContent="Anteprima Admin";
+  ["repairMenuGroup","salesMenuGroup","adminMenuGroup","adminStatsArea","adminOperationalPanels"].forEach(id=>{const el=document.getElementById(id);if(el)el.hidden=false;});
+  ["partsHubMenuItem","autoOrdersMenuItem","usedIntakeMenuItem","repairsMenuItem","workDdtMenuItem","deviceSalesMenuItem","invoicesMenuItem","clientsMenuItem","hoursMenuItem","settingsMenuItem"].forEach(id=>{const el=document.getElementById(id);if(el)el.hidden=false;});
+  document.querySelectorAll(".adminQuick").forEach(el=>el.hidden=false);
+  document.querySelectorAll('.menuItem[data-category]').forEach(b=>b.classList.toggle('active',b.dataset.category==='Dashboard'));
+  btRenderPreviewDashboard();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function btExitPreview(){
+  btPreviewMode=false;
+  document.body.classList.remove("logged-in","preview-mode","menu-open");
+  document.getElementById("dashboardView").hidden=true;
+  document.getElementById("previewBanner").hidden=true;
+  document.getElementById("authPanel").hidden=false;
+  document.getElementById("signedOut").hidden=false;
+  document.getElementById("signedIn").hidden=true;
+  document.getElementById("globalSearchBar").hidden=true;
+  document.getElementById("headerCloudPill").hidden=true;
+  document.getElementById("menuOverlay").hidden=true;
+  document.getElementById("mainMenu")?.classList.remove("open");
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+document.getElementById("previewBtn")?.addEventListener("click",btEnterPreview);
+document.getElementById("previewExitBtn")?.addEventListener("click",btExitPreview);
+
 document.getElementById("forgotPasswordBtn").onclick=async()=>{
   const email=document.getElementById("email").value.trim();
   authMsg.textContent="";
@@ -669,12 +732,12 @@ window.addEventListener("storage",e=>{ if(e.key===BT_LAST_ACTIVITY_KEY && curren
 
 
 function setCategory(category){
-  const isDashboard=category==="Dashboard", isSales=category==="Vendite", isAudit=category==="Cronologia", isUsers=category==="Utenti", isCatalog=category==="GestioneMagazzino", isZeroStock=category==="ScorteZero", isBackup=category==="Backup", isHours=category==="Orari", isDeviceSales=(category==="VenditeAdmin" || category==="Fatturazione"), isBestekCatalog=category==="CatalogoBestek", isDymoNotes=category==="NoteDymo", isWorkDdt=category==="ContoLavorazione", isClients=category==="Clienti", isSaasCompanies=category==="SaaSAziende", isPartsHub=category==="RicambiHub", isUsedIntake=category==="RitiroUsato";
+  const isDashboard=category==="Dashboard", isSales=category==="Vendite", isAudit=category==="Cronologia", isUsers=category==="Utenti", isCatalog=category==="GestioneMagazzino", isZeroStock=category==="ScorteZero", isBackup=category==="Backup", isHours=category==="Orari", isDeviceSales=(category==="VenditeAdmin" || category==="Fatturazione"), isBestekCatalog=category==="CatalogoBestek", isDymoNotes=category==="NoteDymo", isWorkDdt=category==="ContoLavorazione", isClients=category==="Clienti", isSaasCompanies=category==="SaaSAziende", isPartsHub=category==="RicambiHub", isUsedIntake=category==="RitiroUsato", isAutoOrders=category==="DaOrdinareAuto";
   const isCustom=String(category).startsWith("custom:");
   if((isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog||isWorkDdt||isClients||isUsedIntake)&&!isAdmin()) return;
   if(isSaasCompanies&&!isSuperAdmin()) return;
   if(!isSuperAdmin()){
-    const requiredModule=isCustom?'inventory':({Vendite:'sales',GestioneMagazzino:'inventory',ScorteZero:'inventory',VenditeAdmin:'sales',Fatturazione:'invoicing',RiparazioniAdmin:'repairs',AccettazioneRapida:'repairs',AccettazioneCompleta:'repairs',ContoLavorazione:'ddt',Clienti:'repairs',Orari:'hours',Backup:'backup',CatalogoBestek:'bestek',NoteDymo:'dymo',RicambiHub:'inventory',RitiroUsato:'inventory'}[category]);
+    const requiredModule=isCustom?'inventory':({Vendite:'sales',GestioneMagazzino:'inventory',ScorteZero:'inventory',VenditeAdmin:'sales',Fatturazione:'invoicing',RiparazioniAdmin:'repairs',AccettazioneRapida:'repairs',AccettazioneCompleta:'repairs',ContoLavorazione:'ddt',Clienti:'repairs',Orari:'hours',Backup:'backup',CatalogoBestek:'bestek',NoteDymo:'dymo',RicambiHub:'inventory',RitiroUsato:'inventory',DaOrdinareAuto:'inventory'}[category]);
     if(!btLicenseActive()){ if(category!=="Dashboard") return; }
     if(requiredModule&&!btHasModule(requiredModule)) return;
   }
@@ -682,13 +745,13 @@ function setCategory(category){
   try{ localStorage.setItem("beparytech-last-category",String(category)); }catch(_){}
   currentCustomSectionId=isCustom?Number(String(category).split(":")[1]):null;
   const sec=isCustom?customSections.find(s=>Number(s.id)===currentCustomSectionId):null;
-  const title=isDashboard?"Dashboard":isAudit?"Cronologia":isSales?"Vendute":isUsers?"Utenti":isCatalog?"Gestione magazzino":isZeroStock?"Scorte a zero":isBackup?"Backup":isHours?"I miei orari":isDeviceSales?"Vendite ricambi":isBestekCatalog?"Catalogo Bestek":isDymoNotes?"Note DYMO":isWorkDdt?"DDT conto lavorazione":isClients?"Clienti":isSaasCompanies?"Clienti software":isPartsHub?"Ricambi":isUsedIntake?"Ritiro usato":sec?.name||category;
-  const desc=isDashboard?"Riepilogo generale":isAudit?"Tutte le attività del gestionale":isSales?"Vendite, note, stampa DYMO e rientri":isUsers?"Gestione accessi":isCatalog?"Crea e gestisci sezioni e prodotti":isZeroStock?"BackGlass e Housing esauriti, separati":isBackup?"Esporta una copia dei dati":isHours?"Area privata Admin · ore lavorate ed extra":isDeviceSales?"Area privata Admin · ricambi elettronici, IVA e acquisti":isBestekCatalog?"Area privata Admin · codici e accessori Bestek":isDymoNotes?"Scrivi una nota libera e stampala direttamente sulla DYMO":isWorkDdt?"DDT in entrata, lavorazioni e restituzioni al cliente":isClients?"Anagrafica privati e Partita IVA":isSaasCompanies?"Aziende, piani, licenze e moduli":isPartsHub?"Marca, modello, versione e giacenze in tempo reale":isUsedIntake?"IMEI, blacklist, valutazione e dichiarazioni":sec?.description||"Sezione magazzino";
+  const title=isDashboard?"Dashboard":isAudit?"Cronologia":isSales?"Vendute":isUsers?"Utenti":isCatalog?"Gestione magazzino":isZeroStock?"Scorte a zero":isBackup?"Backup":isHours?"I miei orari":isDeviceSales?"Vendite ricambi":isBestekCatalog?"Catalogo Bestek":isDymoNotes?"Note DYMO":isWorkDdt?"DDT conto lavorazione":isClients?"Clienti":isSaasCompanies?"Clienti software":isPartsHub?"Ricambi":isUsedIntake?"Ritiro usato":isAutoOrders?"Da ordinare":sec?.name||category;
+  const desc=isDashboard?"Riepilogo generale":isAudit?"Tutte le attività del gestionale":isSales?"Vendite, note, stampa DYMO e rientri":isUsers?"Gestione accessi":isCatalog?"Crea e gestisci sezioni e prodotti":isZeroStock?"BackGlass e Housing esauriti, separati":isBackup?"Esporta una copia dei dati":isHours?"Area privata Admin · ore lavorate ed extra":isDeviceSales?"Area privata Admin · ricambi elettronici, IVA e acquisti":isBestekCatalog?"Area privata Admin · codici e accessori Bestek":isDymoNotes?"Scrivi una nota libera e stampala direttamente sulla DYMO":isWorkDdt?"DDT in entrata, lavorazioni e restituzioni al cliente":isClients?"Anagrafica privati e Partita IVA":isSaasCompanies?"Aziende, piani, licenze e moduli":isPartsHub?"Marca, modello, versione e giacenze in tempo reale":isUsedIntake?"IMEI, blacklist, valutazione e dichiarazioni":isAutoOrders?"Lista automatica basata sulla scorta minima":sec?.description||"Sezione magazzino";
   document.getElementById("categoryName").textContent=title;
   document.getElementById("categoryDescription").textContent=desc;
-  document.querySelector(".tools").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog||isDymoNotes||isWorkDdt||isClients||isSaasCompanies||isPartsHub||isUsedIntake;
-  document.querySelector(".stats").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog||isDymoNotes||isWorkDdt||isClients||isSaasCompanies||isPartsHub||isUsedIntake;
-  inventory.hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog||isDymoNotes||isWorkDdt||isClients||isSaasCompanies||isPartsHub||isUsedIntake;
+  document.querySelector(".tools").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog||isDymoNotes||isWorkDdt||isClients||isSaasCompanies||isPartsHub||isUsedIntake||isAutoOrders;
+  document.querySelector(".stats").hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog||isDymoNotes||isWorkDdt||isClients||isSaasCompanies||isPartsHub||isUsedIntake||isAutoOrders;
+  inventory.hidden=isDashboard||isSales||isAudit||isUsers||isCatalog||isZeroStock||isBackup||isHours||isDeviceSales||isBestekCatalog||isDymoNotes||isWorkDdt||isClients||isSaasCompanies||isPartsHub||isUsedIntake||isAutoOrders;
   document.getElementById("dashboardView").hidden=!isDashboard;
   document.getElementById("salesView").hidden=!isSales;
   document.getElementById("auditView").hidden=!isAudit;
@@ -701,6 +764,7 @@ function setCategory(category){
   const saasView=document.getElementById("saasCompaniesView"); if(saasView) saasView.hidden=!isSaasCompanies;
   const partsHubView=document.getElementById("partsHubView"); if(partsHubView) partsHubView.hidden=!isPartsHub;
   const usedIntakeView=document.getElementById("usedIntakeView"); if(usedIntakeView) usedIntakeView.hidden=!isUsedIntake;
+  const autoOrderView=document.getElementById("autoOrderView"); if(autoOrderView) autoOrderView.hidden=!isAutoOrders;
   document.getElementById("zeroStockView").hidden=!isZeroStock;
   document.getElementById("backupView").hidden=!isBackup;
   document.getElementById("hoursView").hidden=!isHours;
@@ -714,7 +778,7 @@ function setCategory(category){
     },0);
   }
   search.value=""; filter.value="all"; closeMainMenu();
-  if(isDashboard) loadDashboard(); else if(isAudit) loadAudit(); else if(isSales) loadSales(); else if(isUsers) loadUsers(); else if(isCatalog) renderCatalogAdmin(); else if(isZeroStock) renderZeroStock(); else if(isBackup){} else if(isHours) loadHours(); else if(isDeviceSales) loadDeviceSales(); else if(isBestekCatalog) renderBestekCatalog(); else if(isWorkDdt) loadWorkDdts(); else if(isClients) loadClients(); else if(isSaasCompanies) loadSaasCompanies(); else if(isPartsHub) loadPartsHub(); else if(isUsedIntake) loadUsedIntakes(); else if(isCustom) renderCustomSection(); else if(category==="BackGlass"||category==="Housing") render();
+  if(isDashboard) loadDashboard(); else if(isAudit) loadAudit(); else if(isSales) loadSales(); else if(isUsers) loadUsers(); else if(isCatalog) renderCatalogAdmin(); else if(isZeroStock) renderZeroStock(); else if(isBackup){} else if(isHours) loadHours(); else if(isDeviceSales) loadDeviceSales(); else if(isBestekCatalog) renderBestekCatalog(); else if(isWorkDdt) loadWorkDdts(); else if(isClients) loadClients(); else if(isSaasCompanies) loadSaasCompanies(); else if(isPartsHub) loadPartsHub(); else if(isUsedIntake) loadUsedIntakes(); else if(isAutoOrders) loadAutoOrders(); else if(isCustom) renderCustomSection(); else if(category==="BackGlass"||category==="Housing") render();
 }
 
 
@@ -1358,7 +1422,7 @@ async function loadCustomCatalog(){
 }
 function renderCustomMenu(){
   const box=document.getElementById("customMenuSections"); if(!box)return;
-  box.innerHTML=customSections.filter(s=>s.active!==false).map(s=>{const req=s.section_type==="requests";const icon=req?"🛒":(s.name==="BackGlass"?"◫":s.name==="Housing"?"▣":"▤");return `<button class="menuItem customMenuItem" type="button" data-category="custom:${s.id}"><span class="menuIcon">${icon}</span><span><strong>${escapeHtml(s.name)}</strong><small>${escapeHtml(s.description||"Sezione magazzino")}</small></span></button>`}).join("");
+  const legacyHidden=new Set(["backglass","housing","ricambi","da ordinare"]); box.innerHTML=customSections.filter(s=>s.active!==false&&!legacyHidden.has(String(s.name||"").trim().toLowerCase())).map(s=>{const req=s.section_type==="requests";const icon=req?"🛒":"▤";return `<button class="menuItem customMenuItem" type="button" data-category="custom:${s.id}"><span class="menuIcon">${icon}</span><span><strong>${escapeHtml(s.name)}</strong><small>${escapeHtml(s.description||"Sezione magazzino")}</small></span></button>`}).join("");
   box.querySelectorAll(".menuItem").forEach(btn=>btn.addEventListener("click",()=>setCategory(btn.dataset.category)));
 }
 function customStatus(q,threshold){if(q===0)return["ESAURITO","empty"];if(q<=threshold)return["SCORTA BASSA","low"];return["DISPONIBILE","ok"]}
@@ -1582,8 +1646,11 @@ async function loadDashboard(){
   const reqPromise=sb.from("beparytech_requests").select("id,item,quantity,status,requester_name,created_at").order("created_at",{ascending:false}).limit(500);
   const auditPromise=admin?sb.from("beparytech_audit_events").select("id,actor_name,event_type,title,details,created_at").order("created_at",{ascending:false}).limit(8):Promise.resolve({data:[]});
   const todayPromise=admin?sb.from("beparytech_audit_events").select("id",{count:"exact",head:true}).gte("created_at",startToday.toISOString()):Promise.resolve({count:0});
-  const [reqRes,auditRes,todayRes]=await Promise.all([reqPromise,auditPromise,todayPromise]);
-  const req=reqRes.data||[], audit=auditRes.data||[]; window.btRequests=req;
+  const dashboardPartsPromise=admin?sb.from("beparytech_parts").select("id,brand,model,version,category,name,sku,quantity,low_stock_threshold,updated_at").eq("active",true).limit(3000):Promise.resolve({data:[]});
+  const monthStartForUsed=new Date();monthStartForUsed.setDate(1);monthStartForUsed.setHours(0,0,0,0);
+  const usedPromise=admin?sb.from("beparytech_used_intakes").select("id,created_at",{count:"exact"}).gte("created_at",monthStartForUsed.toISOString()).limit(1000):Promise.resolve({data:[],count:0});
+  const [reqRes,auditRes,todayRes,dashPartsRes,usedRes]=await Promise.all([reqPromise,auditPromise,todayPromise,dashboardPartsPromise,usedPromise]);
+  const req=reqRes.data||[], audit=auditRes.data||[], dashboardParts=dashPartsRes.data||[], usedMonth=usedRes.data||[]; window.btRequests=req;
   const activeSectionIds=new Set(customSections.filter(s=>s.active!==false&&s.section_type==="inventory").map(s=>Number(s.id)));
   const inv=customProducts.filter(p=>p.active!==false&&activeSectionIds.has(Number(p.section_id))), total=inv.reduce((a,p)=>a+Number(p.quantity||0),0), low=inv.filter(p=>Number(p.quantity)>0&&Number(p.quantity)<=Number(p.low_stock_threshold||2)), empty=inv.filter(p=>Number(p.quantity)===0), openReq=req.filter(r=>r.status!=="consegnato"),todayCount=Number(todayRes.count||0);
   document.getElementById("totalPieces").textContent=total;document.getElementById("availableTypes").textContent=inv.filter(p=>Number(p.quantity)>0).length;document.getElementById("lowStock").textContent=low.length;
@@ -1598,25 +1665,29 @@ async function loadDashboard(){
 
   const monthStart=new Date();monthStart.setDate(1);monthStart.setHours(0,0,0,0);
   const dateISO=monthStart.toISOString().slice(0,10);
-  let partsRows=[],repairRows=[];
+  let partsRows=[],repairRows=[],studioRepairError="";
   try{
     const [partsRes,repairsRes]=await Promise.all([
       sb.from("beparytech_admin_device_sales").select("sold_at,sale_price,vat_amount").gte("sold_at",dateISO).limit(1000),
-      sb.from("beparytech_admin_repairs").select("repaired_at,estimated_pickup_date,total_inc_vat,price_ex_vat,vat_amount,repair_status,practice_code,client_name,device").order("repaired_at",{ascending:false}).limit(1000)
+      sb.from("beparytech_admin_repairs").select("id,repaired_at,estimated_pickup_date,total_inc_vat,price_ex_vat,vat_amount,repair_status,practice_code,client_name,device,repair_type").order("repaired_at",{ascending:false}).limit(1000)
     ]);
-    partsRows=partsRes.data||[];repairRows=repairsRes.data||[];
-  }catch(_){ }
+    partsRows=partsRes.data||[];repairRows=repairsRes.data||[];studioRepairError=repairsRes.error?.message||"";
+  }catch(_){studioRepairError="Caricamento non disponibile";}
+  if(typeof btStudioRepairRows==="function")btStudioRepairRows(repairRows,studioRepairError);
   const monthRepairRows=repairRows.filter(r=>String(r.repaired_at||"")>=dateISO);
   const monthRevenue=partsRows.reduce((a,r)=>a+Number(r.sale_price||0)+Number(r.vat_amount||0),0)+monthRepairRows.reduce((a,r)=>a+Number(r.total_inc_vat||0),0);
   const openStatuses=new Set(["da completare","da diagnosticare","in lavorazione","attesa ricambio","pronto"]);
   const openRepairs=repairRows.filter(r=>{const st=String(r.repair_status||"").trim().toLowerCase();return openStatuses.has(st)||(!st.includes("consegn")&&!st.includes("chius")&&!st.includes("annull"));});
   const todayISO=new Date().toISOString().slice(0,10);
   const pickupsToday=repairRows.filter(r=>r.estimated_pickup_date===todayISO && !String(r.repair_status||"").toLowerCase().includes("consegn"));
-  document.getElementById("dashboardCards").innerHTML=`<button class="dashCard kpiBlue dashNavCard" data-dash-category="RiparazioniAdmin"><span>Riparazioni aperte</span><strong>${openRepairs.length}</strong><small>${openRepairs.length?"Pratiche ancora da chiudere":"Tutto sotto controllo"}</small></button><button class="dashCard kpiOrange dashNavCard" data-dash-category="RiparazioniAdmin"><span>Ritiri previsti oggi</span><strong>${pickupsToday.length}</strong><small>${pickupsToday.length?"Da preparare o consegnare":"Nessun ritiro previsto"}</small></button><button class="dashCard kpiGreen dashNavCard" data-dash-category="VenditeAdmin"><span>Incasso questo mese</span><strong>${euroFmt.format(monthRevenue)}</strong><small>${partsRows.length} vendite ricambi · ${monthRepairRows.length} riparazioni</small></button><button class="dashCard kpiPurple dashNavCard" data-dash-category="ScorteZero"><span>Scorte critiche</span><strong>${low.length+empty.length}</strong><small>${empty.length} esauriti · ${low.length} bassi</small></button>`;
+  const autoLow=dashboardParts.filter(p=>Number(p.quantity||0)<=Number(p.low_stock_threshold||0));
+  const partsTotal=dashboardParts.reduce((a,p)=>a+Number(p.quantity||0),0);
+  const readyRepairs=repairRows.filter(r=>/pront|riparat/i.test(String(r.repair_status||""))&&!/consegn|annull/i.test(String(r.repair_status||"")));
+  document.getElementById("dashboardCards").innerHTML=`<button class="dashCard dashNavCard" data-dash-category="RiparazioniAdmin"><span>In laboratorio</span><strong>${studioRepairError?"—":openRepairs.length}</strong><small>Pratiche aperte</small></button><button class="dashCard dashNavCard" data-dash-category="RiparazioniAdmin"><span>Pronte al ritiro</span><strong>${studioRepairError?"—":readyRepairs.length}</strong><small>Lavorazione completata</small></button><button class="dashCard dashNavCard" data-dash-category="DaOrdinareAuto"><span>Scorte da riordinare</span><strong>${dashPartsRes.error?"—":autoLow.length}</strong><small>Ricambi sotto soglia</small></button><button class="dashCard dashNavCard" data-dash-category="Fatturazione"><span>Valore lavorazioni mese</span><strong>${studioRepairError?"—":euroFmt.format(monthRevenue)}</strong><small>Vendite + riparazioni · IVA inclusa</small></button>`;
   document.querySelectorAll(".dashNavCard[data-dash-category]").forEach(b=>b.onclick=()=>setCategory(b.dataset.dashCategory));
-  document.getElementById("dashboardLowStock").innerHTML=[...empty,...low].slice(0,8).map(p=>{const sec=customSections.find(x=>Number(x.id)===Number(p.section_id));return `<button class="dashboardLine" data-section="${p.section_id}"><span><strong>${escapeHtml(p.name)}</strong><small>${escapeHtml(sec?.name||"")} · ${escapeHtml(p.variant||"")}</small></span><b>${p.quantity} pz</b></button>`}).join("")||'<div class="emptyState">Nessuna scorta critica.</div>';
+  document.getElementById("dashboardLowStock").innerHTML=autoLow.slice(0,8).map(p=>`<button class="dashboardLine" data-part-low="${p.id}"><span><strong>${escapeHtml(p.name)}</strong><small>${escapeHtml(p.brand)} · ${escapeHtml(p.model)}${p.version?` · ${escapeHtml(p.version)}`:""}</small></span><b>${p.quantity} / ${p.low_stock_threshold}</b></button>`).join("")||'<div class="emptyState">Nessun ricambio da ordinare.</div>';
   document.getElementById("dashboardActivity").innerHTML=audit.map(e=>`<div class="dashboardLine"><span><strong>${escapeHtml(e.title)}</strong><small>${escapeHtml(e.actor_name||"Sistema")} · ${new Date(e.created_at).toLocaleString("it-IT")}</small></span></div>`).join("")||'<div class="emptyState">Nessuna attività.</div>';
-  document.querySelectorAll(".dashboardLine[data-section]").forEach(b=>b.onclick=()=>setCategory(`custom:${b.dataset.section}`));
+  document.querySelectorAll(".dashboardLine[data-section]").forEach(b=>b.onclick=()=>setCategory(`custom:${b.dataset.section}`));document.querySelectorAll(".dashboardLine[data-part-low]").forEach(b=>b.onclick=()=>setCategory("DaOrdinareAuto"));
 
   const chart=document.getElementById("dashboardMiniChart");
   if(chart){
@@ -1631,7 +1702,7 @@ async function loadDashboard(){
     mix.innerHTML=`<div class="mixDonut"><div><strong>${bg+hs}</strong><small>pezzi</small></div></div><div class="mixLegend"><span><i class="bgDot"></i>BackGlass <b>${bp}%</b></span><span><i class="hsDot"></i>Housing <b>${hp}%</b></span><span><i class="reqDot"></i>Da ordinare <b>${openReq.length}</b></span></div>`;
   }
 }
-document.getElementById("refreshDashboardBtn").onclick=loadDashboard;document.getElementById("refreshAuditBtn").onclick=loadAudit;
+document.getElementById("refreshDashboardBtn").onclick=()=>btPreviewMode?btRenderPreviewDashboard():loadDashboard();document.getElementById("refreshAuditBtn").onclick=loadAudit;
 document.querySelectorAll(".dashboardToggle").forEach(btn=>btn.addEventListener("click",()=>{const panel=btn.closest(".dashboardPanel");const open=panel.classList.toggle("open");btn.setAttribute("aria-expanded",open?"true":"false");}));
 
 const gSearch=document.getElementById("globalSearch"),gResults=document.getElementById("globalSearchResults");
@@ -1720,7 +1791,7 @@ document.getElementById("accountOperatorForm").addEventListener("submit",async e
 
 function exportInventory(){const rows=[["Sezione","Prodotto","Variante","SKU","Barcode","Quantità","Soglia"]];customProducts.forEach(p=>{const sec=customSections.find(s=>Number(s.id)===Number(p.section_id));rows.push([sec?.name,p.name,p.variant,p.sku,p.barcode,p.quantity,p.low_stock_threshold])});downloadText(`BeparyTech_magazzino_${new Date().toISOString().slice(0,10)}.csv`,rows.map(r=>r.map(csvEscape).join(",")).join("\n"),"text/csv;charset=utf-8")}
 async function exportRequests(){const {data}=await sb.from("beparytech_requests").select("requester_name,item,quantity,code,link,note,status,created_at").order("created_at");const rows=[["Operatore","Articolo","Quantità","Codice","Link","Nota","Stato","Data"],...(data||[]).map(r=>[r.requester_name,r.item,r.quantity,r.code,r.link,r.note,r.status,r.created_at])];downloadText(`BeparyTech_da_ordinare_${new Date().toISOString().slice(0,10)}.csv`,rows.map(r=>r.map(csvEscape).join(",")).join("\n"),"text/csv;charset=utf-8")}
-async function exportFull(){const [requests,sales,audit]=await Promise.all([sb.from("beparytech_requests").select("*"),sb.from("beparytech_sales").select("*").limit(5000),sb.from("beparytech_audit_events").select("*").limit(5000)]);downloadText(`BeparyTech_backup_${new Date().toISOString().slice(0,10)}.json`,JSON.stringify({version:17,created_at:new Date().toISOString(),sections:customSections,products:customProducts,requests:requests.data||[],sales:sales.data||[],audit:audit.data||[]},null,2),"application/json")}
+async function exportFull(){throw new Error("Usa l’esportazione dati operativi: il vecchio backup parziale è stato rimosso.");}
 document.getElementById("exportInventoryCsv").onclick=exportInventory;document.getElementById("exportRequestsCsv").onclick=exportRequests;document.getElementById("exportFullBackup").onclick=exportFull;
 
 
@@ -1833,11 +1904,11 @@ function applyTheme(theme){
   themeLabel.textContent=light ? "Notte" : "Giorno";
   themeToggle.setAttribute("aria-label", light ? "Passa alla modalità notte" : "Passa alla modalità giorno");
   if(themeMeta) themeMeta.setAttribute("content", light ? "#f4f1ea" : "#070707");
-  try{ localStorage.setItem("beparytech-theme",theme); }catch(_){}
+  try{ localStorage.setItem("beparytech-theme-v2",theme); }catch(_){}
 }
-let initialTheme="dark";
+let initialTheme="light";
 try{
-  const saved=localStorage.getItem("beparytech-theme");
+  const saved=localStorage.getItem("beparytech-theme-v2");
   if(saved==="light"||saved==="dark") initialTheme=saved;
   else if(window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) initialTheme="light";
 }catch(_){}
@@ -2419,7 +2490,7 @@ function validateIssuer(x){if(!x.name||!x.vat||!x.address||!x.zip||!x.city||!x.p
 function saveIssuerSettings(){const msg=document.getElementById("issuerMsg"),x=readIssuer(),err=validateIssuer(x);if(msg){msg.className=`createUserMsg ${err?"error":"ok"}`;msg.textContent=err||"Dati emittente salvati su questo dispositivo.";}if(err)return false;try{localStorage.setItem("beparytech-invoice-issuer",JSON.stringify(x));}catch(_){}return true;}
 function readVrClient(){const get=id=>String(document.getElementById(id)?.value||"").trim();return {name:get("vrClientName")||"VR Trasporti",vat:get("vrClientVat").replace(/^IT/i,"").replace(/\D/g,""),taxCode:get("vrClientTaxCode").toUpperCase(),recipientCode:get("vrClientRecipient").toUpperCase(),address:get("vrClientAddress"),zip:get("vrClientZip"),city:get("vrClientCity"),province:get("vrClientProvince").toUpperCase(),country:"IT"};}
 function validateVrClient(x){if(!x.name||!x.vat||!x.recipientCode||!x.address||!x.zip||!x.city||!x.province)return "Completa i dati fiscali di VR Trasporti.";if(!/^\d{11}$/.test(x.vat))return "La Partita IVA di VR Trasporti deve avere 11 cifre.";if(!/^[A-Z0-9]{7}$/.test(x.recipientCode))return "Il codice destinatario deve avere 7 caratteri.";if(!/^\d{5}$/.test(x.zip))return "Il CAP deve avere 5 cifre.";if(!/^[A-Z]{2}$/.test(x.province))return "La provincia deve avere 2 lettere.";return "";}
-function saveVrClientSettings(){const x=readVrClient(),err=validateVrClient(x),msg=document.getElementById("vrClientMsg");if(msg){msg.className=`createUserMsg ${err?"error":"ok"}`;msg.textContent=err||"Dati VR Trasporti salvati su questo dispositivo.";}if(err)return false;try{localStorage.setItem("beparytech-invoice-vr-client",JSON.stringify(x));}catch(_){}updateInvoiceClientUi();return true;}
+function saveVrClientSettings(){const x=readVrClient(),err=validateVrClient(x),msg=document.getElementById("vrClientMsg");if(msg){msg.className=`createUserMsg ${err?"error":"ok"}`;msg.textContent=err||"Dati VR Trasporti salvati su questo dispositivo.";}if(err)return false;try{localStorage.setItem("beparytech-invoice-vr-client",JSON.stringify(x));}catch(_){}const title=document.getElementById("invoiceClientTitle");if(title&&invoiceClientMode()==="vr")title.textContent=x.name;return true;}
 function loadVrClientSettings(){try{const x=JSON.parse(localStorage.getItem("beparytech-invoice-vr-client")||"{}");const map={vrClientName:x.name,vrClientVat:x.vat,vrClientTaxCode:x.taxCode,vrClientRecipient:x.recipientCode,vrClientAddress:x.address,vrClientZip:x.zip,vrClientCity:x.city,vrClientProvince:x.province};Object.entries(map).forEach(([id,v])=>{const el=document.getElementById(id);if(el&&v)el.value=v;});}catch(_){} }
 function currentInvoiceClient(){return invoiceClientMode()==="vr"?readVrClient():RIPARALO_INVOICE_CLIENT;}
 function updateInvoiceClientUi(){
@@ -2880,6 +2951,7 @@ setCategory=function(category,fromBack=false){
 
 /* ===== v100 · DYMO AUTO universale · qualsiasi stampante DYMO collegata ===== */
 const BT_DYMO_KEY="bt-dymo-direct-v100";
+let btDymoMemory={};
 let btDymoEndpoint="";
 function btXmlEscape(v){return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&apos;"}[c]));}
 function btGetDymoConfig(){
@@ -2887,10 +2959,10 @@ function btGetDymoConfig(){
     const old=JSON.parse(localStorage.getItem("bt-dymo-direct-v97")||"{}");
     const v98=JSON.parse(localStorage.getItem("bt-dymo-direct-v98")||"{}");
     const cur=JSON.parse(localStorage.getItem(BT_DYMO_KEY)||"{}");
-    return {...{enabled:true,printer:"",endpoint:""},...old,...v98,...cur};
-  }catch(_){return {enabled:true,printer:"",endpoint:""};}
+    return {...{enabled:true,printer:"",endpoint:""},...old,...v98,...cur,...btDymoMemory};
+  }catch(_){return {enabled:true,printer:"",endpoint:"",...btDymoMemory};}
 }
-function btSaveDymoConfig(patch={}){const v={...btGetDymoConfig(),...patch};localStorage.setItem(BT_DYMO_KEY,JSON.stringify(v));return v;}
+function btSaveDymoConfig(patch={}){const v={...btGetDymoConfig(),...patch};btDymoMemory=v;try{localStorage.setItem(BT_DYMO_KEY,JSON.stringify(v));}catch(_){}return v;}
 function btSetDymoStatus(text,kind="") {const el=document.getElementById("dymoDirectStatus");if(!el)return;el.textContent=text;el.className=kind?`dymoStatus${kind}`:"";}
 async function btFetchTimeout(url,opts={},ms=2000){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms);try{return await fetch(url,{...opts,signal:c.signal,cache:"no-store"});}finally{clearTimeout(t);}}
 function btDymoBase(host,port){return `https://${host}:${port}/DYMO/DLS/Printing`;}
@@ -2901,39 +2973,7 @@ async function btProbeDymoBase(base,ms=1500){
     return r.ok && (txt==="true" || txt.includes("true"));
   }catch(_){return false;}
 }
-async function btFindDymoService(force=false){
-  if(btDymoEndpoint&&!force)return btDymoEndpoint;
-  btDymoEndpoint="";btSetDymoStatus("Ricerca automatica DYMO…","Wait");
-  const cfg=btGetDymoConfig();
-  // Prima prova l'endpoint già trovato su questo PC; poi 41951, quindi l'intervallo ufficiale 41952-41960.
-  const candidates=[];
-  if(cfg.endpoint)candidates.push(cfg.endpoint);
-  for(const host of ["localhost","127.0.0.1"]){
-    candidates.push(btDymoBase(host,41951));
-    for(let port=41952;port<=41960;port++)candidates.push(btDymoBase(host,port));
-    // Alcune installazioni DYMO Connect/LabelWriter 5xx espongono il servizio su 62170.
-    candidates.push(btDymoBase(host,62170));
-  }
-  // DYMO Label Software molto vecchio può essere configurato senza TLS.
-  // Un sito HTTPS non può chiamare HTTP (mixed content), quindi questo fallback
-  // viene provato soltanto quando BeparyTech è aperto anch'esso in HTTP/localhost.
-  if(location.protocol!=="https:")for(const host of ["localhost","127.0.0.1"]){
-    candidates.push(`http://${host}:41951/DYMO/DLS/Printing`);
-    for(let port=41952;port<=41960;port++)candidates.push(`http://${host}:${port}/DYMO/DLS/Printing`);
-  }
-  const unique=[...new Set(candidates)];
-  for(const base of unique){
-    if(await btProbeDymoBase(base, base.includes(":41951/")?1800:900)){
-      btDymoEndpoint=base;
-      const m=base.match(/:(4195\d)\//),port=m?m[1]:"";
-      btSaveDymoConfig({endpoint:base});
-      btSetDymoStatus(`DYMO Connect rilevato automaticamente${port?` · porta ${port}`:""}`,"Ok");
-      return base;
-    }
-  }
-  btSetDymoStatus("DYMO Connect non rilevato","Err");
-  throw new Error("Servizio DYMO non raggiungibile. Su questo PC deve rispondere 'true' a StatusConnected.");
-}
+async function btFindDymoService(force=false){return (await window.BeparyDymo.discover(force)).base;}
 function btDecodeXmlEntities(s){
   const el=document.createElement("textarea");el.innerHTML=s;return el.value;
 }
@@ -2998,33 +3038,7 @@ async function btGetDymoPrintersFromBase(base){
   const printers=[...devices.filter(x=>x.connected),...devices.filter(x=>!x.connected)].map(x=>x.name);
   return {printers,devices,raw};
 }
-async function btDetectDymoPrinters(force=true){
-  const sel=document.getElementById("dymoPrinterSelect");if(sel)sel.innerHTML='<option value="">Ricerca automatica…</option>';
-  try{
-    let base=await btFindDymoService(force),result=await btGetDymoPrintersFromBase(base);
-    // Se il servizio risponde ma il primo endpoint non elenca stampanti, rifai una scansione completa una volta.
-    if(!result.printers.length){
-      btDymoEndpoint="";
-      const savedEndpoint=btGetDymoConfig().endpoint;
-      btSaveDymoConfig({endpoint:""});
-      base=await btFindDymoService(true);
-      result=await btGetDymoPrintersFromBase(base);
-      if(!result.printers.length&&savedEndpoint)btSaveDymoConfig({endpoint:savedEndpoint});
-    }
-    const printers=result.printers;
-    if(!printers.length)throw new Error("DYMO Connect è attivo, ma GetPrinters non ha restituito il nome della stampante.");
-    const cfg=btGetDymoConfig(),saved=cfg.printer;
-    const connected=(result.devices||[]).filter(x=>x.connected).map(x=>x.name);
-    // AUTO: se c'è una DYMO collegata fisicamente, usa quella a prescindere dal modello.
-    // Mantiene la scelta salvata solo quando è ancora realmente collegata.
-    const chosen=(connected.includes(saved)?saved:connected[0]) || (printers.includes(saved)?saved:printers[0]);
-    if(sel){sel.innerHTML=printers.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");sel.value=chosen;}
-    btSaveDymoConfig({printer:chosen,endpoint:base});
-    const pm=base.match(/:(4195\d)\//),port=pm?pm[1]:"";
-    btSetDymoStatus(`Pronta AUTO · ${chosen}${port?` · porta ${port}`:""}`,"Ok");
-    return printers;
-  }catch(err){if(sel)sel.innerHTML='<option value="">DYMO non disponibile</option>';btSetDymoStatus(err.message||"DYMO non disponibile","Err");throw err;}
-}
+async function btDetectDymoPrinters(force=true){return window.BeparyDymo.detect(force);}
 function btDymoPaper(st){
   const w=Math.max(10,Math.min(120,Number(st?.w)||57));
   const h=Math.max(10,Math.min(200,Number(st?.h)||32));
@@ -3145,83 +3159,7 @@ function btDymoLegacyLabelXml({title,meta,note,qrText}){
 function btDymoPrintErrorText(txt,status){
   const t=String(txt||'').trim();return `Errore DYMO${status?` (${status})`:''}: ${t||'risposta non valida dal servizio di stampa'}`;
 }
-async function btDymoBrowserCompatPrint(data){
-  // Ultima compatibilità: non richiede il Web Service DYMO. Usa il driver
-  // installato in Windows/macOS e apre il dialogo di stampa già nel formato etichetta.
-  const st=getRepairLabelSettingsV92(),paper=btResolvedDymoGeometry(st);
-  const w=Number(paper.w)||57,h=Number(paper.h)||32,margin=Math.max(0,Math.min(8,Number(st.margin)||0)),scale=(Math.max(70,Math.min(120,Number(st.scale)||100))/100),offX=Number(st.offsetX)||0,offY=Number(st.offsetY)||0;
-  let qrData="";
-  if(String(data?.qrText||"").trim() && typeof QRCode==="function"){
-    const host=document.createElement("div");host.style.cssText="position:fixed;left:-10000px;top:-10000px;width:180px;height:180px;background:#fff";document.body.appendChild(host);
-    try{new QRCode(host,{text:String(data.qrText),width:180,height:180,correctLevel:QRCode.CorrectLevel?.M});await new Promise(r=>setTimeout(r,80));const c=host.querySelector("canvas");const img=host.querySelector("img");qrData=c?.toDataURL?.("image/png")||img?.src||"";}catch(_){}finally{host.remove();}
-  }
-  const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  const qr=qrData?`<img class="qr" src="${qrData}" alt="QR">`:"";
-  const html=`<!doctype html><html><head><meta charset="utf-8"><title>Etichetta DYMO</title><style>
-  @page{size:${w}mm ${h}mm;margin:0}*{box-sizing:border-box}html,body{margin:0;padding:0;width:${w}mm;height:${h}mm;background:#fff;color:#000;font-family:Arial,sans-serif;overflow:hidden}.label{width:${w}mm;height:${h}mm;padding:${margin}mm;display:flex;gap:1.2mm;align-items:stretch;transform-origin:top left;transform:translate(${offX}mm,${offY}mm) scale(${scale})}.txt{min-width:0;flex:1;display:flex;flex-direction:column;justify-content:flex-start}.title{font-weight:700;font-size:10pt;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.meta{font-size:7pt;line-height:1.1;margin-top:.6mm;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.note{font-size:8pt;line-height:1.08;margin-top:1mm;white-space:pre-wrap;overflow-wrap:anywhere;overflow:hidden}.qr{width:18mm;height:18mm;object-fit:contain;align-self:center;flex:none}@media print{html,body{width:${w}mm!important;height:${h}mm!important}}
-  </style></head><body><main class="label"><div class="txt"><div class="title">${esc(data?.title||"BEPARYTECH")}</div>${String(data?.meta||"").trim()?`<div class="meta">${esc(data.meta)}</div>`:""}<div class="note">${esc(data?.note||"")}</div></div>${qr}</main></body></html>`;
-  const iframe=document.createElement("iframe");iframe.setAttribute("aria-hidden","true");iframe.style.cssText="position:fixed;right:0;bottom:0;width:1px;height:1px;border:0;opacity:0;pointer-events:none";document.body.appendChild(iframe);
-  const doc=iframe.contentDocument||iframe.contentWindow?.document;if(!doc){iframe.remove();throw new Error("Impossibile preparare la stampa di compatibilità.");}
-  doc.open();doc.write(html);doc.close();
-  await new Promise((resolve,reject)=>{const run=()=>{try{iframe.contentWindow.focus();iframe.contentWindow.print();btSetDymoStatus("Modalità compatibilità · scegli la stampante DYMO nel dialogo di stampa","Wait");resolve(true);}catch(e){reject(e);}finally{setTimeout(()=>iframe.remove(),2500);}};if(doc.readyState==="complete")setTimeout(run,120);else iframe.onload=()=>setTimeout(run,120);});
-  return true;
-}
-async function btDymoDirectPrint(data){
-  let cfg=btGetDymoConfig();if(!cfg.enabled)throw new Error("La stampa diretta DYMO è disattivata nelle Impostazioni.");
-  let base=await btFindDymoService(false),printer=cfg.printer;
-  try{
-    const current=await btGetDymoPrintersFromBase(base);
-    const connected=(current.devices||[]).filter(x=>x.connected).map(x=>x.name);
-    if(connected.length && !connected.includes(printer)){
-      printer=connected[0];cfg=btSaveDymoConfig({printer,endpoint:base});
-      const sel=document.getElementById("dymoPrinterSelect");if(sel){sel.innerHTML=current.printers.map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");sel.value=printer;}
-    }else if(!printer){const printers=await btDetectDymoPrinters(false);cfg=btGetDymoConfig();base=btDymoEndpoint||cfg.endpoint||base;printer=cfg.printer||printers[0];}
-  }catch(_){const printers=await btDetectDymoPrinters(true);cfg=btGetDymoConfig();base=btDymoEndpoint||cfg.endpoint||base;printer=cfg.printer||printers[0];}
-  if(!printer)throw new Error("Nessuna stampante DYMO collegata.");
-
-  const formEncode=o=>Object.entries(o).map(([k,v])=>`${encodeURIComponent(k)}=${encodeURIComponent(String(v??""))}`).join("&");
-  const sendXml=async(labelXml,mode)=>{
-    const driverParams=`<LabelWriterPrintParams><Copies>1</Copies><JobTitle>BeparyTech</JobTitle><FlowDirection>LeftToRight</FlowDirection><RollSelection>Auto</RollSelection></LabelWriterPrintParams>`;
-    let lastErr=null;
-    // Prima lascia al driver DYMO la scelta automatica di rotolo/taglio; poi riprova senza parametri per i driver più vecchi.
-    for(const printParamsXml of [driverParams,""]){
-      const body=formEncode({printerName:printer,printParamsXml,labelXml,labelSetXml:""});
-      for(const action of ["PrintLabel","PrintLabel2"]){
-      try{
-        const r=await btFetchTimeout(`${base}/${action}`,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded;charset=UTF-8"},body},13000);
-        const txt=await r.text();
-        if(!r.ok || /error|exception|not declared|invalid|failed/i.test(String(txt||'')))throw new Error(btDymoPrintErrorText(txt,r.status));
-        btSaveDymoConfig({printer,endpoint:base,labelMode:mode,printAction:action});return txt;
-      }catch(e){lastErr=e;}
-      }
-    }
-    throw lastErr||new Error("Il servizio DYMO ha rifiutato il comando di stampa.");
-  };
-  const tryFormats=async()=>{
-    // Ricorda l'ultimo formato riuscito su questo PC, ma mantiene sempre il fallback opposto.
-    const preferred=btGetDymoConfig().labelMode==="legacy"?"legacy":"modern";
-    const modes=preferred==="legacy"?["legacy","modern"]:["modern","legacy"];
-    let lastErr=null;
-    for(const mode of modes){
-      try{const xml=mode==="legacy"?btDymoLegacyLabelXml(data):await btDymoLabelXml(data);await sendXml(xml,mode);return mode;}catch(e){lastErr=e;}
-    }
-    throw lastErr||new Error("La DYMO non ha accettato nessuno dei formati di etichetta supportati.");
-  };
-  let usedMode;
-  try{usedMode=await tryFormats();}
-  catch(firstErr){
-    // Porta o stampante possono essere cambiate: nuova scansione + secondo tentativo completo.
-    btDymoEndpoint="";
-    try{await btDetectDymoPrinters(true);cfg=btGetDymoConfig();base=btDymoEndpoint||cfg.endpoint;printer=cfg.printer;if(!base||!printer)throw firstErr;usedMode=await tryFormats();}
-    catch(secondErr){
-      // Se il Web Service/certificato locale è troppo vecchio o non raggiungibile,
-      // non lasciare il pulsante morto: passa al driver di sistema.
-      try{return await btDymoBrowserCompatPrint(data);}
-      catch(browserErr){throw new Error(`${secondErr?.message||firstErr?.message||"Impossibile stampare sulla DYMO."}\nProvati: porte DYMO, PrintLabel/PrintLabel2, formato moderno/legacy e stampa di compatibilità.\n${browserErr?.message||""}`.trim());}
-    }
-  }
-  btSetDymoStatus(`Stampata direttamente · ${printer} · ${usedMode==="legacy"?"compatibilità legacy":"formato moderno"}`,"Ok");return true;
-}
+function btDymoDirectPrint(data){return window.BeparyDymo.print(data);}
 function bindDymoDirectV98(){
   const btn=document.getElementById("dymoDetectBtn"),sel=document.getElementById("dymoPrinterSelect"),enabled=document.getElementById("dymoDirectEnabled");
   if(btn&&btn.dataset.bound!=="1"){btn.dataset.bound="1";btn.addEventListener("click",()=>btDetectDymoPrinters(true).catch(()=>{}));}
@@ -3665,7 +3603,7 @@ function bindClientsV11(){const f=document.getElementById("clientForm");if(!f||f
 document.addEventListener("DOMContentLoaded",()=>{bindClientsV11();setTimeout(()=>{if(isAdmin())loadClients();},1300);});
 
 
-// ===== V1.5 · RICAMBI HUB + RITIRO USATO =====
+// ===== V2.0 · RICAMBI HUB + RITIRO USATO =====
 let btParts=[], btUsedIntakes=[], btPartsImportRows=[];
 let btPartFilters={brand:'',model:'',version:'',category:''};
 const BT_PART_CATEGORIES=['Display / Touch','BackGlass','Housing / Scocca','Batteria','Connettore di ricarica','Fotocamera','Flat / Flex','Altoparlante / Cassa','Microfono','Tasti / Pulsanti','SIM Tray','Altri Ricambi'];
@@ -3693,16 +3631,83 @@ function mapImportRow(obj){const m={};Object.entries(obj).forEach(([k,v])=>m[nor
 async function handlePartsImportFile(file){try{let rawRows=[];const ext=(file.name.split('.').pop()||'').toLowerCase();if((ext==='xlsx'||ext==='xls')&&window.XLSX){const buf=await file.arrayBuffer();const wb=XLSX.read(buf,{type:'array'}),ws=wb.Sheets[wb.SheetNames[0]];rawRows=XLSX.utils.sheet_to_json(ws,{defval:''});}else{const text=await file.text();const sep=(text.split('\n')[0]||'').includes(';')?';':',';const lines=text.replace(/^\uFEFF/,'').split(/\r?\n/).filter(x=>x.trim());if(!lines.length)throw new Error('File vuoto.');const parseLine=(line)=>{const out=[];let cur='',q=false;for(let i=0;i<line.length;i++){const c=line[i];if(c==='"'){if(q&&line[i+1]==='"'){cur+='"';i++;}else q=!q;}else if(c===sep&&!q){out.push(cur);cur='';}else cur+=c;}out.push(cur);return out;};const h=parseLine(lines[0]);rawRows=lines.slice(1).map(l=>{const a=parseLine(l),o={};h.forEach((k,i)=>o[k]=a[i]??'');return o;});}btPartsImportRows=rawRows.map(mapImportRow).filter(r=>r.brand&&r.model&&r.name);const existing=new Set(btParts.map(btPartKey));const seen=new Set();const body=document.getElementById('partsImportPreviewBody');if(body)body.innerHTML=btPartsImportRows.slice(0,100).map(r=>{const k=btPartKey(r),dup=existing.has(k)||seen.has(k);seen.add(k);return `<tr><td>${escapeHtml(r.brand)}</td><td>${escapeHtml(r.model)}</td><td>${escapeHtml(r.version||'—')}</td><td>${escapeHtml(r.category)}</td><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.sku||'—')}</td><td>${r.quantity}</td><td><span class="importStatus ${dup?'dup':'new'}">${dup?'Esistente':'Nuovo'}</span></td></tr>`}).join('');document.getElementById('partsImportSummary').textContent=`${btPartsImportRows.length} righe valide trovate${btPartsImportRows.length>100?' · mostrate le prime 100':''}.`;document.getElementById('partsImportModal').hidden=false;}catch(e){alert('Importazione: '+(e.message||e));}}
 async function confirmPartsImport(){if(!btPartsImportRows.length)return;const btn=document.getElementById('partsImportConfirm'),msg=document.getElementById('partsImportMsg');btn.disabled=true;msg.className='createUserMsg';msg.textContent='Importazione in corso…';try{const ctx=await btGetWorkspaceOwnerId(),mode=document.querySelector('input[name="partsImportMode"]:checked')?.value||'add';let created=0,updated=0;for(const row of btPartsImportRows){const existing=btParts.find(p=>btPartKey(p)===btPartKey(row));if(existing){const quantity=mode==='add'?Number(existing.quantity||0)+Number(row.quantity||0):Number(row.quantity||0);const {error}=await sb.from('beparytech_parts').update({...row,quantity,updated_at:new Date().toISOString()}).eq('id',existing.id).eq('workspace_owner_id',ctx.owner);if(error)throw error;updated++;}else{const {error}=await sb.from('beparytech_parts').insert({...row,workspace_owner_id:ctx.owner,created_by:currentUser.id});if(error)throw error;created++;}}msg.className='createUserMsg ok';msg.textContent=`Importazione completata: ${created} nuovi, ${updated} aggiornati.`;await loadPartsHub(true);setTimeout(()=>{document.getElementById('partsImportModal').hidden=true;},900);}catch(e){msg.className='createUserMsg error';msg.textContent=e.message||'Errore importazione.';}finally{btn.disabled=false;}}
 
+
+let btAutoOrders=[];
+async function loadAutoOrders(silent=false){
+  if(!currentUser)return;
+  const ctx=await btGetWorkspaceOwnerId();
+  const {data,error}=await sb.from('beparytech_parts').select('*').eq('workspace_owner_id',ctx.owner).eq('active',true).order('brand').order('model').limit(3000);
+  if(error){if(!silent){const b=document.getElementById('autoOrdersBody');if(b)b.innerHTML='<tr><td colspan="9">Errore caricamento: '+escapeHtml(error.message||'')+'</td></tr>';}return;}
+  btAutoOrders=(data||[]).filter(r=>Number(r.quantity||0)<=Number(r.low_stock_threshold||0));
+  renderAutoOrders();
+}
+function renderAutoOrders(){
+  const q=(document.getElementById('autoOrderSearch')?.value||'').trim().toLowerCase();
+  const zeroOnly=!!document.getElementById('autoOrderZeroOnly')?.checked;
+  let rows=btAutoOrders.filter(r=>!zeroOnly||Number(r.quantity||0)===0).filter(r=>`${r.brand} ${r.model} ${r.version||''} ${r.name} ${r.sku||''}`.toLowerCase().includes(q));
+  const body=document.getElementById('autoOrdersBody'); if(!body)return;
+  const suggested=r=>Math.max(1,Number(r.low_stock_threshold||0)+1-Number(r.quantity||0));
+  body.innerHTML=rows.map(r=>`<tr><td>${escapeHtml(r.brand)}</td><td><strong>${escapeHtml(r.model)}</strong></td><td>${escapeHtml(r.version||'—')}</td><td>${escapeHtml(r.name)}</td><td>${escapeHtml(r.sku||'—')}</td><td><span class="stockPill ${Number(r.quantity||0)===0?'zero':'low'}">${Number(r.quantity||0)}</span></td><td>${Number(r.low_stock_threshold||0)}</td><td><strong>${suggested(r)}</strong></td><td><button class="autoOrderOpen" data-auto-part="${r.id}" type="button">Apri ricambio</button></td></tr>`).join('')||'<tr><td colspan="9"><div class="emptyState">Nessun ricambio da ordinare. Le scorte sono sopra la soglia minima.</div></td></tr>';
+  const c=document.getElementById('autoOrderCount'),z=document.getElementById('autoOrderZero'),qt=document.getElementById('autoOrderQty');
+  if(c)c.textContent=btAutoOrders.length;if(z)z.textContent=btAutoOrders.filter(r=>Number(r.quantity||0)===0).length;if(qt)qt.textContent=btAutoOrders.reduce((a,r)=>a+suggested(r),0);
+  body.querySelectorAll('[data-auto-part]').forEach(btn=>btn.onclick=()=>{const id=Number(btn.dataset.autoPart);setCategory('RicambiHub');setTimeout(()=>{const r=btParts.find(x=>Number(x.id)===id);if(r){btPartSelection.brand=r.brand;btPartSelection.model=r.model;btPartSelection.version=r.version||'';renderPartsHub();editBtPart(id);}},200);});
+}
 async function loadUsedIntakes(silent=false){if(!currentUser)return;const ctx=await btGetWorkspaceOwnerId();const {data,error}=await sb.from('beparytech_used_intakes').select('*').eq('workspace_owner_id',ctx.owner).order('created_at',{ascending:false}).limit(500);if(error){if(!silent){const m=document.getElementById('usedIntakeMsg');if(m){m.className='createUserMsg error';m.textContent='Esegui prima 09_SETUP_PARTS_USED_V1.sql in Supabase: '+error.message;}}return;}btUsedIntakes=data||[];renderUsedIntakes();}
 function renderUsedIntakes(){const q=(document.getElementById('usedSearch')?.value||'').trim().toLowerCase(),rows=btUsedIntakes.filter(r=>`${r.brand} ${r.model} ${r.imei1} ${r.imei2||''} ${r.serial||''} ${r.customer_name}`.toLowerCase().includes(q));const box=document.getElementById('usedList');if(!box)return;box.innerHTML=rows.map(r=>`<article class="usedRow"><div><strong>${escapeHtml(r.brand)} ${escapeHtml(r.model)}</strong><small>${escapeHtml(r.version||'')} · ${escapeHtml(r.capacity||'')} · ${escapeHtml(r.color||'')}</small><span>IMEI: ${escapeHtml(r.imei1)}</span><span>Cliente: ${escapeHtml(r.customer_name)}</span></div><div class="usedRowStatus"><b class="blacklist ${r.blacklist_checked?(r.blacklist_result==='Segnalato'?'bad':'ok'):'wait'}">${r.blacklist_checked?`Blacklist: ${escapeHtml(r.blacklist_result||'Verificata')}`:'Blacklist da verificare'}</b><strong>${btMoney(r.valuation)}</strong><button data-used-edit="${r.id}" type="button">Apri</button></div></article>`).join('')||'<div class="emptyState">Nessun ritiro registrato.</div>';box.querySelectorAll('[data-used-edit]').forEach(b=>b.onclick=()=>editUsedIntake(Number(b.dataset.usedEdit)));}
 function resetUsedForm(){const f=document.getElementById('usedIntakeForm');if(!f)return;f.reset();document.getElementById('usedEditId').value='';document.getElementById('usedBlacklistResult').value='Da verificare';document.getElementById('usedIntakeMsg').textContent='';}
 function editUsedIntake(id){const r=btUsedIntakes.find(x=>Number(x.id)===id);if(!r)return;const vals={usedEditId:r.id,usedBrand:r.brand,usedModel:r.model,usedVersion:r.version,usedCapacity:r.capacity,usedColor:r.color,usedValue:r.valuation,usedImei1:r.imei1,usedImei2:r.imei2,usedSerial:r.serial,usedBlacklistResult:r.blacklist_result,usedCustomerName:r.customer_name,usedCustomerDocument:r.customer_document,usedNotes:r.notes};Object.entries(vals).forEach(([id,v])=>{const el=document.getElementById(id);if(el)el.value=v??'';});for(const [id,key] of [['usedBlacklistChecked','blacklist_checked'],['usedNotStolen','declared_not_stolen'],['usedOwnership','ownership_declared'],['usedAccountsRemoved','accounts_removed'],['usedDataErased','data_erased'],['usedConditionAccepted','condition_accepted'],['usedTermsAccepted','terms_accepted']]){document.getElementById(id).checked=!!r[key];}document.getElementById('usedIntakeForm').scrollIntoView({behavior:'smooth'});}
 async function saveUsedIntake(ev){ev.preventDefault();if(!isAdmin())return;const ctx=await btGetWorkspaceOwnerId(),id=Number(document.getElementById('usedEditId').value||0),checked=document.getElementById('usedBlacklistChecked').checked;const payload={workspace_owner_id:ctx.owner,brand:document.getElementById('usedBrand').value.trim(),model:document.getElementById('usedModel').value.trim(),version:document.getElementById('usedVersion').value.trim()||null,capacity:document.getElementById('usedCapacity').value.trim()||null,color:document.getElementById('usedColor').value.trim()||null,valuation:Number(document.getElementById('usedValue').value||0),imei1:document.getElementById('usedImei1').value.trim(),imei2:document.getElementById('usedImei2').value.trim()||null,serial:document.getElementById('usedSerial').value.trim()||null,blacklist_checked:checked,blacklist_result:checked?document.getElementById('usedBlacklistResult').value:'Da verificare',blacklist_checked_at:checked?new Date().toISOString():null,declared_not_stolen:document.getElementById('usedNotStolen').checked,ownership_declared:document.getElementById('usedOwnership').checked,accounts_removed:document.getElementById('usedAccountsRemoved').checked,data_erased:document.getElementById('usedDataErased').checked,condition_accepted:document.getElementById('usedConditionAccepted').checked,terms_accepted:document.getElementById('usedTermsAccepted').checked,customer_name:document.getElementById('usedCustomerName').value.trim(),customer_document:document.getElementById('usedCustomerDocument').value.trim()||null,notes:document.getElementById('usedNotes').value.trim()||null,updated_at:new Date().toISOString()};const msg=document.getElementById('usedIntakeMsg');let error;if(id)({error}=await sb.from('beparytech_used_intakes').update(payload).eq('id',id).eq('workspace_owner_id',ctx.owner));else({error}=await sb.from('beparytech_used_intakes').insert({...payload,created_by:currentUser.id}));if(error){msg.className='createUserMsg error';msg.textContent=error.message;return;}msg.className='createUserMsg ok';msg.textContent='Ritiro salvato.';resetUsedForm();await loadUsedIntakes(true);}
 
-// Wiring UI V1.5
+// Wiring UI V2.0
 if(document.getElementById('partEditorForm'))document.getElementById('partEditorForm').addEventListener('submit',saveBtPart);
 ['partsBrandSearch','partsModelSearch','partsVersionSearch'].forEach(id=>document.getElementById(id)?.addEventListener('input',renderPartsHub));
 document.getElementById('partsTableSearch')?.addEventListener('input',renderPartsHub);document.getElementById('partsLowOnly')?.addEventListener('change',renderPartsHub);document.getElementById('partEditorClear')?.addEventListener('click',clearBtPartForm);document.getElementById('partsAddBtn')?.addEventListener('click',()=>{clearBtPartForm();document.getElementById('partEditorPanel').scrollIntoView({behavior:'smooth'});});document.getElementById('partsRefreshBtn')?.addEventListener('click',()=>loadPartsHub());
 document.getElementById('partsDownloadTemplate')?.addEventListener('click',downloadPartsTemplate);document.getElementById('partsOpenImport')?.addEventListener('click',()=>document.getElementById('partsImportFile').click());document.getElementById('partsImportBtn')?.addEventListener('click',()=>document.getElementById('partsImportFile').click());document.getElementById('partsImportFile')?.addEventListener('change',e=>{const f=e.target.files?.[0];if(f)handlePartsImportFile(f);e.target.value='';});document.getElementById('partsImportClose')?.addEventListener('click',()=>document.getElementById('partsImportModal').hidden=true);document.getElementById('partsImportCancel')?.addEventListener('click',()=>document.getElementById('partsImportModal').hidden=true);document.getElementById('partsImportConfirm')?.addEventListener('click',confirmPartsImport);
-document.getElementById('partsPrintBtn')?.addEventListener('click',()=>{const first=btPartRowsFiltered()[0];if(!first){alert('Seleziona o cerca prima un ricambio.');return;}if(typeof printFreeDymoNote==='function'){printFreeDymoNote(`${first.brand} ${first.model}\n${first.name}\n${first.sku||''}`);}else setCategory('NoteDymo');});
+document.getElementById('partsPrintBtn')?.addEventListener('click',()=>{const first=btPartRowsFiltered()[0];if(!first){alert('Seleziona o cerca prima un ricambio.');return;}btDymoDirectPrint({title:`${first.brand} ${first.model}`,meta:first.sku||'',note:first.name||'',qrText:''}).catch(e=>alert(e.message));});
+document.getElementById('autoOrdersRefresh')?.addEventListener('click',()=>loadAutoOrders());document.getElementById('autoOrderSearch')?.addEventListener('input',renderAutoOrders);document.getElementById('autoOrderZeroOnly')?.addEventListener('change',renderAutoOrders);
 document.getElementById('usedIntakeForm')?.addEventListener('submit',saveUsedIntake);document.getElementById('usedNewBtn')?.addEventListener('click',resetUsedForm);document.getElementById('usedSearch')?.addEventListener('input',renderUsedIntakes);
+
+// V2.0.2: lookup P.IVA in anagrafica e fatturazione VR.
+function btVatLookupFields(prefix) {
+  return Object.fromEntries(['Name','Address','Zip','City','Province','TaxCode','Recipient','Pec'].map(s => [s, document.getElementById(prefix+s)]));
+}
+async function btLookupVat(prefix, state) {
+  const input=document.getElementById(prefix+'Vat'), status=document.getElementById(prefix+'VatStatus'), button=document.getElementById(prefix+'VatLookup');
+  const vat=String(input?.value||'').trim().replace(/^IT/i,'').replace(/\s/g,'');
+  const seq=++state.seq;
+  if(!/^\d{11}$/.test(vat)){status.textContent='Inserisci una partita IVA di 11 cifre, con IT facoltativo.';return;}
+  const fields=btVatLookupFields(prefix), snapshot=Object.fromEntries(Object.entries(fields).map(([k,e])=>[k,e?.value||'']));
+  const formId=document.getElementById('clientId')?.value;
+  const fresh=()=>seq===state.seq && String(input.value).trim().replace(/^IT/i,'').replace(/\s/g,'')===vat && (prefix!=='client'||(document.getElementById('clientId')?.value===formId&&document.getElementById('clientType')?.value==='business'));
+  button.disabled=true;status.textContent='Ricerca dati azienda…';
+  try {
+    const ctx=await btGetWorkspaceOwnerId();
+    const {data:saved,error:localError}=await sb.from('beparytech_clients').select('display_name,vat_number,tax_code,recipient_code,pec,address,zip_code,city,province').eq('workspace_owner_id',ctx.owner).eq('active',true).in('vat_number',[vat,'IT'+vat]).limit(1);
+    let result=saved?.[0] ? {found:true,source:'Anagrafica salvata',name:saved[0].display_name,address:saved[0].address,zip:saved[0].zip_code,city:saved[0].city,province:saved[0].province,taxCode:saved[0].tax_code,recipient:saved[0].recipient_code,pec:saved[0].pec} : null;
+    if(!result){const response=await sb.functions.invoke('beparytech-vat-lookup',{body:{vat}});if(response.error)throw new Error('Ricerca online non disponibile. Riprova o compila manualmente.');result=response.data;}
+    if(!fresh())return;
+    if(!result?.found){status.textContent=result?.message||'Nessun dato trovato. Puoi compilare manualmente.';return;}
+    let count=0;
+    for(const [key,el] of Object.entries(fields)){
+      const value=result[key[0].toLowerCase()+key.slice(1)];
+      // Preserve manual values and any edits made while the request was pending.
+      if(el&&value&&el.value===snapshot[key]&&(!el.value.trim()||(prefix==='vrClient'&&key==='Name'&&el.value==='VR Trasporti'))){el.value=String(value).slice(0,el.maxLength>0?el.maxLength:500);count++;}
+    }
+    status.textContent=`${result.source}: ${count} campi compilati. Controlla indirizzo, CAP, comune e provincia; completa i dati mancanti e salva.`;
+  }catch(e){if(fresh())status.textContent=e.message||'Ricerca non disponibile. Compila manualmente.';}
+  finally{if(seq===state.seq)button.disabled=false;}
+}
+function bindVatLookups(){
+  for(const prefix of ['client','vrClient']){
+    const input=document.getElementById(prefix+'Vat'),button=document.getElementById(prefix+'VatLookup');
+    if(!input||!button||input.dataset.vatBound)continue;input.dataset.vatBound='1';
+    const state={seq:0,timer:null};
+    input.addEventListener('input',()=>{state.seq++;button.disabled=false;clearTimeout(state.timer);const vat=input.value.trim().replace(/^IT/i,'').replace(/\s/g,'');if(/^\d{11}$/.test(vat))state.timer=setTimeout(()=>btLookupVat(prefix,state),650);});
+    button.addEventListener('click',()=>{clearTimeout(state.timer);btLookupVat(prefix,state);});
+    if(prefix==='client'){
+      document.getElementById('clientForm')?.addEventListener('reset',()=>{state.seq++;clearTimeout(state.timer);button.disabled=false;document.getElementById(prefix+'VatStatus').textContent='Inserisci la partita IVA per cercare i dati.';});
+      document.getElementById('clientType')?.addEventListener('change',()=>{state.seq++;clearTimeout(state.timer);button.disabled=false;});
+    }
+  }
+}
+document.addEventListener('DOMContentLoaded',bindVatLookups);

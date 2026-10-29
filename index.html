@@ -9,59 +9,60 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="BeparyTech Manager">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
-  <title>BeparyTech V1.5</title>
-  <link rel="manifest" href="manifest.json?v=1">
+  <title>BeparyTech · Il tuo laboratorio</title>
+  <link rel="manifest" href="manifest.json?v=2200">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=1400">
+  <link rel="stylesheet" href="style.css?v=2200">
 
 
 
-</head>
-<body>
+<link rel="stylesheet" href="studio.css?v=2200"></head>
+<body class="studio">
   <div id="menuOverlay" class="menuOverlay" hidden></div>
   <aside id="mainMenu" class="mainMenu" aria-hidden="true">
-    <div class="menuHead"><div class="menuBrand"><img src="icon-192.png" alt=""><div><strong>BeparyTech V1.5</strong><span>Gestionale riparazioni & magazzino</span></div></div><button id="menuClose" class="menuClose animatedBtn" type="button">×</button></div>
-    <nav class="menuNav">
-      <button class="menuItem active" type="button" data-category="Dashboard"><span class="menuIcon">⌂</span><span><strong>Dashboard</strong><small>Riepilogo magazzino</small></span></button>
+    <div class="menuHead"><div class="menuBrand"><span class="studioBrandMark" aria-hidden="true">B</span><div><strong>BeparyTech</strong><span>IL TUO WORKSPACE</span></div></div><button id="menuClose" class="menuClose animatedBtn" type="button">×</button></div>
+    <div class="studioWorkspace"><span>BT</span><div>Il tuo laboratorio<small>Riparazioni · Ricambi · Clienti</small></div></div><nav class="menuNav">
+      <button class="menuItem active" type="button" data-category="Dashboard"><span class="menuIcon">⌂</span><span><strong>Il mio spazio</strong><small>Panoramica attività</small></span></button>
       <div id="customMenuSections" class="customMenuSections"></div>
 
       <div id="repairMenuGroup" class="menuGroup adminOnly" hidden>
-        <div class="menuGroupTitle">RIPARAZIONI</div>
-        <button id="quickRepairMenuItem" class="menuItem adminOnly" type="button" data-category="AccettazioneRapida"><span class="menuIcon">⚡</span><span><strong>Accettazione rapida</strong><small>Cliente, dispositivo e lavoro</small></span></button>
-        <button id="fullRepairMenuItem" class="menuItem adminOnly" type="button" data-category="AccettazioneCompleta"><span class="menuIcon">＋</span><span><strong>Accettazione completa</strong><small>Ritiro, firma, IMEI e preventivo</small></span></button>
-        <button id="repairsMenuItem" class="menuItem adminOnly" type="button" data-category="RiparazioniAdmin"><span class="menuIcon">🛠</span><span><strong>Riparazioni / Pratiche</strong><small>In lavorazione, pronti e storico</small></span></button>
-        <button id="workDdtMenuItem" class="menuItem adminOnly" type="button" data-category="ContoLavorazione"><span class="menuIcon">⇄</span><span><strong>DDT conto lavorazione</strong><small>Entrata, lavorazione e restituzione</small></span></button>
+        <div class="menuGroupTitle">IL LABORATORIO</div>
+        <button id="repairsMenuItem" class="menuItem adminOnly" type="button" data-category="RiparazioniAdmin"><span class="menuIcon">⌁</span><span><strong>Riparazioni</strong><small>In lavorazione, pronti e storico</small></span></button>
+        <details class="studioNavDetails"><summary>Nuova accettazione</summary><button id="quickRepairMenuItem" class="menuItem adminOnly" type="button" data-category="AccettazioneRapida"><span class="menuIcon">＋</span><span><strong>Accettazione rapida</strong><small>Cliente, dispositivo e lavoro</small></span></button>
+        <button id="fullRepairMenuItem" class="menuItem adminOnly" type="button" data-category="AccettazioneCompleta"><span class="menuIcon">▤</span><span><strong>Accettazione con firma</strong><small>Ritiro, firma, IMEI e preventivo</small></span></button>
+        </details><button id="workDdtMenuItem" class="menuItem adminOnly" type="button" data-category="ContoLavorazione"><span class="menuIcon">⇄</span><span><strong>DDT conto lavorazione</strong><small>Entrata, lavorazione e restituzione</small></span></button>
       </div>
 
       <div class="menuGroup">
         <div class="menuGroupTitle">MAGAZZINO</div>
-        <button id="partsHubMenuItem" class="menuItem" type="button" data-category="RicambiHub"><span class="menuIcon">▣</span><span><strong>Ricambi</strong><small>Marca, modello, versione e giacenze live</small></span></button>
-        <button id="usedIntakeMenuItem" class="menuItem adminOnly" type="button" data-category="RitiroUsato"><span class="menuIcon">♻</span><span><strong>Ritiro usato</strong><small>IMEI, blacklist, valutazione e dichiarazioni</small></span></button>
-        <button class="menuItem" type="button" data-category="Cronologia"><span class="menuIcon">≋</span><span><strong>Cronologia magazzino</strong><small>Tutte le attività</small></span></button>
-        <button class="menuItem" type="button" data-category="Vendite"><span class="menuIcon">✓</span><span><strong>Uscite magazzino</strong><small>Scarichi, note e rientri</small></span></button>
-        <button class="menuItem" type="button" data-category="NoteDymo"><span class="menuIcon">✎</span><span><strong>Note DYMO</strong><small>Scrivi e stampa etichette libere</small></span></button>
+        <button id="partsHubMenuItem" class="menuItem" type="button" data-category="RicambiHub"><span class="menuIcon">▦</span><span><strong>Magazzino ricambi</strong><small>Marca, modello, versione e giacenze live</small></span></button>
+        <button id="autoOrdersMenuItem" class="menuItem" type="button" data-category="DaOrdinareAuto"><span class="menuIcon">↗</span><span><strong>Acquisti e scorte</strong><small>Automatico da scorta minima</small></span></button>
+        <button id="usedIntakeMenuItem" class="menuItem adminOnly" type="button" data-category="RitiroUsato"><span class="menuIcon">↻</span><span><strong>Ritiro usato</strong><small>IMEI, blacklist, valutazione e dichiarazioni</small></span></button>
+        <button class="menuItem" type="button" data-category="Cronologia"><span class="menuIcon">≋</span><span><strong>Movimenti magazzino</strong><small>Tutte le attività</small></span></button>
+        <button class="menuItem" type="button" data-category="Vendite"><span class="menuIcon">↗</span><span><strong>Uscite e rientri</strong><small>Scarichi, note e rientri</small></span></button>
+        <button class="menuItem" type="button" data-category="NoteDymo"><span class="menuIcon">▧</span><span><strong>Etichette libere</strong><small>Scrivi e stampa etichette libere</small></span></button>
         <button id="bestekCatalogMenuItem" class="menuItem adminOnly" type="button" data-category="CatalogoBestek" hidden><span class="menuIcon">BK</span><span><strong>Catalogo Bestek</strong><small>Codici e accessori verificati</small></span></button>
         <button id="catalogMenuItem" class="menuItem adminOnly" type="button" data-category="GestioneMagazzino" hidden><span class="menuIcon">＋</span><span><strong>Gestione magazzino</strong><small>Sezioni e prodotti</small></span></button>
-        <button id="zeroStockMenuItem" class="menuItem adminOnly" type="button" data-category="ScorteZero" hidden><span class="menuIcon">0</span><span><strong>Scorte a zero</strong><small>BackGlass, Housing e Ricambi</small></span></button>
+        <button id="zeroStockMenuItem" class="menuItem adminOnly" type="button" data-category="ScorteZero" hidden><span class="menuIcon">0</span><span><strong>Articoli esauriti</strong><small>BackGlass, Housing e Ricambi</small></span></button>
       </div>
 
       <div id="salesMenuGroup" class="menuGroup adminOnly" hidden>
-        <div class="menuGroupTitle">VENDITE</div>
-        <button id="deviceSalesMenuItem" class="menuItem adminOnly" type="button" data-category="VenditeAdmin"><span class="menuIcon">€</span><span><strong>Vendita ricambi</strong><small>Prezzi, IVA e riferimenti acquisto</small></span></button>
-        <button id="invoicesMenuItem" class="menuItem adminOnly" type="button" data-category="Fatturazione"><span class="menuIcon">🧾</span><span><strong>Fatturazione</strong><small>Riparalo / MELA · XML Aruba</small></span></button>
+        <div class="menuGroupTitle">VENDITE E DOCUMENTI</div>
+        <button id="deviceSalesMenuItem" class="menuItem adminOnly" type="button" data-category="VenditeAdmin"><span class="menuIcon">€</span><span><strong>Vendite ricambi</strong><small>Ricambi, prezzi e IVA</small></span></button>
+        <button id="invoicesMenuItem" class="menuItem adminOnly" type="button" data-category="Fatturazione"><span class="menuIcon">▤</span><span><strong>Fatture clienti</strong><small>Clienti, documenti e XML</small></span></button>
       </div>
 
       <div id="adminMenuGroup" class="menuGroup adminOnly" hidden>
-        <div class="menuGroupTitle">AMMINISTRAZIONE</div>
+        <div class="menuGroupTitle">GESTIONE E SISTEMA</div>
         <button id="clientsMenuItem" class="menuItem adminOnly" type="button" data-category="Clienti"><span class="menuIcon">♧</span><span><strong>Clienti</strong><small>Privati e Partita IVA</small></span></button>
-        <button id="hoursMenuItem" class="menuItem adminOnly" type="button" data-category="Orari"><span class="menuIcon">◷</span><span><strong>Orari</strong><small>Ore lavorate ed extra</small></span></button>
-        <button id="backupMenuItem" class="menuItem adminOnly" type="button" data-category="Backup"><span class="menuIcon">⇩</span><span><strong>Backup</strong><small>Esporta dati</small></span></button>
-        <button id="usersMenuItem" class="menuItem adminOnly" type="button" data-category="Utenti"><span class="menuIcon">♙</span><span><strong>Utenti</strong><small>Accessi e password</small></span></button>
-        <button id="securityAccessMenuItem" class="menuItem adminOnly" type="button" data-category="SicurezzaAccessi"><span class="menuIcon">◉</span><span><strong>Sicurezza accessi</strong><small>Login, dispositivi e provenienza</small></span></button>
-        <button id="settingsMenuItem" class="menuItem adminOnly" type="button" data-category="Impostazioni"><span class="menuIcon">⚙</span><span><strong>Impostazioni</strong><small>Negozi, DYMO e preferenze</small></span></button>
-        <button id="adminChangesMenuItem" class="menuItem adminOnly" type="button" data-category="ModificheImportanti"><span class="menuIcon">✦</span><span><strong>Centro modifiche</strong><small>Controllo completo Admin</small></span></button>
-      </div>
+        <button id="hoursMenuItem" class="menuItem adminOnly" type="button" data-category="Orari"><span class="menuIcon">◷</span><span><strong>Orari e presenze</strong><small>Ore lavorate ed extra</small></span></button>
+        <details class="studioNavDetails"><summary>Amministrazione avanzata</summary><button id="backupMenuItem" class="menuItem adminOnly" type="button" data-category="Backup"><span class="menuIcon">⇩</span><span><strong>Backup</strong><small>Esporta dati</small></span></button>
+        <button id="usersMenuItem" class="menuItem adminOnly" type="button" data-category="Utenti"><span class="menuIcon">♙</span><span><strong>Utenti e ruoli</strong><small>Accessi e password</small></span></button>
+        <button id="securityAccessMenuItem" class="menuItem adminOnly" type="button" data-category="SicurezzaAccessi"><span class="menuIcon">◎</span><span><strong>Registro accessi</strong><small>Login, dispositivi e provenienza</small></span></button>
+        <button id="adminChangesMenuItem" class="menuItem adminOnly" type="button" data-category="ModificheImportanti"><span class="menuIcon">◇</span><span><strong>Strumenti amministratore</strong><small>Controllo completo Admin</small></span></button>
+      </details><button id="settingsMenuItem" class="menuItem adminOnly" type="button" data-category="Impostazioni"><span class="menuIcon">⚙</span><span><strong>Impostazioni e DYMO</strong><small>Negozi, DYMO e preferenze</small></span></button>
+        </div>
 
       <div id="saasMenuGroup" class="menuGroup" hidden>
         <div class="menuGroupTitle">BEPARYTECH SOFTWARE</div>
@@ -75,11 +76,11 @@
       <div class="brandHead">
         <img src="icon-192.png" alt="BeparyTech" class="brandIcon">
         <div>
-          <div class="eyebrow">BEPARYTECH MANAGER</div>
-          <h1>Gestionale riparazioni & magazzino</h1>
+          <div class="eyebrow">BEPARYTECH STUDIO</div>
+          <h1>Il tuo laboratorio, organizzato.</h1>
         </div>
       </div>
-      <div class="headerActions">
+      <div class="studioHeaderTitle"><strong>BeparyTech</strong><span id="studioCurrentArea">Il mio spazio</span></div><div class="headerActions">
         <button id="menuToggle" class="menuToggle animatedBtn" type="button" aria-label="Apri menu"><span class="menuGlyph">☰</span><span>Menu</span></button>
         <button id="themeToggle" class="themeToggle animatedBtn" type="button" aria-label="Passa alla modalità giorno" title="Modalità giorno/notte">
           <span class="themeSun" aria-hidden="true">☀︎</span><span class="themeTrack"><span class="themeKnob"></span></span><span class="themeMoon" aria-hidden="true">☾</span>
@@ -130,6 +131,7 @@
         <div class="passwordRow"><input id="password" type="password" placeholder="Password (min. 12 caratteri)"><button id="forgotPasswordBtn" class="forgotPasswordBtn" type="button">Password dimenticata?</button></div>
         <div class="authButtons">
           <button id="loginBtn" class="full">Accedi</button>
+          <button id="previewBtn" class="secondary full" type="button">Anteprima gestionale</button>
         </div>
         <div id="authMsg"></div>
         <div class="loginTrust"><span class="loginTrustMark">◆</span><div><strong>GESTIONALE PROPRIETARIO BEPARYTECH</strong><small>Accesso riservato · © 2026 BeparyTech · Tutti i diritti riservati</small></div></div>
@@ -141,28 +143,28 @@
       </div>
     </section>
     <section id="dashboardView" class="dashboardView dashboardV87 dashboardV1119" hidden>
+      <div id="previewBanner" class="previewBanner" hidden><div><strong>ANTEPRIMA REALE</strong><span>BeparyTech Studio con dati dimostrativi. Nessun dato reale viene modificato.</span></div><button id="previewExitBtn" type="button">Esci anteprima</button></div>
       <div class="dashTopbar">
         <div class="dashSearchVisual"><span>⌕</span><strong>Cerca prodotti, IMEI, clienti, fatture…</strong></div>
         <div class="dashUserMini"><span id="dashUserInitials">BT</span><div><strong id="dashUserName">BeparyTech</strong><small id="dashUserRole">Amministratore</small></div></div>
       </div>
 
       <div class="dashboardHero premiumDashboardHero v87Hero">
-        <div class="dashboardHeroCopy"><span class="usersKicker">BEPARYTECH MANAGER</span><h2>Benvenuto, <span id="dashboardGreetingName">Admin</span>!</h2><p>Tutto sotto controllo, sempre.</p></div>
-        <div class="heroQuote">“Piccole riparazioni, grandi connessioni.”<small>— BeparyTech</small></div>
-        <button id="refreshDashboardBtn" class="miniBtn animatedBtn" type="button">↻ Aggiorna</button>
+        <div class="dashboardHeroCopy"><span class="usersKicker">IL MIO SPAZIO</span><h2>Ciao, <span id="dashboardGreetingName">Admin</span>.</h2><p>Ecco cosa succede nel tuo laboratorio.</p></div>
+        <div class="heroQuote">Ogni pratica al posto giusto.<small>Dall’accettazione alla fattura.</small></div><button id="refreshDashboardBtn" class="miniBtn animatedBtn" type="button">↻ Aggiorna</button>
       </div>
 
-      <div class="dashboardMainGrid">
+      <div class="studioWelcome"><div><span class="studioEyebrow">IL TUO SPAZIO DI LAVORO</span><h3>Ogni pratica al posto giusto.</h3><p>Dall’accettazione alla fattura. Tutto il laboratorio, in un unico posto.</p></div><div class="studioWelcomeMark" aria-hidden="true">bt.</div></div><div class="dashboardMainGrid">
         <div class="dashboardCenterCol">
           <div id="adminStatsArea" class="adminStatsArea adminOnly" hidden>
             <div id="dashboardCards" class="dashboardCards dashboardKpis"></div>
-            <div class="dashboardAnalyticsGrid">
+            <div class="dashboardAnalyticsGrid" hidden="hidden">
               <section class="dashAnalyticsCard salesTrendCard">
                 <div class="dashCardHead"><div><strong>Andamento attività</strong><small>Ultimi 6 mesi</small></div><span class="adminBadge">ADMIN</span></div>
                 <div id="dashboardMiniChart" class="dashboardMiniChart"></div>
               </section>
               <section class="dashAnalyticsCard categoryMixCard">
-                <div class="dashCardHead"><div><strong>Riepilogo magazzino</strong><small>BackGlass & Housing</small></div></div>
+                <div class="dashCardHead"><div><strong>Riepilogo magazzino</strong><small>BackGlass &amp; Housing</small></div></div>
                 <div id="dashboardCategoryMix" class="dashboardCategoryMix"></div>
               </section>
             </div>
@@ -172,13 +174,13 @@
             <button type="button" class="adminQuick primaryActionCard" data-quick-category="AccettazioneRapida"><b>＋</b><span><strong>Nuova accettazione</strong><small>Apri subito una nuova pratica</small></span><em>Apri →</em></button>
             <button type="button" class="adminQuick primaryActionCard" data-quick-category="RiparazioniAdmin"><b>⌁</b><span><strong>Riparazioni</strong><small>Pratiche, ritiri e consegne</small></span><em>Apri →</em></button>
             <button type="button" class="adminQuick primaryActionCard" data-quick-category="VenditeAdmin"><b>€</b><span><strong>Vendite ricambi</strong><small>Nuova vendita e fatturazione</small></span><em>Apri →</em></button>
-            <button type="button" class="primaryActionCard" data-quick-category="BackGlass"><b>▣</b><span><strong>Magazzino</strong><small>BackGlass, Housing e ricambi</small></span><em>Apri →</em></button>
+            <button type="button" class="primaryActionCard" data-quick-category="RicambiHub"><b>▣</b><span><strong>Magazzino</strong><small>BackGlass, Housing e ricambi</small></span><em>Apri →</em></button>
             <button type="button" class="adminQuick primaryActionCard" data-quick-category="ContoLavorazione"><b>▤</b><span><strong>DDT lavorazione</strong><small>Entrata, lavorazione e restituzione</small></span><em>Apri →</em></button>
             <button type="button" class="primaryActionCard" data-quick-category="Cronologia"><b>≋</b><span><strong>Cronologia</strong><small>Ultimi movimenti del gestionale</small></span><em>Apri →</em></button>
           </div>
 
-          <div id="adminOperationalPanels" class="dashboardColumns adminOnly" hidden>
-            <div class="dashboardPanel open"><button class="panelHead dashboardToggle" type="button" aria-expanded="true"><span><strong>Scorte in esaurimento</strong><small>Articoli da controllare</small></span><b class="panelChevron">⌄</b></button><div id="dashboardLowStock" class="dashboardPanelBody"></div></div>
+          <section id="studioRepairsPanel" class="studioRepairsPanel adminOnly" hidden><div class="studioPanelHeading"><div><span class="studioEyebrow">OPERATIVITÀ</span><h3>Sul banco di lavoro</h3></div><button type="button" class="studioTextAction" data-quick-category="RiparazioniAdmin">Tutte le pratiche ↗</button></div><div id="studioRepairList"><div class="emptyState">Caricamento pratiche…</div></div></section><div id="adminOperationalPanels" class="dashboardColumns adminOnly" hidden>
+            <div class="dashboardPanel open"><button class="panelHead dashboardToggle" type="button" aria-expanded="true"><span><strong>Ricambi da ordinare</strong><small>Automatico dalla scorta minima</small></span><b class="panelChevron">⌄</b></button><div id="dashboardLowStock" class="dashboardPanelBody"></div></div>
             <div class="dashboardPanel open"><button class="panelHead dashboardToggle" type="button" aria-expanded="true"><span><strong>Ultimi movimenti</strong><small>Attività più recenti</small></span><b class="panelChevron">⌄</b></button><div id="dashboardActivity" class="dashboardPanelBody"></div></div>
           </div>
 
@@ -192,7 +194,7 @@
           <button class="railAction green adminQuick" type="button" data-rail-category="RiparazioniAdmin" data-work-target="repairs"><b>＋</b><span>Nuova riparazione</span></button>
           <button class="railAction purple adminQuick" type="button" data-rail-category="Fatturazione"><b>▤</b><span>Genera fattura</span></button>
           <button class="railAction dark adminQuick" type="button" data-rail-category="Fatturazione"><b>⇧</b><span>Esporta per Aruba</span></button>
-          <div class="noLogoReminder"><strong>⚠ BackGlass & Housing</strong><span>Tutti gli articoli vengono gestiti con la dicitura <b>NO LOGO</b>, anche nelle fatture.</span></div>
+          <div class="noLogoReminder"><strong>⚠ BackGlass &amp; Housing</strong><span>Tutti gli articoli vengono gestiti con la dicitura <b>NO LOGO</b>, anche nelle fatture.</span></div>
           <div class="railRecent"><div class="dashCardHead"><strong>Accessi rapidi</strong></div><button type="button" data-rail-category="Cronologia">Cronologia <span>→</span></button><button type="button" class="adminQuick" data-rail-category="ScorteZero">Scorte a zero <span>→</span></button><button type="button" class="adminQuick" data-rail-category="Orari">Ore lavorate <span>→</span></button></div>
         </aside>
       </div>
@@ -337,7 +339,7 @@
     </button>
     <button type="button" class="adminWorkTab" data-work-tab="repairs" role="tab" aria-selected="false">
       <span class="adminWorkIcon">🛠️</span>
-      <span class="adminWorkText"><strong>Accettazione & Riparazioni</strong><small>Pratiche, preventivi, garanzie e consegna</small></span>
+      <span class="adminWorkText"><strong>Accettazione &amp; Riparazioni</strong><small>Pratiche, preventivi, garanzie e consegna</small></span>
     </button>
     <button type="button" class="adminWorkTab" data-work-tab="invoices" role="tab" aria-selected="false">
       <span class="adminWorkIcon">🧾</span>
@@ -406,7 +408,7 @@
 
   <div id="adminRepairsPanel" class="adminWorkPanel" data-work-panel="repairs" hidden>
     <div class="adminPanelHeader">
-      <div><strong>Accettazione & Riparazioni <span class="v1Badge">V1</span></strong><small>Pratica unica: ritiro, diagnosi, costi, acconto, firma, consegna e storico modifiche.</small></div>
+      <div><strong>Accettazione &amp; Riparazioni <span class="v1Badge">V1</span></strong><small>Pratica unica: ritiro, diagnosi, costi, acconto, firma, consegna e storico modifiche.</small></div>
     </div>
 
     <section class="quickIntakeCard deviceSaleCard adminUniformCard" id="quickIntakeCard">
@@ -439,7 +441,7 @@
 <option>E-POL</option></select></label>
         <label id="adminRepairCustomClientWrap" class="wide" hidden><span>Nome cliente *</span><input id="adminRepairCustomClient" maxlength="160" placeholder="Scrivi il nome del cliente" disabled></label><label><span>Telefono cliente</span><input id="adminRepairCustomerPhone" type="tel" maxlength="40" placeholder="es. +39 333 1234567"></label><label><span>Email cliente</span><input id="adminRepairCustomerEmail" type="email" maxlength="160" placeholder="Facoltativa"></label>
         <label class="wide"><span>Dispositivo *</span><input id="adminRepairDevice" maxlength="160" placeholder="es. iPhone 15 Pro, S21 Ultra 5G..." required></label>
-        <label><span>Tipo di riparazione *</span><input id="adminRepairType" list="adminRepairTypeOptions" maxlength="240" placeholder="Seleziona o scrivi l’intervento" required><datalist id="adminRepairTypeOptions"><option value="Cambio display"><option value="Cambio batteria"><option value="Cambio connettore"><option value="Riparazione scheda madre"><option value="Altro"></datalist></label>
+        <label><span>Tipo di riparazione *</span><input id="adminRepairType" list="adminRepairTypeOptions" maxlength="240" placeholder="Seleziona o scrivi l’intervento" required><datalist id="adminRepairTypeOptions"><option value="Cambio display"></option><option value="Cambio batteria"></option><option value="Cambio connettore"></option><option value="Riparazione scheda madre"></option><option value="Altro"></option></datalist></label>
         <label><span>IMEI / Seriale</span><input id="adminRepairImei" maxlength="120" placeholder="Facoltativo"></label><label class="wide"><span>Difetto dichiarato dal cliente *</span><textarea id="adminRepairReportedIssue" maxlength="1000" rows="2" placeholder="es. Non carica, display rotto, non si accende…" required></textarea></label><label class="wide"><span>Stato estetico all’accettazione</span><input id="adminRepairDeviceCondition" maxlength="500" placeholder="es. Vetro posteriore graffiato, cornice segnata…"></label><div class="wide repairV1Block"><div class="repairV1BlockHead"><strong>Accessori consegnati</strong><small>Seleziona quello che entra in laboratorio insieme al dispositivo.</small></div><div class="repairAccessoryChecks"><label><input id="repairAccCharger" type="checkbox"> Caricatore</label><label><input id="repairAccCable" type="checkbox"> Cavo</label><label><input id="repairAccSim" type="checkbox"> SIM</label><label><input id="repairAccCase" type="checkbox"> Custodia</label><label><input id="repairAccBox" type="checkbox"> Scatola</label></div><label class="repairAccessoryOther"><span>Altro / dettagli</span><input id="adminRepairAccessories" maxlength="500" placeholder="es. adattatore, pennino, nessun accessorio"></label></div>
         <div class="wide intakeTermsBox">
           <div class="repairMediaHead"><strong>Condizioni di presa in carico e privacy</strong><small>Semplici, chiare e valide per questa pratica.</small></div>
@@ -502,7 +504,7 @@
       <div class="deviceSaleCardHead"><div><strong>Dati fiscali VR Trasporti</strong><small>Inseriscili una volta: vengono salvati su questo dispositivo.</small></div></div>
       <div class="deviceSaleGrid">
         <label class="wide"><span>Ragione sociale *</span><input id="vrClientName" maxlength="120" value="VR Trasporti"></label>
-        <label><span>Partita IVA *</span><input id="vrClientVat" maxlength="13" placeholder="IT01234567890"></label>
+        <label><span>Partita IVA *</span><input id="vrClientVat" maxlength="13" placeholder="IT01234567890"><button id="vrClientVatLookup" class="miniBtn" type="button">Cerca dati da P.IVA</button><small id="vrClientVatStatus" aria-live="polite">Ricerca automatica dopo 11 cifre. Verifica i dati prima di salvare; codice destinatario e PEC vanno completati se mancanti.</small></label>
         <label><span>Codice fiscale</span><input id="vrClientTaxCode" maxlength="16"></label>
         <label><span>Codice destinatario *</span><input id="vrClientRecipient" maxlength="7" placeholder="XXXXXXX"></label>
         <label class="wide"><span>Indirizzo *</span><input id="vrClientAddress" maxlength="120"></label>
@@ -586,7 +588,7 @@
         <label><span>Telefono</span><input id="clientPhone" type="tel" maxlength="40" placeholder="+39 ..."></label>
         <label><span>Email</span><input id="clientEmail" type="email" maxlength="180"></label>
         <label class="privateField"><span>Codice fiscale</span><input id="clientTaxCode" maxlength="16"></label>
-        <label class="businessField" hidden><span>Partita IVA *</span><input id="clientVat" maxlength="13" placeholder="IT01234567890"></label>
+        <label class="businessField" hidden><span>Partita IVA *</span><input id="clientVat" maxlength="13" placeholder="IT01234567890"><button id="clientVatLookup" class="miniBtn" type="button">Cerca dati da P.IVA</button><small id="clientVatStatus" aria-live="polite">Ricerca automatica dopo 11 cifre. Verifica i dati prima di salvare; codice destinatario e PEC vanno completati se mancanti.</small></label>
         <label class="businessField" hidden><span>Codice destinatario</span><input id="clientRecipient" maxlength="7" placeholder="7 caratteri"></label>
         <label class="businessField" hidden><span>PEC</span><input id="clientPec" type="email" maxlength="180"></label>
         <label class="wide"><span>Indirizzo</span><input id="clientAddress" maxlength="180"></label>
@@ -714,7 +716,24 @@
         <button id="dymoDetectBtn" class="secondaryAction" type="button">Rileva DYMO</button>
         <label class="inlineCheck dymoDirectToggle"><input id="dymoDirectEnabled" type="checkbox" checked> Stampa diretta senza finestra del browser</label>
       </div>
-      <div class="labelConfigHint">Modalità universale: rileva automaticamente la DYMO di questo PC, usa la misura scelta, orientamento, margini e correzioni locali. Il taglio resta gestito dal driver DYMO quando disponibile.</div>
+      <details class="dymoAdvanced"><summary>Compatibilità e diagnostica DYMO</summary>
+        <div class="deviceSaleGrid">
+          <label><span>Formato etichetta</span><select id="dymoFormatMode"><option value="auto">Automatico: moderno / legacy</option><option value="modern">DYMO Connect</option><option value="legacy">DYMO Label Software</option></select></label>
+          <label><span>Parametri driver</span><select id="dymoParameters"><option value="auto">Automatici</option><option value="driver">Predefiniti del driver</option><option value="custom">Usa rotolo e qualità scelti</option></select></label>
+          <label><span>Rotolo (Twin Turbo)</span><select id="dymoRoll"><option value="Auto">Automatico</option><option value="Left">Sinistro</option><option value="Right">Destro</option></select></label>
+          <label><span>Qualità</span><select id="dymoQuality"><option value="Auto">Automatica</option><option value="Text">Testo</option><option value="BarcodeAndGraphics">Codici e grafica</option></select></label>
+          <label><span>Attesa risposta</span><select id="dymoTimeout"><option value="15000">15 secondi</option><option value="30000">30 secondi</option><option value="5000">5 secondi</option></select></label>
+          <label class="wide"><span>Servizio locale personalizzato (facoltativo)</span><input id="dymoCustomEndpoint" type="url" placeholder="https://localhost:41951"></label>
+          <label class="wide"><span>Modello nativo DYMO (.dymo / .label, massimo 250 KB)</span><input id="dymoTemplateFile" type="file" accept=".dymo,.label,.xml"><small id="dymoTemplateName">Nessun modello importato</small></label>
+        </div>
+        <p>Nel modello DYMO usa {{TITLE}}, {{META}}, {{NOTE}} e {{QR}} nei rispettivi oggetti testo/codice. Il modello importato conserva misure, layout e impostazioni native, e ha precedenza sul formato automatico.</p>
+        <button id="dymoClearTemplateBtn" type="button" class="secondaryAction">Rimuovi modello</button>
+        <button id="dymoDiagnoseBtn" type="button" class="secondaryAction">Diagnostica senza stampare</button>
+        <button id="dymoExportLogBtn" type="button" class="secondaryAction">Scarica diagnostica</button>
+        <button id="dymoResetConnectionBtn" type="button" class="secondaryAction">Rileva di nuovo da zero</button>
+        <pre id="dymoDiagnosticLog" class="dymoDiagnosticLog" aria-live="polite"></pre>
+      </details>
+      <div class="labelConfigHint">Stampa diretta, senza passaggio automatico al browser. Su ogni PC devono essere installati driver e servizio DYMO compatibili. Diagnostica verifica servizio e stampante; “Stampa etichetta test” invia una sola etichetta.</div>
   </section>
 
 
@@ -924,6 +943,19 @@
   </template>
 
 
+  <section id="autoOrderView" class="autoOrderView btNewView" hidden>
+    <div class="partsTopbar"><div><span class="partsEyebrow">RIORDINO AUTOMATICO</span><h2>Ricambi da ordinare</h2><p>Compaiono automaticamente quando la giacenza raggiunge o scende sotto la scorta minima.</p></div><button id="autoOrdersRefresh" class="primaryAction" type="button">↻ Aggiorna</button></div>
+    <div class="autoOrderSummary">
+      <div><span>Articoli da ordinare</span><strong id="autoOrderCount">0</strong></div>
+      <div><span>Pezzi suggeriti</span><strong id="autoOrderQty">0</strong></div>
+      <div><span>Scorte a zero</span><strong id="autoOrderZero">0</strong></div>
+    </div>
+    <section class="partsListPanel autoOrderPanel">
+      <div class="partsListHead"><div><strong>Lista automatica</strong><span>Basata su giacenza e scorta minima</span></div><input id="autoOrderSearch" placeholder="Cerca marca, modello o ricambio…"><label class="checkInline"><input id="autoOrderZeroOnly" type="checkbox"> Solo esauriti</label></div>
+      <div class="partsTableWrap"><table class="partsTable"><thead><tr><th>Marca</th><th>Modello</th><th>Versione</th><th>Ricambio</th><th>Codice</th><th>Q.tà</th><th>Scorta min.</th><th>Da ordinare</th><th>Azione</th></tr></thead><tbody id="autoOrdersBody"></tbody></table></div>
+    </section>
+  </section>
+
   <section id="partsHubView" class="partsHubView btNewView" hidden>
     <div class="partsTopbar">
       <div><span class="partsEyebrow">MAGAZZINO RICAMBI</span><h2>Ricambi</h2><p>BackGlass, Housing e tutti i componenti in un unico catalogo.</p></div>
@@ -1038,10 +1070,11 @@
 </nav>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="app.js?v=1500"></script>
+<script src="app.js?v=2200"></script>
+<script src="dymo-engine.js?v=2200"></script>
 
 
 
 
-</body>
+<script src="studio.js?v=2200"></script><script src="data-export.js?v=2200"></script></body>
 </html>

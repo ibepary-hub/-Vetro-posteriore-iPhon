@@ -1,0 +1,39 @@
+BeparyTech V2.0.2 — Fatture VR e ricerca partita IVA
+
+Base: BeparyTech_V2_0_PREVIEW_REALE.zip, ultima copia sorgente disponibile.
+Non è stato possibile confrontare questa copia con il sito attualmente online.
+
+CORREZIONE FATTURE VR
+La funzione Salva dati VR richiamava updateInvoiceClientUi(), che svuotava
+invoiceAutomationLines. Anche Esporta XML eseguiva quel salvataggio, perdendo
+quindi le righe prima della generazione. Il salvataggio aggiorna ora soltanto
+il titolo cliente e conserva selezione, righe e totali.
+
+RICERCA PARTITA IVA
+In Clienti/Azienda e nei dati VR, inserire 11 cifre (IT facoltativo).
+Parte la ricerca automatica; il pulsante permette di riprovare.
+Prima si cerca nell'anagrafica del workspace, poi nel servizio europeo VIES.
+Vengono compilati solo i campi vuoti, senza sovrascrivere modifiche manuali.
+Controllare i dati e premere Salva. Non vengono emesse fatture automaticamente.
+VIES può non restituire dati per partite IVA non abilitate agli scambi UE.
+Codice destinatario, PEC e codice fiscale non vengono inventati.
+CAP, città e provincia vengono separati soltanto se il formato è riconosciuto.
+Altrimenti controllare l'indirizzo restituito e completarli manualmente.
+La funzione autenticata beparytech-vat-lookup è stata pubblicata sul progetto
+Supabase già configurato. Il suo sorgente è incluso in supabase/functions/.
+
+AGGIORNAMENTO SITO
+Caricare i file di questa cartella nella stessa posizione del gestionale
+esistente su GitHub Pages, mantenendo i file e le configurazioni del progetto.
+app.js, index.html e sw.js contengono le modifiche dell'interfaccia.
+Versione cache e URL degli asset aggiornati a 2002.
+Non sono richieste migrazioni del database per queste modifiche.
+
+VERIFICA
+node --check app.js
+node --check sw.js
+node tests/invoice-vat.test.cjs
+Test eseguiti: esportazione XML VR con righe preservate e totale IVA,
+compilazione P.IVA, preservazione campi manuali, input errato,
+risposte obsolete e dati VIES incompleti/non disponibili.
+Non eseguito un collaudo con la sessione utente o sul sito live.

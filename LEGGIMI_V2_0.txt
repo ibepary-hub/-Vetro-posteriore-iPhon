@@ -1,0 +1,6 @@
+BEPARYTECH V2.0
+
+Caricare tutti i file della cartella sul repository GitHub Pages, sostituendo la versione precedente.
+Supabase: usa le tabelle gia create beparytech_parts e beparytech_used_intakes. Non serve eseguire nuove migrazioni SQL per questa versione.
+
+Nota: dopo il deploy fare un refresh completo una volta. Il service worker usa la nuova cache V2.0.

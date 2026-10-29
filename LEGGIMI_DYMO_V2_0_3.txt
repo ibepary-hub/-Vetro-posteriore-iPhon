@@ -1,0 +1,77 @@
+BEPARYTECH V2.0.3 — DYMO diretta
+Include le correzioni VR Trasporti e compilazione da partita IVA della V2.0.2.
+
+PROBLEMA CORRETTO
+Il precedente motore dichiarava di stampare direttamente ma, dopo gli errori,
+richiamava btDymoBrowserCompatPrint(), che apriva il dialogo del browser.
+Quel percorso è stato eliminato. Tutti i pulsanti DYMO passano ora per
+un unico motore, dymo-engine.js. Anche la stampa dei ricambi usa quel motore.
+La stampa di documenti/scontrini e PDF resta una funzione distinta.
+
+CONFIGURAZIONE
+Impostazioni > Stampa diretta DYMO > Rileva DYMO.
+Se c'è una sola stampante collegata, si può lasciare Automatico.
+Con più stampanti scegliere esplicitamente quella desiderata.
+Premere Diagnostica senza stampare; poi Stampa etichetta test.
+
+Gestiti nel codice:
+- servizio locale HTTPS, localhost / 127.0.0.1;
+- ricerca porte 41951–41960 e 62170, indirizzo/porta locale personalizzabile;
+- servizio che risponde ma non elenca stampanti;
+- stampante offline, stampante salvata mancante, più stampanti collegate;
+- etichette DYMO Connect e DYMO Label Software, scelta automatica o manuale;
+- endpoint PrintLabel / PrintLabel2, memoria dell'ultima combinazione accettata;
+- rotolo automatico, sinistro/destro per Twin Turbo;
+- qualità testo/grafica, parametri del driver, attesa 5/15/30 secondi;
+- misure personalizzate, orientamento, margini, scala, offset e QR già presenti;
+- importazione modelli nativi .dymo/.label, compresi layout specifici;
+- coda seriale e protezione dai doppi clic;
+- registro diagnostico scaricabile, senza contenuto delle etichette;
+- nuova scansione senza cancellare misure e modello importato;
+- funzionamento in memoria se il browser impedisce il salvataggio locale;
+- cache aggiornata con inclusione del nuovo motore.
+
+MODELLI NATIVI
+Creare e salvare un'etichetta nel software DYMO installato, quindi importarla.
+Negli oggetti del modello inserire {{TITLE}}, {{META}}, {{NOTE}} e {{QR}}.
+Il motore sostituisce questi segnaposto con i dati da stampare.
+Il modello importato ha precedenza su formato, dimensioni e layout automatici.
+Per LabelManager/nastro è richiesto un modello nativo della misura installata.
+Per tornare al layout automatico premere Rimuovi modello.
+
+ERRORI E REINVII
+Il successo significa che il servizio ha accettato il lavoro, non certifica
+che l'etichetta sia uscita fisicamente.
+La compatibilità automatica riprova soltanto dopo un rifiuto esplicito del
+formato/parametri oppure un endpoint non supportato.
+Se il comando viene inviato ma la risposta manca, o arriva una risposta
+ambigua/errore server, il motore si ferma: controllare la coda prima di
+riprovare per evitare etichette duplicate.
+
+REQUISITI REALI
+Serve un PC/Mac con driver e Web Service DYMO funzionanti. Il browser deve
+poter accedere al servizio locale; certificati e permessi sono gestiti dal
+sistema operativo/browser. Il gestionale non può installarli o aggirarli.
+La ricerca localhost riguarda il dispositivo su cui si apre il gestionale:
+un iPhone non raggiunge tramite localhost la stampante collegata a un altro PC.
+Non viene promessa compatibilità con qualunque modello/driver esistente.
+
+AGGIORNAMENTO DEL SITO
+Caricare TUTTI i file del pacchetto nel progetto esistente, incluso
+il nuovo dymo-engine.js accanto ad app.js. Versione cache: 2003.
+Il sito online non è stato aggiornato da questa sessione.
+Base: ultima copia disponibile BeparyTech_V2_0_PREVIEW_REALE.zip.
+
+VERIFICHE E LIMITI
+Superati i test automatici in tests/dymo-engine.test.cjs su invio, doppi clic,
+risposta persa, errore server, offline, più stampanti, formato legacy,
+PrintLabel2, risposte non riconosciute, rotolo, qualità e indirizzi locali.
+Superati i test della fatturazione VR e del recupero partita IVA.
+Verificati sintassi JavaScript, caricamento del motore e ID delle impostazioni.
+Non effettuate prove fisiche con una stampante DYMO né collaudo browser sul PC
+utente: non è disponibile accesso al suo servizio locale in questa sessione.
+
+RIFERIMENTI UFFICIALI
+https://github.com/dymosoftware/dymo-connect-framework
+https://www.dymo.com/support?cfid=online-support-sdk
+https://help.dymo.com/s/article/How-to-troubleshoot-DYMO-Web-Service?language=en_US

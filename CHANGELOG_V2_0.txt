@@ -1,0 +1,15 @@
+BeparyTech V2.0 — Redesign operativo
+06/10/2026
+
+- Dashboard ridisegnata sul mockup approvato.
+- Menu desktop fisso e semplificato.
+- Ricambi unificati: BackGlass e Housing non compaiono piu come sezioni separate nel menu.
+- Nuova voce "Da ordinare" automatica basata su giacenza <= scorta minima.
+- Dashboard con 6 KPI reali: riparazioni, ricambi, da ordinare, usato, fatturato, ritiri.
+- Ritiro usato mantenuto con IMEI/blacklist/dichiarazioni.
+- Orari restano Solo Admin.
+- Fatturazione, DDT, clienti e riparazioni mantenuti.
+- Importazione ricambi CSV/Excel mantenuta.
+- Realtime Supabase per ricambi e aggiornamento dashboard/riordini.
+- Tema V2 parte in modalita giorno per corrispondere al design approvato; resta disponibile il toggle notte.
+- Cache service worker aggiornata a V2.0.

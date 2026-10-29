@@ -1,0 +1,7 @@
+V2.1 Studio
+Nuovo tema forest approvato e organizzazione menu.
+Aggiunti studio.css e studio.js con presentazione e navigazione adattiva.
+Aggiunta dashboard operativa alimentata dalle riparazioni caricate.
+Conservati gli ID, le route e le funzioni del gestionale esistente.
+Aggiunta dichiarazione mancante catalogRealtimeDebounce.
+Aggiornati cache e riferimenti asset alla versione 2100.
