@@ -63,10 +63,10 @@ async function detect(force=true){
   catch(e){btSetDymoStatus(e.message,'Err');log('errore',e.message);throw e;}
 }
 function printParams(cfg){
-  if(cfg.parameters==='driver')return '';
+  if(!cfg.parameters||cfg.parameters==='auto'||cfg.parameters==='driver')return '';
   const roll=['Auto','Left','Right'].includes(cfg.roll)?cfg.roll:'Auto';
   const quality=['Auto','Text','BarcodeAndGraphics'].includes(cfg.quality)?cfg.quality:'Auto';
-  return `<LabelWriterPrintParams><Copies>1</Copies><JobTitle>BeparyTech</JobTitle><PrintQuality>${quality}</PrintQuality><RollSelection>${roll}</RollSelection></LabelWriterPrintParams>`;
+  return `<LabelWriterPrintParams><Copies>1</Copies><JobTitle>BeparyTech</JobTitle><PrintQuality>${quality}</PrintQuality><TwinTurboRoll>${roll}</TwinTurboRoll></LabelWriterPrintParams>`;
 }
 function templateXml(template,data){
   if(template.length>250000||/<!DOCTYPE|<!ENTITY|<script\b/i.test(template))throw error('Modello non consentito o troppo grande.');
@@ -82,7 +82,7 @@ function classifyResponse(status,txt,action){
   if([404,405].includes(status))return 'action';
   // Only retry when the service explicitly rejected a schema/parameter before printing.
   if((status===400||status===422||status===200)&&/not declared|invalid (?:label|xml|print param)|schema|unsupported (?:label|format)|cannot deserialize|unexpected element/i.test(message))return 'format';
-  if(status<200||status>=300)throw error(`Servizio DYMO: risposta ${status}. Controlla la coda prima di riprovare; nessun reinvio automatico.`,'uncertain');
+  if(status<200||status>=300){log('risposta',`${status} · ${message}`);throw error(`Servizio DYMO: risposta ${status}${message?' · '+message.replace(/<[^>]*>/g,' ').slice(0,240):''}. Apri Impostazioni e DYMO → Diagnostica per i dettagli. Controlla la coda prima di riprovare; nessun reinvio automatico.`,'uncertain');}
   if(value===false||/^(false|null)$/i.test(raw)||/error|exception|failed|invalid/i.test(message))throw error('La DYMO ha rifiutato il lavoro. Controlla stampante e diagnostica; nessuna pagina di stampa è stata aperta.');
   if(action==='PrintLabel2'&&!/^(?:"?\d+"?)$/.test(raw))throw error('Risposta DYMO non riconosciuta. Controlla la coda prima di riprovare.','uncertain');
   if(action==='PrintLabel'&&raw!==''&&value!==true&&value!==''&&!/^\d+$/.test(String(value)))throw error('Risposta DYMO non riconosciuta. Controlla la coda prima di riprovare.','uncertain');

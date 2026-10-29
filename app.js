@@ -1903,7 +1903,7 @@ function applyTheme(theme){
   themeIcon.textContent=light ? "☾" : "☀︎";
   themeLabel.textContent=light ? "Notte" : "Giorno";
   themeToggle.setAttribute("aria-label", light ? "Passa alla modalità notte" : "Passa alla modalità giorno");
-  if(themeMeta) themeMeta.setAttribute("content", light ? "#f4f1ea" : "#070707");
+  if(themeMeta) themeMeta.setAttribute("content", light ? "#f5f6f3" : "#151d18");
   try{ localStorage.setItem("beparytech-theme-v2",theme); }catch(_){}
 }
 let initialTheme="light";

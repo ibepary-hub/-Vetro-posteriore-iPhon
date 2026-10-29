@@ -1,0 +1,14 @@
+BeparyTech V2.2 RC2 — 29 ottobre 2026
+
+Correzioni:
+- Ritiro usato, Magazzino ricambi e Acquisti e scorte spostati nel contenitore principale: non passano più sotto il menu laterale.
+- Temi giorno/notte: campi, dichiarazioni, elenchi, tabelle e finestre di dialogo con superfici e testi coerenti.
+- Finestre di dialogo sopra il menu, con scorrimento su schermi piccoli.
+- DYMO: modalità automatica usa i parametri predefiniti del driver; parametro personalizzato del rotolo corretto in TwinTurboRoll.
+- Diagnostica mostra il testo restituito dal servizio DYMO in caso di errore.
+- Cache aggiornata a 2201.
+
+Verifiche: quattro suite automatiche superate; controllo layout nel browser a 1440, 1100 e 390 px in entrambi i temi. Nessuno sconfinamento orizzontale di Ritiro usato.
+La stampa è verificata con servizio simulato, non con una stampante fisica. La risposta 400 da sola non identifica ogni possibile causa: se persiste, usare Impostazioni e DYMO > Diagnostica ed esportare il registro.
+
+Installazione: sostituire i file web con quelli dello ZIP, mantenendo la propria configurazione e i dati. Non eseguire nuovamente gli script SQL per questo aggiornamento. Ricaricare con Ctrl+F5.

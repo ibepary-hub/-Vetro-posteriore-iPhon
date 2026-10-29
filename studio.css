@@ -88,3 +88,29 @@ body.studio[data-theme] #headerCloudPill{background:var(--studio-soft)!important
 html body.studio[data-theme] [hidden]{display:none!important}
 body.studio[data-theme] button#refreshDashboardBtn{font-size:12px!important;color:var(--text)!important;background:var(--card)!important;border:1px solid var(--line)!important;min-width:90px!important;padding:9px!important;text-indent:0!important}
 body.studio[data-theme] button#refreshDashboardBtn:before,body.studio[data-theme] button#refreshDashboardBtn:after{content:none!important;display:none!important}
+/* V2.2 RC2: shared theme surfaces, including the intake and print dialogs. */
+body.studio[data-theme="light"]{color-scheme:light;--muted:#52665a;--line:#cbd7ce;--border:#cbd7ce}
+body.studio[data-theme="dark"]{color-scheme:dark;--muted:#b3c6b8;--line:#496050;--border:#496050}
+body.studio[data-theme] :is(.saleDialog,.usedChecks,.blacklistCheck,.partsTable th,.panelTitle button,.usedRowStatus button,.partRowActions button,.saleItemLabel,.operatorResolved,.noteHistory,.settingsPanel,.settingsCard){background:var(--card2)!important;color:var(--text)!important;border-color:var(--line)!important;box-shadow:none!important}
+body.studio[data-theme] :is(.usedCard label,.partEditorForm label,.usedSectionTitle,.usedRow strong,.panelTitle strong,.partsTable td,.saleMain,.saleMeta,.salePrice,.saleTotal,.saleNote,.archiveReason,.settingsPanel label){color:var(--text)!important;border-color:var(--line)!important}
+body.studio[data-theme] :is(.usedRow small,.usedRow span,.blacklistCheck small,.partsTable small,.partsEyebrow,.saleMain span,.saleMeta small,.salePrice small,.archiveNote,.selectorEmpty){color:var(--muted)!important}
+body.studio[data-theme] :is(.usedRow,.partsTable td,.saleActionsRow,.saleDialogHead){border-color:var(--line)!important}
+body.studio[data-theme] :is(.usedTabs .active,.salesSubTab.active,.clientTypeTab.active){background:var(--studio-soft)!important;color:var(--gold)!important;border:1px solid var(--gold)!important}
+body.studio[data-theme] :is(.greenAction,.primaryAction){background:var(--gold)!important;color:var(--bg)!important;border-color:var(--gold)!important;box-shadow:none!important}
+body.studio[data-theme] :is(.rowAction.delete,.dangerAction,.saleError,.createUserMsg.error){color:var(--red)!important;border-color:var(--red)!important;background:var(--card)!important}
+body.studio[data-theme] .blacklist.ok{color:var(--green)!important;background:var(--studio-soft)!important}
+body.studio[data-theme] .blacklist.bad{color:var(--red)!important;background:var(--card2)!important}
+body.studio[data-theme] .blacklist.wait{color:var(--amber)!important;background:var(--card2)!important}
+body.studio[data-theme] .usedLayout{grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);align-items:start}
+body.studio[data-theme] :is(.usedCard,.usedRow,.panelTitle,.usedLayout>*){min-width:0}
+body.studio[data-theme] .usedRow{flex-wrap:wrap;overflow-wrap:anywhere}
+body.studio[data-theme] .usedCard input,body.studio[data-theme] .usedCard select,body.studio[data-theme] .usedCard textarea{font-size:14px!important;padding:10px 11px!important}
+body.studio[data-theme] .usedCard label{font-size:12px!important}
+body.studio[data-theme] .panelTitle{flex-wrap:wrap}
+body.studio[data-theme] .saleModal{z-index:13000!important;overflow:auto}
+body.studio[data-theme] .saleDialog{max-height:calc(100dvh - 36px);overflow:auto}
+body.studio[data-theme] .headerLogoutBtn{position:static!important}
+@media(max-width:1250px){body.studio[data-theme] .usedLayout{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:700px){body.studio[data-theme] .usedCard :is(input,select,textarea){font-size:16px!important}body.studio[data-theme] .usedHistory{min-height:0}}
+body.studio[data-theme] .menuItem{min-height:42px!important;height:auto!important;max-height:none!important;padding:10px 9px!important;grid-template-columns:18px minmax(0,1fr)!important;gap:9px!important}
+body.studio[data-theme] .menuNav{display:flex!important;flex-direction:column!important;gap:3px!important;min-height:0!important}
