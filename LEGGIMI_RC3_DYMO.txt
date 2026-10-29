@@ -1,0 +1,52 @@
+BeparyTech V2.2 RC3 — 29 ottobre 2026
+
+Questa versione affronta l'errore DYMO 400 con testo
+"Object reference not set to an instance of an object".
+L'errore è interno al servizio DYMO: la coda vuota non ne identifica la causa.
+La correzione non è stata provata su una stampante fisica.
+
+MODIFICHE
+- Serializzazione Color con uno spazio interno, come indicato da DYMO per
+  compatibilità con il parser Windows (framework issue #10).
+- Allineamento verticale del testo legacy corretto in Middle.
+- Metadati font e posizione testo completati per gli oggetti QR nativi.
+- Prima della stampa il servizio elabora la medesima etichetta con RenderLabel.
+  Il comando produce un'immagine, non un lavoro in coda.
+- In modalità Automatica, se l'elaborazione di un formato fallisce, viene
+  verificato l'altro formato. Se entrambi falliscono non si invia la stampa.
+- Se un servizio vecchio risponde 404/405 a RenderLabel, si mantiene la stampa
+  diretta e viene segnalato che l'anteprima non è supportata.
+- Dopo un errore interno o un timeout nella fase PrintLabel non si reinvia
+  automaticamente: elaborazione e stampa sono due fasi diverse.
+- Diagnostica: test di elaborazione, anteprima, versione RC3, dati stampante,
+  geometria e messaggi del servizio. Non stampa.
+- Scarica ultima etichetta: permette di aprire lo stesso XML con DYMO Connect.
+  Il file può contenere i dati della vendita/pratica di cui si è provata la stampa.
+- Cache web aggiornata a 2202. Le correzioni di layout della RC2 sono incluse.
+
+DOPO L'AGGIORNAMENTO
+1. Sostituire i file web e ricaricare con Ctrl+F5. Non rieseguire gli SQL.
+2. Impostazioni e DYMO > Compatibilità e diagnostica DYMO.
+3. Formato etichetta: Automatico; parametri: Automatici.
+4. Premere Diagnostica senza stampare. Il registro deve riportare 2.2 RC3.
+5. Se l'anteprima riesce, provare Stampa etichetta test.
+6. Se fallisce ancora, scaricare la diagnostica e indicare modello DYMO,
+   versione di DYMO Connect e collegamento USB oppure stampante condivisa.
+   Per separare il problema del gestionale da quello del driver, aprire anche
+   l'ultima etichetta scaricata nel software DYMO e provare da lì.
+
+VERIFICHE E LIMITI
+- Suite automatiche: stampa, doppio clic, selezione stampante, timeout, errori
+  HTTP, errore NullReference prima/dopo l'invio, fallback solo in preflight,
+  risposte non valide, diagnostica senza stampe e serializzazione Color.
+- Nel browser: XML reali generati in 8 combinazioni (moderno/legacy,
+  orizzontale/verticale, con/senza QR), escaping dei dati e nessun parsererror.
+- Nel browser con servizio simulato: verifica che lo stesso XML sia renderizzato
+  prima di PrintLabel, una sola stampa e diagnostica senza PrintLabel.
+- Questi test non eseguono il parser proprietario o il driver DYMO del PC utente.
+  L'anteprima reale del nuovo controllo servirà a verificarli sul PC.
+
+RIFERIMENTI
+https://github.com/dymosoftware/dymo-connect-framework/issues/10
+https://github.com/dymosoftware/dymo-connect-framework/blob/master/dymo.connect.framework.js
+https://github.com/dymosoftware/DCD-SDK-Sample/tree/master/JavaScript/PreviewAndPrintLabel

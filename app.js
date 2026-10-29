@@ -3130,7 +3130,7 @@ async function btDymoLabelXml({title,meta,note,qrText}){
   if(hasQr){
     const q=btXmlEscape(String(qrText));
     const qx=Math.min(W-margin-qrSize,textX+textW+gap),qy=Math.max(margin,Math.min(H-margin-qrSize,textY+(usableH-qrSize)/2));
-    objects+=`<BarcodeObject><Name>QRCODE</Name>${brushes}<Rotation>Rotation0</Rotation><OutlineThickness>1</OutlineThickness><IsOutlined>False</IsOutlined><BorderStyle>SolidLine</BorderStyle><Margin><DYMOThickness Left="0" Top="0" Right="0" Bottom="0" /></Margin><BarcodeFormat>QRCode</BarcodeFormat><Data><DataString>${q}</DataString></Data><HorizontalAlignment>Center</HorizontalAlignment><VerticalAlignment>Middle</VerticalAlignment><Size>AutoFit</Size><EQRCodeType>QRCodeText</EQRCodeType><TextDataHolder><Value>${q}</Value></TextDataHolder><ObjectLayout><DYMOPoint><X>${num(qx)}</X><Y>${num(qy)}</Y></DYMOPoint><Size><Width>${num(qrSize)}</Width><Height>${num(qrSize)}</Height></Size></ObjectLayout></BarcodeObject>`;
+    objects+=`<BarcodeObject><Name>QRCODE</Name>${brushes}<Rotation>Rotation0</Rotation><OutlineThickness>1</OutlineThickness><IsOutlined>False</IsOutlined><BorderStyle>SolidLine</BorderStyle><Margin><DYMOThickness Left="0" Top="0" Right="0" Bottom="0" /></Margin><BarcodeFormat>QRCode</BarcodeFormat><Data><DataString>${q}</DataString></Data><HorizontalAlignment>Center</HorizontalAlignment><VerticalAlignment>Middle</VerticalAlignment><Size>AutoFit</Size><TextPosition>None</TextPosition>${font(8,false)}<EQRCodeType>QRCodeText</EQRCodeType><TextDataHolder><Value>${q}</Value></TextDataHolder><ObjectLayout><DYMOPoint><X>${num(qx)}</X><Y>${num(qy)}</Y></DYMOPoint><Size><Width>${num(qrSize)}</Width><Height>${num(qrSize)}</Height></Size></ObjectLayout></BarcodeObject>`;
   }
   const labelX=Math.max(0,margin+offX),labelY=Math.max(0,margin+offY),labelW=Math.max(0.2,Math.min(W-labelX,usableW)),labelH=Math.max(0.2,Math.min(H-labelY,usableH));
   return `<?xml version="1.0" encoding="utf-8"?><DesktopLabel Version="1"><DYMOLabel Version="4"><Description>BeparyTech DYMO</Description><Orientation>${paper.orientation}</Orientation><LabelName>${btXmlEscape(paper.name||'Custom')}</LabelName><InitialLength>0</InitialLength><BorderStyle>SolidLine</BorderStyle><DYMORect><DYMOPoint><X>${num(labelX)}</X><Y>${num(labelY)}</Y></DYMOPoint><Size><Width>${num(labelW)}</Width><Height>${num(labelH)}</Height></Size></DYMORect><BorderColor><SolidColorBrush><Color A="1" R="0" G="0" B="0"></Color></SolidColorBrush></BorderColor><BorderThickness>1</BorderThickness><Show_Border>False</Show_Border><HasFixedLength>False</HasFixedLength><FixedLengthValue>0</FixedLengthValue><DynamicLayoutManager><RotationBehavior>ClearObjects</RotationBehavior><LabelObjects>${objects}</LabelObjects></DynamicLayoutManager></DYMOLabel><LabelApplication>Blank</LabelApplication><DataTable><Columns></Columns><Rows></Rows></DataTable></DesktopLabel>`;
@@ -3145,7 +3145,7 @@ function btDymoLegacyLabelXml({title,meta,note,qrText}){
   const qr=Math.round(Math.min(H-margin*2,980)),gap=hasQr?55:0,textW=Math.max(300,W-margin*2-(hasQr?qr+gap:0));
   const titleH=Math.round((H-margin*2)*0.28),metaH=String(meta||'').trim()?Math.round((H-margin*2)*0.22):0,noteH=Math.max(180,H-margin*2-titleH-metaH);
   const font=(size,bold=false)=>`<Font Family="Arial" Size="${size}" Bold="${bold?'True':'False'}" Italic="False" Underline="False" Strikeout="False" />`;
-  const textObj=(name,value,x,y,w,h,size,bold=false)=>`<ObjectInfo><TextObject><Name>${name}</Name><ForeColor Alpha="255" Red="0" Green="0" Blue="0" /><BackColor Alpha="0" Red="255" Green="255" Blue="255" /><LinkedObjectName></LinkedObjectName><Rotation>Rotation0</Rotation><IsMirrored>False</IsMirrored><IsVariable>False</IsVariable><HorizontalAlignment>Left</HorizontalAlignment><VerticalAlignment>Center</VerticalAlignment><TextFitMode>ShrinkToFit</TextFitMode><UseFullFontHeight>True</UseFullFontHeight><Verticalized>False</Verticalized><StyledText><Element><String>${btXmlEscape(String(value||''))}</String><Attributes>${font(size,bold)}<ForeColor Alpha="255" Red="0" Green="0" Blue="0" /></Attributes></Element></StyledText></TextObject><Bounds X="${x}" Y="${y}" Width="${w}" Height="${h}" /></ObjectInfo>`;
+  const textObj=(name,value,x,y,w,h,size,bold=false)=>`<ObjectInfo><TextObject><Name>${name}</Name><ForeColor Alpha="255" Red="0" Green="0" Blue="0" /><BackColor Alpha="0" Red="255" Green="255" Blue="255" /><LinkedObjectName></LinkedObjectName><Rotation>Rotation0</Rotation><IsMirrored>False</IsMirrored><IsVariable>False</IsVariable><HorizontalAlignment>Left</HorizontalAlignment><VerticalAlignment>Middle</VerticalAlignment><TextFitMode>ShrinkToFit</TextFitMode><UseFullFontHeight>True</UseFullFontHeight><Verticalized>False</Verticalized><StyledText><Element><String>${btXmlEscape(String(value||''))}</String><Attributes>${font(size,bold)}<ForeColor Alpha="255" Red="0" Green="0" Blue="0" /></Attributes></Element></StyledText></TextObject><Bounds X="${x}" Y="${y}" Width="${w}" Height="${h}" /></ObjectInfo>`;
   let objects='';
   objects+=textObj('TITLE',title||'BEPARYTECH',margin,margin,textW,titleH,13,true);
   if(metaH)objects+=textObj('META',meta,margin,margin+titleH,textW,metaH,10,false);
@@ -3215,7 +3215,7 @@ document.addEventListener("DOMContentLoaded",bindDymoDirectV98);setTimeout(bindD
         qrText:""
       });
     }catch(err){
-      alert((err?.message||"Impossibile stampare sulla DYMO.")+"\n\nLa stampa DYMO ora è solo diretta: non verrà aperta nessuna pagina di stampa del browser.");
+      alert((err?.message||"Impossibile stampare sulla DYMO."));
     }
   }
   async function btDirectOnlyRepair(id){
@@ -3230,7 +3230,7 @@ document.addEventListener("DOMContentLoaded",bindDymoDirectV98);setTimeout(bindD
         qrText:st.qr?`${location.origin}${location.pathname}?practice=${encodeURIComponent(r.practice_code||r.id)}`:""
       });
     }catch(err){
-      alert((err?.message||"Impossibile stampare sulla DYMO.")+"\n\nLa stampa DYMO ora è solo diretta: non verrà aperta nessuna pagina di stampa del browser.");
+      alert((err?.message||"Impossibile stampare sulla DYMO."));
     }
   }
 

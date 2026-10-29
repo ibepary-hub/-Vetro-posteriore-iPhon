@@ -10,14 +10,14 @@
   <meta name="apple-mobile-web-app-title" content="BeparyTech Manager">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
   <title>BeparyTech · Il tuo laboratorio</title>
-  <link rel="manifest" href="manifest.json?v=2201">
+  <link rel="manifest" href="manifest.json?v=2202">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=2201">
+  <link rel="stylesheet" href="style.css?v=2202">
 
 
 
-<link rel="stylesheet" href="studio.css?v=2201"></head>
+<link rel="stylesheet" href="studio.css?v=2202"></head>
 <body class="studio">
   <div id="menuOverlay" class="menuOverlay" hidden></div>
   <aside id="mainMenu" class="mainMenu" aria-hidden="true">
@@ -729,11 +729,13 @@
         <p>Nel modello DYMO usa {{TITLE}}, {{META}}, {{NOTE}} e {{QR}} nei rispettivi oggetti testo/codice. Il modello importato conserva misure, layout e impostazioni native, e ha precedenza sul formato automatico.</p>
         <button id="dymoClearTemplateBtn" type="button" class="secondaryAction">Rimuovi modello</button>
         <button id="dymoDiagnoseBtn" type="button" class="secondaryAction">Diagnostica senza stampare</button>
+        <button id="dymoExportLabelBtn" type="button" class="secondaryAction">Scarica ultima etichetta</button>
         <button id="dymoExportLogBtn" type="button" class="secondaryAction">Scarica diagnostica</button>
         <button id="dymoResetConnectionBtn" type="button" class="secondaryAction">Rileva di nuovo da zero</button>
+        <img id="dymoDiagnosticPreview" alt="Etichetta elaborata dal servizio DYMO, senza stampa" hidden style="max-width:100%;background:white;border:1px solid var(--line);padding:8px;margin:12px 0">
         <pre id="dymoDiagnosticLog" class="dymoDiagnosticLog" aria-live="polite"></pre>
       </details>
-      <div class="labelConfigHint">Stampa diretta, senza passaggio automatico al browser. Su ogni PC devono essere installati driver e servizio DYMO compatibili. Diagnostica verifica servizio e stampante; “Stampa etichetta test” invia una sola etichetta.</div>
+      <div class="labelConfigHint">Stampa diretta, senza passaggio automatico al browser. Su ogni PC devono essere installati driver e servizio DYMO compatibili. Diagnostica RC3 verifica anche l’elaborazione dell’etichetta senza stampare; “Stampa etichetta test” invia una sola etichetta.</div>
   </section>
 
 
@@ -1070,11 +1072,11 @@
 </nav>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="app.js?v=2201"></script>
-<script src="dymo-engine.js?v=2201"></script>
+<script src="app.js?v=2202"></script>
+<script src="dymo-engine.js?v=2202"></script>
 
 
 
 
-<script src="studio.js?v=2201"></script><script src="data-export.js?v=2201"></script></body>
+<script src="studio.js?v=2202"></script><script src="data-export.js?v=2202"></script></body>
 </html>
