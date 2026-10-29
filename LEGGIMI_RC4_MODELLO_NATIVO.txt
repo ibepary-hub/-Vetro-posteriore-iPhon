@@ -1,0 +1,49 @@
+BeparyTech V2.2 RC4 — modello nativo fornito dall'utente
+
+È incluso gestionale.dymo, ricevuto in questa sessione. Non è stata dichiarata
+né verificata qui una stampa fisica riuscita del file originale.
+
+DIFFERENZE OSSERVATE
+Il file fornito usa DYMOLabel Version=3, carta
+1933084 Drbl 2-1/4 x 1-1/4 in, Orientation=Portrait e area stampabile
+X=0.03999997, Y=0.06, Width=2.17, Height=1.13 (pollici).
+La RC3 generava Version=4 con un altro identificativo carta e orientamento.
+Queste differenze sono osservate; il log NullReference non dimostra quale
+singola differenza causi l'errore del servizio.
+
+MODIFICHE
+Per il formato 57 × 32 mm (anche selezionato come 32 × 57), nelle modalità
+Automatica o DYMO Connect, si usa la struttura XML del file fornito.
+Il testo TEST è sostituito con titolo, negozio/metadati e note, conservando
+il riquadro di testo e il ridimensionamento automatico del modello.
+La geometria della carta, il codice carta e l'orientamento interno restano
+quelli nativi: Portrait è il valore del file, non un errore da cambiare a mano.
+Scala, margine aggiuntivo e offset regolano solo il contenuto entro l'area.
+Per le pratiche con QR viene aggiunto il codice nella stessa area stampabile;
+questo oggetto non era presente nel file originale e richiede prova fisica.
+I modelli importati manualmente continuano ad avere precedenza.
+Gli altri formati carta mantengono il percorso precedente.
+Il formato legacy non è usato come ripiego per il modello nativo.
+
+La diagnostica confronta prima il file originale con TEST e poi quello
+compilato. Entrambe le operazioni sono RenderLabel e non inviano stampe.
+Se l'elaborazione fallisce, la stampa resta bloccata.
+
+INSTALLAZIONE
+- Sostituire i file web inclusi nello ZIP, anche il nuovo dymo-native.js.
+- Ricaricare con Ctrl+F5.
+- Impostare 57 × 32 mm e Formato etichetta: Automatico.
+- Non è necessario importare gestionale.dymo manualmente.
+- In diagnostica verificare che compaiano 2.2 RC4 e modello nativo.
+- Provare prima Diagnostica senza stampare e poi Stampa etichetta test.
+- Nessuno script SQL necessario; nessuna modifica ai dati.
+
+CONTROLLI E LIMITI
+Suite automatiche superate. Verifica nel browser dei dati dinamici con
+caratteri speciali, del mantenimento dei metadati nativi, della presenza QR
+quando richiesto, dei limiti dell'area stampabile con scala/offset e della
+sequenza RenderLabel prima di una sola PrintLabel (servizio simulato).
+Verificata la diagnostica senza comandi di stampa.
+Non è disponibile il driver/servizio DYMO del PC utente: la prova reale
+resta necessaria. Se fallisce, inviare il nuovo registro RC4, che distingue
+modello originale e modello compilato.

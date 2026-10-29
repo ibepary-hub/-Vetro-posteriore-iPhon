@@ -10,14 +10,14 @@
   <meta name="apple-mobile-web-app-title" content="BeparyTech Manager">
   <meta id="themeColorMeta" name="theme-color" content="#070707">
   <title>BeparyTech · Il tuo laboratorio</title>
-  <link rel="manifest" href="manifest.json?v=2202">
+  <link rel="manifest" href="manifest.json?v=2203">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="icon" type="image/png" href="favicon-64.png">
-  <link rel="stylesheet" href="style.css?v=2202">
+  <link rel="stylesheet" href="style.css?v=2203">
 
 
 
-<link rel="stylesheet" href="studio.css?v=2202"></head>
+<link rel="stylesheet" href="studio.css?v=2203"></head>
 <body class="studio">
   <div id="menuOverlay" class="menuOverlay" hidden></div>
   <aside id="mainMenu" class="mainMenu" aria-hidden="true">
@@ -718,7 +718,7 @@
       </div>
       <details class="dymoAdvanced"><summary>Compatibilità e diagnostica DYMO</summary>
         <div class="deviceSaleGrid">
-          <label><span>Formato etichetta</span><select id="dymoFormatMode"><option value="auto">Automatico: moderno / legacy</option><option value="modern">DYMO Connect</option><option value="legacy">DYMO Label Software</option></select></label>
+          <label><span>Formato etichetta</span><select id="dymoFormatMode"><option value="auto">Automatico: modello nativo 57 × 32 / altri formati</option><option value="modern">DYMO Connect</option><option value="legacy">DYMO Label Software</option></select></label>
           <label><span>Parametri driver</span><select id="dymoParameters"><option value="auto">Automatici</option><option value="driver">Predefiniti del driver</option><option value="custom">Usa rotolo e qualità scelti</option></select></label>
           <label><span>Rotolo (Twin Turbo)</span><select id="dymoRoll"><option value="Auto">Automatico</option><option value="Left">Sinistro</option><option value="Right">Destro</option></select></label>
           <label><span>Qualità</span><select id="dymoQuality"><option value="Auto">Automatica</option><option value="Text">Testo</option><option value="BarcodeAndGraphics">Codici e grafica</option></select></label>
@@ -726,6 +726,7 @@
           <label class="wide"><span>Servizio locale personalizzato (facoltativo)</span><input id="dymoCustomEndpoint" type="url" placeholder="https://localhost:41951"></label>
           <label class="wide"><span>Modello nativo DYMO (.dymo / .label, massimo 250 KB)</span><input id="dymoTemplateFile" type="file" accept=".dymo,.label,.xml"><small id="dymoTemplateName">Nessun modello importato</small></label>
         </div>
+        <p>Per 57 × 32 mm è già incluso il modello gestionale.dymo fornito da te. Codice carta e orientamento interno seguono il file originale. Per altri formati puoi importare un modello.</p>
         <p>Nel modello DYMO usa {{TITLE}}, {{META}}, {{NOTE}} e {{QR}} nei rispettivi oggetti testo/codice. Il modello importato conserva misure, layout e impostazioni native, e ha precedenza sul formato automatico.</p>
         <button id="dymoClearTemplateBtn" type="button" class="secondaryAction">Rimuovi modello</button>
         <button id="dymoDiagnoseBtn" type="button" class="secondaryAction">Diagnostica senza stampare</button>
@@ -735,7 +736,7 @@
         <img id="dymoDiagnosticPreview" alt="Etichetta elaborata dal servizio DYMO, senza stampa" hidden style="max-width:100%;background:white;border:1px solid var(--line);padding:8px;margin:12px 0">
         <pre id="dymoDiagnosticLog" class="dymoDiagnosticLog" aria-live="polite"></pre>
       </details>
-      <div class="labelConfigHint">Stampa diretta, senza passaggio automatico al browser. Su ogni PC devono essere installati driver e servizio DYMO compatibili. Diagnostica RC3 verifica anche l’elaborazione dell’etichetta senza stampare; “Stampa etichetta test” invia una sola etichetta.</div>
+      <div class="labelConfigHint">Stampa diretta, senza passaggio automatico al browser. Su ogni PC devono essere installati driver e servizio DYMO compatibili. Diagnostica RC4 verifica anche l’elaborazione dell’etichetta senza stampare; “Stampa etichetta test” invia una sola etichetta.</div>
   </section>
 
 
@@ -1072,11 +1073,12 @@
 </nav>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="app.js?v=2202"></script>
-<script src="dymo-engine.js?v=2202"></script>
+<script src="app.js?v=2203"></script>
+<script src="dymo-native.js?v=2203"></script>
+<script src="dymo-engine.js?v=2203"></script>
 
 
 
 
-<script src="studio.js?v=2202"></script><script src="data-export.js?v=2202"></script></body>
+<script src="studio.js?v=2203"></script><script src="data-export.js?v=2203"></script></body>
 </html>

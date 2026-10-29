@@ -2,7 +2,7 @@
 (function(global){
 'use strict';
 let discovery=null, tail=Promise.resolve(), lastLabel=null;
-const ENGINE_VERSION="2.2 RC3";
+const ENGINE_VERSION="2.2 RC4";
 const pending=new Map(), acceptedRecently=new Map(), journal=[];
 function log(stage,message){journal.push({time:new Date().toISOString(),stage,message:String(message).slice(0,350)});if(journal.length>60)journal.shift();const el=document.getElementById('dymoDiagnosticLog');if(el)el.textContent=journal.map(x=>`${x.time} · ${x.stage} · ${x.message}`).join('\n');}
 function error(message,kind='blocked'){return Object.assign(new Error(message),{kind});}
@@ -90,11 +90,14 @@ function responseText(raw){
 }
 function detail(raw){return responseText(raw).replace(/<[^>]*>/g,' ').replace(/\s+/g,' ').trim().slice(0,600);}
 function labelModes(cfg){
+  const native=global.BeparyNativeDymo;
+  if(!cfg.template&&cfg.format!=='legacy'&&native&&native.supports(getRepairLabelSettingsV92()))return ['native'];
   const remembered=cfg.labelMode==='legacy'?'legacy':'modern';
   return cfg.template?['template']:(!cfg.format||cfg.format==='auto')?[remembered,remembered==='modern'?'legacy':'modern']:[cfg.format];
 }
 async function buildLabel(mode,cfg,data){
-  const xml=normalizeLabelXml(mode==='template'?templateXml(cfg.template,data):mode==='legacy'?btDymoLegacyLabelXml(data):await btDymoLabelXml(data));
+  const raw=mode==='native'?global.BeparyNativeDymo.build(data,getRepairLabelSettingsV92(),data.qrText?await btDymoLabelXml(data):''):mode==='template'?templateXml(cfg.template,data):mode==='legacy'?btDymoLegacyLabelXml(data):await btDymoLabelXml(data);
+  const xml=normalizeLabelXml(raw);
   lastLabel={xml,extension:/<DesktopLabel\b/.test(xml)?'dymo':'label'};
   return xml;
 }
@@ -166,12 +169,18 @@ function print(data){
 }
 async function diagnostics(){
   log('versione',ENGINE_VERSION);
+  if(global.BeparyNativeDymo)log('modello nativo','gestionale.dymo · DYMOLabel v3 · 1933084 Drbl 2-1/4 x 1-1/4 in');
   log('ambiente',`${navigator.userAgent} · ${location.protocol}`);
   const preview=document.getElementById('dymoDiagnosticPreview');if(preview){preview.hidden=true;preview.removeAttribute('src');}
   try{
     const cfg=btGetDymoConfig(),info=await discover(true);showPrinters(info);const printer=choose(info,cfg);
     log('stampante',`${printer.name} · ${printer.type}`);
     log('impostazioni',JSON.stringify({format:cfg.format||'auto',parameters:cfg.parameters||'auto',template:!!cfg.template,geometry:typeof getRepairLabelSettingsV92==='function'?getRepairLabelSettingsV92():{}}));
+    if(global.BeparyNativeDymo&&global.BeparyNativeDymo.supports(getRepairLabelSettingsV92())){
+      log('modello originale','Verifica del file allegato, con testo TEST e senza stampa');
+      const original=await renderCheck(info.base,printer,normalizeLabelXml(global.BeparyNativeDymo.source()),cfg);
+      log('modello originale',original.png?'Elaborazione riuscita':original.failed?'Elaborazione fallita: '+original.message:'Anteprima non supportata');
+    }
     let passed=0,supported=0;
     for(const mode of labelModes(cfg)){
       const xml=await buildLabel(mode,cfg,{title:'BEPARYTECH TEST',meta:'Verifica compatibilità',note:'Etichetta di prova: nessuna stampa inviata.',qrText:''});
