@@ -32,3 +32,9 @@ html[data-bt-brand="egyphone"] .egyV2CashNav{display:block;width:calc(100% - 24p
 .egyV2Ops button{background:#d7ae59;color:#141a23;border:0;border-radius:9px;padding:11px;font-weight:650;cursor:pointer}
 .egyV2Ops form button{grid-column:1/-1;justify-self:start}
 @media(max-width:650px){.egyV2Ops form{grid-template-columns:1fr}.egyV2OpsCard{padding:14px}.egyV2OpsHead{align-items:start}}
+
+#egyCustomerPortal{position:fixed;inset:0;z-index:2147483640;background:#081b2b;color:#fff;display:grid;place-items:center;padding:20px;overflow:auto}
+#egyCustomerPortal .egyCustomerCard{width:min(100%,500px);background:#142c40;border:1px solid #b59755;border-radius:20px;padding:30px;text-align:center}
+#egyCustomerPortal h1{color:#e8c17c;letter-spacing:.1em}
+#egyCustomerPortal h2{color:#f4f5f6}
+#egyV2CustomerUrl{overflow-wrap:anywhere;line-height:2}
