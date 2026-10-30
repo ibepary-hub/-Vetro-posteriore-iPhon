@@ -18,7 +18,23 @@
 
 
 <link rel="stylesheet" href="studio.css?v=2204">
-<link rel="stylesheet" href="egyphone-theme.css?v=7"><style>#btSupportOverlay[hidden]{display:none!important}#btSupportOverlay{position:fixed;inset:0;z-index:99999;background:#000a;display:flex;justify-content:center;align-items:flex-start;overflow:auto;padding:30px 12px}.btSupportCard{background:#142a3b;color:#fff;width:min(700px,100%);border-radius:16px;padding:22px;border:1px solid #bd9a55}.btSupportTop{display:flex;align-items:center;justify-content:space-between}.btSupportCard form{display:grid;gap:12px}.btSupportCard label{display:grid;gap:5px}.btSupportCard input,.btSupportCard textarea,.btSupportCard select{background:#0b1d2b;color:#fff;border:1px solid #667d8b;border-radius:8px;padding:10px;width:100%}.btSupportCard button{border-radius:8px;padding:10px;cursor:pointer}.btSupportItem{border-top:1px solid #496073;padding:12px 0}.btSupportItem small{display:block;color:#cad5dd;margin-top:4px}</style></head>
+<link rel="stylesheet" href="egyphone-theme.css?v=7"><style>#btSupportOverlay[hidden]{display:none!important}#btSupportOverlay{position:fixed;inset:0;z-index:99999;background:#000a;display:flex;justify-content:center;align-items:flex-start;overflow:auto;padding:30px 12px}.btSupportCard{background:#142a3b;color:#fff;width:min(700px,100%);border-radius:16px;padding:22px;border:1px solid #bd9a55}.btSupportTop{display:flex;align-items:center;justify-content:space-between}.btSupportCard form{display:grid;gap:12px}.btSupportCard label{display:grid;gap:5px}.btSupportCard input,.btSupportCard textarea,.btSupportCard select{background:#0b1d2b;color:#fff;border:1px solid #667d8b;border-radius:8px;padding:10px;width:100%}.btSupportCard button{border-radius:8px;padding:10px;cursor:pointer}.btSupportItem{border-top:1px solid #496073;padding:12px 0}.btSupportItem small{display:block;color:#cad5dd;margin-top:4px}</style><style id="btSupportPageCss">
+#btSupportOverlay[hidden]{display:none!important}
+#btSupportOverlay:not([hidden]){position:fixed!important;inset:48px 0 0 258px!important;z-index:999999!important;display:block!important;overflow-y:auto!important;overflow-x:hidden!important;padding:32px clamp(16px,4vw,60px)!important;background:#091b2b!important;box-sizing:border-box!important;transform:none!important;opacity:1!important;visibility:visible!important}
+#btSupportOverlay .btSupportCard{display:block!important;position:relative!important;float:none!important;transform:none!important;margin:0 auto!important;max-width:920px!important;width:100%!important;min-height:450px!important;background:#122c42!important;color:#f3f6fa!important;border:1px solid #385b74!important;border-radius:16px!important;padding:28px!important;box-sizing:border-box!important}
+#btSupportOverlay .btSupportTop{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:15px!important;margin-bottom:18px!important}
+#btSupportOverlay .btSupportTop h2{margin:0!important;font-size:25px!important;color:#f3d28d!important}
+#btSupportOverlay #btSupportForm{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:18px!important;align-items:start!important;margin:24px 0!important}
+#btSupportOverlay #btSupportForm label{display:flex!important;flex-direction:column!important;gap:7px!important;color:#ebf1f7!important;min-width:0!important}
+#btSupportOverlay #btSupportForm label:nth-child(n+3){grid-column:1/-1!important}
+#btSupportOverlay #btSupportForm input,#btSupportOverlay #btSupportForm textarea,#btSupportOverlay #btSupportForm select{display:block!important;box-sizing:border-box!important;width:100%!important;min-width:0!important;max-width:100%!important;background:#091e30!important;color:#fff!important;border:1px solid #526d83!important;border-radius:9px!important;padding:12px!important;font:inherit!important}
+#btSupportOverlay #btSupportForm textarea{min-height:130px!important;resize:vertical!important}
+#btSupportOverlay #btSupportForm>button{grid-column:1/-1!important;justify-self:start!important;background:#e6b347!important;color:#121c26!important;border:0!important;padding:12px 22px!important;font-weight:700!important}
+#btSupportOverlay #btSupportMessage{grid-column:1/-1!important}
+#btSupportOverlay #btSupportHistory{margin-top:22px!important;padding-top:15px!important;border-top:1px solid #496279!important}
+#btSupportOverlay #btSupportClose{background:#254259!important;color:white!important;border:1px solid #55728b!important}
+@media(max-width:850px){#btSupportOverlay:not([hidden]){inset:48px 0 0 0!important;padding:15px!important}#btSupportOverlay .btSupportCard{padding:18px!important}#btSupportOverlay #btSupportForm{grid-template-columns:1fr!important}#btSupportOverlay #btSupportForm label{grid-column:1/-1!important}}
+</style></head>
 <body class="studio">
   <div id="menuOverlay" class="menuOverlay" hidden></div>
   <aside id="mainMenu" class="mainMenu" aria-hidden="true">
@@ -1082,5 +1098,5 @@
 
 
 <script src="studio.js?v=2204"></script>
-<script src="egyphone-brand.js?v=4" defer></script><script src="egyphone-features.js?v=7" defer></script><script src="support-tickets.js?v=1" defer></script><script src="data-export.js?v=2204"></script></body>
+<script src="egyphone-brand.js?v=4" defer></script><script src="egyphone-features.js?v=7" defer></script><script src="support-tickets.js?v=2" defer></script><script src="data-export.js?v=2204"></script></body>
 </html>
