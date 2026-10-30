@@ -4,7 +4,7 @@
  const active=()=>document.documentElement.dataset.btBrand==="egyphone";
  const checks=["Display","Touch","Fotocamera anteriore","Fotocamera posteriore","Audio","Microfono","Ricarica","Wi-Fi","Rete mobile","Face ID / impronta"];
  let installed=false;
- const esc=v=>String(v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;":"&quot;"}[c]));
+ const esc=v=>String(v).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
  function mount(){
   if(!active()||installed)return;
   const form=document.getElementById("quickRepairForm"),note=document.getElementById("quickRepairNote");
