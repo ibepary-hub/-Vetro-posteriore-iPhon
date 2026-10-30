@@ -1,0 +1,9 @@
+/* EGYPHONE V2 · sviluppo isolato. Nessun effetto sugli altri tenant. */
+html[data-bt-brand="egyphone"] #mainMenu .menuNav .menuGroupTitle{letter-spacing:.12em}
+html[data-bt-brand="egyphone"] #mainMenu .menuNav .menuItem{min-height:43px}
+html[data-bt-brand="egyphone"] #mainMenu .menuNav .menuItem strong{font-weight:650}
+html[data-bt-brand="egyphone"] #mainMenu .menuNav .studioNavDetails[open]{border-left:2px solid #b68e44;margin-left:12px;padding-left:8px}
+html[data-bt-brand="egyphone"] #mainMenu .menuNav .v2Secondary{display:none!important}
+html[data-bt-brand="egyphone"] #mainMenu .menuNav .v2Advanced[open] .v2Secondary{display:flex!important}
+html[data-bt-brand="egyphone"] #mainMenu .menuNav .v2Advanced{border:1px solid #435268;border-radius:10px;padding:7px 4px;margin:9px 0}
+html[data-bt-brand="egyphone"] #mainMenu .menuNav .v2Advanced summary{cursor:pointer;padding:10px;color:#d8c390}
