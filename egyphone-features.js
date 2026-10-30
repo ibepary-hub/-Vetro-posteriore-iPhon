@@ -147,16 +147,28 @@
     async function refreshArchive(){
       const panel=wrapper.querySelector("#egyDocArchive");if(!panel)return;
       const {data,error}=await sb.from("beparytech_courtesy_documents")
-        .select("code,created_at,customer_name,description,amount,payment_method,status,notes,customer_phone")
+        .select("code,created_at,customer_name,description,amount,payment_method,status,notes,customer_phone,void_reason,voided_at")
         .order("created_at",{ascending:false}).limit(200);
       if(error){panel.textContent="Archivio non disponibile: "+error.message;return;}
       const rows=data||[];
       panel.innerHTML='<h3>Archivio documenti di cortesia</h3><p>'+rows.length+' documenti recenti · numerazione interna</p>'+
         '<div class="egyArchiveRows">'+rows.map((row,i)=>
           '<div class="egyArchiveItem"><div><strong>'+esc(row.code)+'</strong><small>'+esc(new Date(row.created_at).toLocaleDateString("it-IT"))+
-          ' · '+esc(row.customer_name||"Cliente generico")+' · '+esc(row.description)+'</small></div><div><b>'+Number(row.amount).toFixed(2).replace(".",",")+' €</b> <button type="button" data-archive-index="'+i+'">PDF</button></div></div>'
+          ' · '+esc(row.customer_name||"Cliente generico")+' · '+esc(row.description)+(row.status==="void"?' · ANNULLATO: '+esc(row.void_reason||""):'')+'</small></div><div><b>'+Number(row.amount).toFixed(2).replace(".",",")+' €</b> <button type="button" data-archive-index="'+i+'">PDF</button>'+(row.status==="issued"?' <button type="button" class="egyVoidBtn" data-void-index="'+i+'">Annulla</button>':'')+'</div></div>'
         ).join("")+'</div>';
       panel.querySelectorAll("[data-archive-index]").forEach(b=>b.addEventListener("click",()=>makeReceiptPdf(rows[Number(b.dataset.archiveIndex)])));
+      panel.querySelectorAll("[data-void-index]").forEach(b=>b.addEventListener("click",async()=>{
+        const row=rows[Number(b.dataset.voidIndex)];if(!row||row.status!=="issued")return;
+        const reason=window.prompt("Motivo annullamento di "+row.code+" (almeno 5 caratteri):");
+        if(reason===null)return;
+        const clean=reason.trim();if(clean.length<5||clean.length>500){window.alert("Inserisci una motivazione da 5 a 500 caratteri.");return;}
+        if(!window.confirm("Confermi annullamento di "+row.code+"? Il numero rimarrà in archivio e non sarà riutilizzato."))return;
+        b.disabled=true;
+        const {error}=await sb.rpc("bt_void_courtesy_document",{p_code:row.code,p_reason:clean});
+        if(error){window.alert("Annullamento non riuscito: "+error.message);b.disabled=false;return;}
+        await refreshArchive();
+      }));
+
     }
     const archive=document.createElement("section");archive.id="egyDocArchive";archive.className="egyDocArchive";
     wrapper.append(archive);
