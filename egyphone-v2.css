@@ -18,3 +18,17 @@ html[data-bt-brand="egyphone"] .egyV2CheckGrid select{min-width:0;width:100%;col
 
 html[data-bt-brand="egyphone"] .egyV2Tech{display:flex;flex-direction:column;gap:6px;margin:12px 0;color:#f4d18a}
 html[data-bt-brand="egyphone"] .egyV2Tech select{padding:10px;width:100%;border:1px solid #64798d;border-radius:8px;background:#122a3d;color:#f7f4ed}
+
+html[data-bt-brand="egyphone"] .egyV2CashNav{display:block;width:calc(100% - 24px);margin:12px;padding:12px;border:1px solid #a88c53;background:#21384a;color:#f5ddb0;border-radius:10px;text-align:left;cursor:pointer}
+.egyV2Ops[hidden]{display:none!important}
+.egyV2Ops{position:fixed;inset:0;z-index:2147483600;overflow-y:auto;background:#081b2b;padding:22px 15px;color:white}
+.egyV2OpsCard{max-width:850px;margin:auto;border:1px solid #5b6d7c;border-radius:15px;background:#142c40;padding:24px}
+.egyV2OpsHead{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.egyV2Ops h2,.egyV2Ops h3{color:#eed19a}
+.egyV2Ops form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px;margin:24px 0;padding:18px;border:1px solid #48667a;border-radius:12px}
+.egyV2Ops form h3{grid-column:1/-1;margin:0}
+.egyV2Ops label{display:flex;flex-direction:column;gap:6px;min-width:0}
+.egyV2Ops input,.egyV2Ops select{min-width:0;width:100%;background:#0b2032;color:white;padding:11px;border:1px solid #687e90;border-radius:8px}
+.egyV2Ops button{background:#d7ae59;color:#141a23;border:0;border-radius:9px;padding:11px;font-weight:650;cursor:pointer}
+.egyV2Ops form button{grid-column:1/-1;justify-self:start}
+@media(max-width:650px){.egyV2Ops form{grid-template-columns:1fr}.egyV2OpsCard{padding:14px}.egyV2OpsHead{align-items:start}}
