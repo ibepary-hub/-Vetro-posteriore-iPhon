@@ -1930,9 +1930,11 @@ function supplierFromUrl(value){
   }catch(_){return "";}
 }
 function updateDeviceSaleVatPreview(){
-  const net=Math.max(0,Number(document.getElementById("deviceSalePrice")?.value)||0);
+  const entered=Math.max(0,Number(document.getElementById("deviceSalePrice")?.value)||0);
   const rate=Math.min(100,Math.max(0,Number(document.getElementById("deviceSaleVatRate")?.value)||0));
-  const vat=net*rate/100, gross=net+vat;
+  const net=btRepairGrossPriceMode?Math.round(entered/(1+rate/100)*100)/100:entered;
+  const gross=btRepairGrossPriceMode?entered:Math.round(net*(1+rate/100)*100)/100;
+  const vat=Math.round((gross-net)*100)/100;
   document.getElementById("deviceSaleNet").textContent=euroFmt.format(net||0);
   document.getElementById("deviceSaleVat").textContent=euroFmt.format(vat||0);
   document.getElementById("deviceSaleGross").textContent=euroFmt.format(gross||0);
@@ -1986,7 +1988,7 @@ function duplicateDeviceSale(id){
   document.getElementById("deviceSaleDate").value=new Date().toISOString().slice(0,10);
   document.getElementById("deviceSaleStore").value=r.store||"";
   document.getElementById("deviceSaleName").value=r.device_name||"";
-  document.getElementById("deviceSalePrice").value=Number(r.net_amount ?? r.sale_price ?? 0);
+  document.getElementById("deviceSalePrice").value=btRepairGrossPriceMode?Number(deviceSaleTotals(r).gross.toFixed(2)):Number(r.net_amount ?? r.sale_price ?? 0);
   document.getElementById("deviceSaleVatRate").value=Number(r.vat_rate||0);
   document.getElementById("deviceSalePurchaseUrl").value=r.purchase_url||"";
   document.getElementById("deviceSaleSupplier").value=r.supplier_name||"";
@@ -2026,8 +2028,9 @@ document.getElementById("deviceSaleEditForm")?.addEventListener("submit",async e
   if(error){msg.className="createUserMsg error";msg.textContent=error.message||"Impossibile salvare le modifiche.";return;}
   closeEditDeviceSale();await loadDeviceSales();document.getElementById("cloudStatus").textContent="☁︎ Vendita modificata";
 });
-async function loadDeviceSales(){
+async async function loadDeviceSales(){
   if(!isAdmin()) return;
+  await btLoadRepairPriceMode();
   const list=document.getElementById("deviceSalesList"), sum=document.getElementById("deviceSalesSummary"); if(!list)return;
   list.innerHTML='<div class="emptyState">Caricamento…</div>';
   const {data,error}=await sb.from("beparytech_admin_device_sales").select("*").order("sold_at",{ascending:false}).order("id",{ascending:false}).limit(300);
@@ -2050,7 +2053,7 @@ document.getElementById("deviceSalePurchaseUrl")?.addEventListener("input",e=>{c
 document.getElementById("refreshDeviceSalesBtn")?.addEventListener("click",loadDeviceSales);
 document.getElementById("deviceSaleForm")?.addEventListener("submit",async e=>{e.preventDefault(); if(!isAdmin())return; const msg=document.getElementById("deviceSaleMsg");
   const url=document.getElementById("deviceSalePurchaseUrl").value.trim(); if(url && safeExternalUrl(url)==="#"){msg.className="createUserMsg error";msg.textContent="Link acquisto non valido.";return;}
-  const row={workspace_owner_id:workspaceOwnerId,created_by:currentUser.id,sold_at:document.getElementById("deviceSaleDate").value,store:document.getElementById("deviceSaleStore").value,device_name:document.getElementById("deviceSaleName").value.trim(),sale_price:Number(document.getElementById("deviceSalePrice").value),vat_rate:Number(document.getElementById("deviceSaleVatRate").value)||0,purchase_url:url||null,supplier_name:document.getElementById("deviceSaleSupplier").value.trim()||supplierFromUrl(url)||null,note:document.getElementById("deviceSaleNote").value.trim()||null};
+  const row={workspace_owner_id:workspaceOwnerId,created_by:currentUser.id,sold_at:document.getElementById("deviceSaleDate").value,store:document.getElementById("deviceSaleStore").value,device_name:document.getElementById("deviceSaleName").value.trim(),sale_price:btRepairGrossPriceMode?Math.round(Number(document.getElementById("deviceSalePrice").value)/(1+Number(document.getElementById("deviceSaleVatRate").value||0)/100)*100)/100:Number(document.getElementById("deviceSalePrice").value),vat_rate:Number(document.getElementById("deviceSaleVatRate").value)||0,purchase_url:url||null,supplier_name:document.getElementById("deviceSaleSupplier").value.trim()||supplierFromUrl(url)||null,note:document.getElementById("deviceSaleNote").value.trim()||null};
   const {error}=await sb.from("beparytech_admin_device_sales").insert(row); msg.className=`createUserMsg ${error?"error":"ok"}`; msg.textContent=error?error.message:"Vendita salvata."; if(!error){e.target.reset();document.getElementById("deviceSaleDate").value=new Date().toISOString().slice(0,10);document.getElementById("deviceSaleVatRate").value="22";updateDeviceSaleVatPreview();loadDeviceSales();}
 });
 document.getElementById("adminLoginPasswordForm")?.addEventListener("submit",async e=>{e.preventDefault(); if(!isAdmin())return; const msg=document.getElementById("adminLoginPasswordMsg"),btn=document.getElementById("adminLoginPasswordSave"), userId=document.getElementById("adminLoginPasswordUser").value,p1=document.getElementById("adminLoginPasswordValue").value,p2=document.getElementById("adminLoginPasswordValue2").value; msg.textContent=""; if(!userId){msg.textContent="Seleziona un utente.";return;} if(!isStrongLoginPassword(p1)){msg.textContent="Password: minimo 12 caratteri con maiuscola, minuscola, numero e simbolo.";return;} if(p1!==p2){msg.textContent="Le password non coincidono.";return;} btn.disabled=true; const {data,error}=await sb.functions.invoke("beparytech-users",{method:"POST",body:{action:"set_login_password",user_id:userId,password:p1}}); btn.disabled=false; if(error||data?.error){msg.className="createUserMsg error";msg.textContent=data?.error||error?.message||"Impossibile aggiornare la password.";return;} msg.className="createUserMsg ok";msg.textContent="Password login aggiornata correttamente.";e.target.reset();});
@@ -2171,13 +2174,16 @@ async function btLoadRepairPriceMode(){
     const owner=await btGetWorkspaceOwnerId();
     const id=owner?.owner;
     if(!id){btRepairGrossPriceMode=false;return;}
-    const {data,error}=await sb.from("beparytech_companies").select("slug,metadata").eq("workspace_owner_id",id).maybeSingle();
+    const {data,error}=await sb.from("beparytech_companies").select("slug,vat_number,metadata").eq("workspace_owner_id",id).maybeSingle();
     if(error)throw error;
-    btRepairGrossPriceMode=String(data?.slug||"").toLowerCase()==="egyphone"||data?.metadata?.price_entry_mode==="gross";
-    const label=document.querySelector('label[for="adminRepairPrice"]');
-    if(label)label.textContent=btRepairGrossPriceMode?"Prezzo finale (IVA inclusa)":"Prezzo (IVA esclusa)";
-    updateAdminRepairVatPreview();
-  }catch(err){console.warn("Modalità prezzi IVA",err);btRepairGrossPriceMode=false;}
+    btRepairGrossPriceMode=String(data?.slug||"").trim().toLowerCase()==="egyphone"||String(data?.vat_number||"").replace(/\D/g,"")==="01753890332"||data?.metadata?.price_entry_mode==="gross";
+    btUpdateVatPriceLabels();
+    updateAdminRepairVatPreview();updateDeviceSaleVatPreview();
+  }catch(err){console.warn("Modalità prezzi IVA",err);btRepairGrossPriceMode=false;btUpdateVatPriceLabels();}
+}
+function btUpdateVatPriceLabels(){
+  const change=(id)=>{const span=document.getElementById(id)?.closest("label")?.querySelector("span");if(span)span.textContent=btRepairGrossPriceMode?"Prezzo finale IVA inclusa *":"Prezzo escluso IVA *";};
+  change("adminRepairPrice");change("deviceSalePrice");
 }
 function updateAdminRepairVatPreview(){
   const entered=Math.max(0,Number(document.getElementById("adminRepairPrice")?.value)||0);
