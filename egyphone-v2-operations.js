@@ -2,7 +2,7 @@
 (()=>{
 const active=()=>document.documentElement.dataset.btBrand==="egyphone";
 let mounted=false;
-const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;":"&quot;"}[c]));
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 async function owner(){
  const {data:{user}}=await sb.auth.getUser();if(!user)throw Error("Accesso richiesto");
  const {data,error}=await sb.from("beparytech_profiles").select("workspace_owner_id,active,role").eq("user_id",user.id).single();
