@@ -46,6 +46,29 @@
 
   const receiptFields=[["receiptCustomer","Cliente (facoltativo)"],["receiptPhone","Telefono (facoltativo)"],["receiptDescription","Descrizione *"],["receiptAmount","Totale IVA inclusa (€) *"],["receiptPayment","Metodo pagamento"],["receiptNotes","Note (facoltative)"]];
   function makeFields(list){return list.map(([key,label])=>'<label class="egyField"><span>'+esc(label)+'</span><input autocomplete="off" name="'+esc(key)+'" placeholder="'+esc(label)+'" '+(key==="receiptAmount"?'type="number" step="0.01" min="0"':'')+'></label>').join("");}
+  async function lookupInvoiceVat(form,kind,seq){
+    const isIssuer=kind==="issuer", prefix=isIssuer?"issuer":"customer", vatInput=form.elements.namedItem(prefix+"Vat");
+    const status=document.getElementById("egyInvoiceStatus");
+    const vat=String(vatInput?.value||"").replace(/^IT/i,"").replace(/\D/g,"");
+    if(!/^\d{11}$/.test(vat))return;
+    const refs=isIssuer?{name:"issuerName",address:"issuerAddress",zip:"issuerZip",city:"issuerCity",province:"issuerProvince",taxCode:"issuerFiscal"}:
+       {name:"customerName",address:"customerAddress",zip:"customerZip",city:"customerCity",province:"customerProvince",taxCode:"customerFiscal",recipient:"customerSdi",pec:"customerPec"};
+    const before=Object.fromEntries(Object.entries(refs).map(([k,v])=>[k,form.elements.namedItem(v)?.value||""]));
+    status.textContent="Ricerca dati per partita IVA…";
+    try{
+      const response=await sb.functions.invoke("beparytech-vat-lookup",{body:{vat}});
+      if(response.error)throw new Error("Servizio di ricerca non disponibile.");
+      if(seq!==lookupInvoiceVat.seq[kind] || String(vatInput.value).replace(/^IT/i,"").replace(/\D/g,"")!==vat)return;
+      const data=response.data;if(!data?.found){status.textContent=data?.message||"Nessun risultato: inserisci i dati manualmente.";return;}
+      let count=0;
+      Object.entries(refs).forEach(([source,key])=>{
+        const input=form.elements.namedItem(key),value=data[source];
+        if(input && value && input.value===before[source] && !input.value.trim()){input.value=String(value);count++;}
+      });
+      status.textContent=count?count+" campi precompilati. Verifica sempre i dati prima di salvare.":"Nessun campo vuoto da completare.";
+    }catch(err){if(seq===lookupInvoiceVat.seq[kind])status.textContent=err.message+" Compila manualmente.";}
+  }
+  lookupInvoiceVat.seq={issuer:0,customer:0};
   function billingPanel(){
     const container=document.getElementById("adminInvoicesPanel");
     if(!container||container.querySelector("#egyInvoiceForm"))return;
@@ -60,8 +83,20 @@
       '<p class="egyInvoiceDisclaimer">La fattura elettronica XML EGYPHONE non è ancora abilitata. Il PDF di cortesia non è uno scontrino fiscale né un documento commerciale valido ai fini fiscali.</p>';
     container.prepend(wrapper);
     const form=wrapper.querySelector("form"),status=wrapper.querySelector("#egyInvoiceStatus");
+    const fiscal=form.elements.namedItem("issuerRegime");
+    if(fiscal){const sel=document.createElement("select");sel.name="issuerRegime";sel.innerHTML='<option value="">Seleziona regime fiscale…</option><option value="RF01">RF01 · Ordinario</option><option value="RF19">RF19 · Forfettario</option><option value="RF18">RF18 · Altro</option>';fiscal.replaceWith(sel);}
+    const vatTimers={};
+    ["issuer","customer"].forEach(kind=>{
+      const input=form.elements.namedItem(kind+"Vat");if(!input)return;
+      const btn=document.createElement("button");btn.type="button";btn.className="secondaryAction";btn.textContent="Cerca partita IVA";btn.style.marginTop="7px";
+      input.closest("label").append(btn);
+      const call=()=>lookupInvoiceVat(form,kind,++lookupInvoiceVat.seq[kind]);
+      btn.addEventListener("click",call);
+      input.addEventListener("input",()=>{clearTimeout(vatTimers[kind]);if(/^\d{11}$/.test(input.value.replace(/^IT/i,"").replace(/\D/g,"")))vatTimers[kind]=setTimeout(call,650);});
+    });
+    const defaults={issuerName:"EGYPTER PHONE DI ABDELRAHMAN TAMER MOHAMED ABDELWAHA",issuerVat:"01753890332",issuerFiscal:"BDLTRM82A01Z336O",issuerAddress:"VIALE DANTE ALIGHIERI 98",issuerCity:"PIACENZA",issuerProvince:"PC"};
     const allFields=[...fields,...receiptFields];
-    try{const saved=JSON.parse(localStorage.getItem(billingKey())||"{}");allFields.forEach(([k])=>{if(typeof saved[k]==="string")form.elements.namedItem(k).value=saved[k];});}catch(_){}
+    let saved={};try{saved=JSON.parse(localStorage.getItem(billingKey())||"{}")||{};}catch(_){};allFields.forEach(([k])=>{const v=saved[k]!==undefined?saved[k]:defaults[k];if(typeof v==="string")form.elements.namedItem(k).value=v;});
     const switchMode=mode=>{
       const receipt=mode==="receipt";
       wrapper.querySelector("#egyInvoiceColumns").hidden=receipt;
