@@ -26,6 +26,7 @@
     setText(".dashUserMini #dashUserRole","Amministratore EGYPHONE");
     setText("#dashboardTitle","EGYPHONE");
     if(document.title.includes("BeparyTech"))document.title="EGYPHONE · Il tuo laboratorio";
+    document.dispatchEvent(new CustomEvent("egyphone:active"));
     // Esclude clienti e sedi preconfigurati per l'azienda principale.
     const repairClients=document.getElementById("adminRepairClient");
     if(repairClients){
