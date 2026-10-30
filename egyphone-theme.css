@@ -275,3 +275,11 @@ html[data-bt-brand="egyphone"] #egyInvoiceStatus{color:#f1d28d;min-height:18px}
 html[data-bt-brand="egyphone"] .egyInvoiceDisclaimer{color:#bfd0dc;font-size:12px;line-height:1.6;margin-top:15px}
 @media(max-width:800px){html[data-bt-brand="egyphone"] .egyInvoiceColumns{grid-template-columns:1fr;gap:14px}html[data-bt-brand="egyphone"] #egyInvoiceForm{padding:14px}html[data-bt-brand="egyphone"] .egyInvoiceColumn{padding:15px}}
 @media(max-width:480px){html[data-bt-brand="egyphone"] .egyDocTabs button{flex:1 1 140px}html[data-bt-brand="egyphone"] .egyInvoiceActions button{flex:1 1 100%;min-height:44px}}
+
+html[data-bt-brand="egyphone"] .egyDocArchive{margin-top:24px;padding:16px;border:1px solid #426078;border-radius:14px;background:#132a40;color:#f4f0e6}
+html[data-bt-brand="egyphone"] .egyDocArchive h3{color:#f4d28a;margin:0 0 8px}
+html[data-bt-brand="egyphone"] .egyArchiveRows{display:grid;gap:8px;margin-top:14px}
+html[data-bt-brand="egyphone"] .egyArchiveItem{display:flex;justify-content:space-between;align-items:center;gap:14px;border:1px solid #3a526a;background:#1a3248;border-radius:10px;padding:12px}
+html[data-bt-brand="egyphone"] .egyArchiveItem small{display:block;color:#c4d0df;margin-top:5px}
+html[data-bt-brand="egyphone"] .egyArchiveItem button{border-radius:8px;background:#d9af58;color:#1e1a14;border:0;padding:8px 12px;font-weight:700}
+@media(max-width:600px){html[data-bt-brand="egyphone"] .egyArchiveItem{flex-direction:column;align-items:stretch}html[data-bt-brand="egyphone"] .egyArchiveItem>div:last-child{display:flex;justify-content:space-between;align-items:center}}
