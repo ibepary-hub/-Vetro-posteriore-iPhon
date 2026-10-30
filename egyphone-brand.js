@@ -20,6 +20,7 @@
     const box=document.querySelector(".studioWorkspace > div");
     if(box){const first=[...box.childNodes].find(n=>n.nodeType===Node.TEXT_NODE);if(first)first.textContent="EGYPHONE";else box.prepend(document.createTextNode("EGYPHONE"));}
     document.documentElement.dataset.btBrand="egyphone";
+    setText(".studioHeaderTitle strong","EGYPHONE");
     setText("#dashUserName","EGYPHONE");
     setText("#dashboardGreetingName","EGYPHONE");
     setText(".dashUserMini #dashUserRole","Amministratore EGYPHONE");
@@ -65,6 +66,10 @@
   const poll=setInterval(()=>{check().catch(console.warn);if(++attempts>=12)clearInterval(poll);},2500);
   // La dashboard viene talvolta disegnata dopo il login e riscrive l'intestazione.
   // Osserva solo le intestazioni, senza interferire con i dati o i moduli.
+  const heading=document.querySelector(".studioHeaderTitle strong");
+  if(heading){
+    new MutationObserver(()=>{if(document.documentElement.dataset.btBrand==="egyphone"&&heading.textContent!=="EGYPHONE")heading.textContent="EGYPHONE";}).observe(heading,{childList:true,characterData:true,subtree:true});
+  }
   const header=document.getElementById("dashUserName");
   if(header){
     new MutationObserver(()=>{if(document.documentElement.dataset.btBrand==="egyphone" && header.textContent!=="EGYPHONE")header.textContent="EGYPHONE";}).observe(header,{childList:true,characterData:true,subtree:true});
