@@ -1,0 +1,44 @@
+/* EGYPHONE — visual theme, scoped strictly to authenticated EGYPHONE workspace.
+   No changes to business logic, permissions or billing calculations. */
+html[data-bt-brand="egyphone"] body.studio{
+ --bg:#081623;--card:#102337;--card2:#142c42;--text:#f4f0e6;--muted:#b9c5d0;--line:#30455a;
+ --gold:#e1ac38;--gold2:#f0c86a;--green:#d3a33e;--amber:#e8bb55;
+ --panel:#102337;--surface:#0b1b2a;--input:#12283a;--border:#30455a;--accent:#dfac41;
+ --v2-bg:#081623;--v2-card:#102337;--v2-line:#30455a;--v2-text:#f4f0e6;--v2-muted:#b9c5d0;
+ --studio-soft:#172c3d;--studio-welcome:#162d43;
+ background:#0b1929!important;color:#f4f0e6;
+}
+html[data-bt-brand="egyphone"] body.studio .mainMenu{
+ background:linear-gradient(180deg,#08131e,#10263a)!important;border-right:1px solid #4b3d25!important;
+}
+html[data-bt-brand="egyphone"] body.studio .menuHead,
+html[data-bt-brand="egyphone"] body.studio .studioWorkspace{border-color:#4c3e2a!important}
+html[data-bt-brand="egyphone"] body.studio .menuBrand strong{color:#f6d78d!important}
+html[data-bt-brand="egyphone"] body.studio .menuBrand span,
+html[data-bt-brand="egyphone"] body.studio .menuGroupTitle{color:#d9b76d!important}
+html[data-bt-brand="egyphone"] body.studio .menuItem{color:#dbe6ef!important}
+html[data-bt-brand="egyphone"] body.studio .menuItem.active,
+html[data-bt-brand="egyphone"] body.studio .menuItem:hover{
+ background:rgba(220,169,57,.18)!important;color:#ffdb87!important;
+}
+html[data-bt-brand="egyphone"] body.studio .studioBrandMark img,
+html[data-bt-brand="egyphone"] body.studio .studioWorkspace img{filter:drop-shadow(0 2px 5px #ddaa4366)}
+html[data-bt-brand="egyphone"] body.studio button.primaryAction,
+html[data-bt-brand="egyphone"] body.studio .primaryAction,
+html[data-bt-brand="egyphone"] body.studio .scannerNavButton{
+ background:linear-gradient(135deg,#f3d17c,#c99428)!important;
+ border-color:#b78420!important;color:#211a0b!important;
+}
+html[data-bt-brand="egyphone"] body.studio input:focus,
+html[data-bt-brand="egyphone"] body.studio select:focus,
+html[data-bt-brand="egyphone"] body.studio textarea:focus{
+ border-color:#d5a138!important;outline-color:#d5a138!important;box-shadow:0 0 0 3px #d5a13833!important;
+}
+html[data-bt-brand="egyphone"] body.studio .studioWelcome,
+html[data-bt-brand="egyphone"] body.studio .studioWelcomeBanner{
+ background:linear-gradient(120deg,#18344a,#26384a)!important;
+}
+html[data-bt-brand="egyphone"] body.studio .menuIcon{color:#e9be65!important}
+@media(prefers-reduced-motion:reduce){
+ html[data-bt-brand="egyphone"] body.studio *{transition-duration:.01ms!important}
+}
