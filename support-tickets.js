@@ -17,7 +17,7 @@ async function load(host){
 function mount(){
  if(mounted||!document.getElementById("mainMenu")||typeof sb==="undefined")return;
  const menu=document.getElementById("mainMenu");
- const button=document.createElement("button");button.type="button";button.id="btOpenSupport";button.textContent="🎧 Centro assistenza IT";button.style.cssText="width:calc(100% - 24px);margin:12px;padding:13px;border-radius:10px;background:#233c50;color:#fff;border:1px solid #bd9a55;cursor:pointer;";
+ const button=document.createElement("button");button.type="button";button.id="btOpenSupport";button.textContent="🎧 Centro assistenza IT";
  menu.append(button);
  const layer=document.createElement("div");layer.id="btSupportOverlay";layer.hidden=true;
  layer.innerHTML='<div class="btSupportCard"><div class="btSupportTop"><h2>Centro assistenza IT</h2><button type="button" id="btSupportClose">← Torna al gestionale</button></div><p>Segnala un problema o richiedi una modifica al tuo gestionale.</p><form id="btSupportForm"><label>Tipo di richiesta<select name="category"><option>Problema tecnico</option><option>Richiesta modifica</option><option>Nuova funzionalità</option></select></label><label>Priorità<select name="priority"><option>Normale</option><option>Bassa</option><option>Urgente</option></select></label><label>Oggetto<input name="subject" minlength="3" maxlength="160" required></label><label>Descrizione<textarea name="description" minlength="10" maxlength="5000" rows="4" required></textarea></label><button type="submit">Apri ticket</button><p id="btSupportMessage" aria-live="polite"></p></form><div id="btSupportHistory"></div></div>';
