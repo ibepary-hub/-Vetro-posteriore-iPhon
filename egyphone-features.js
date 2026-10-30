@@ -105,12 +105,19 @@
     const defaults={issuerName:"EGYPTER PHONE DI ABDELRAHMAN TAMER MOHAMED ABDELWAHA",issuerVat:"01753890332",issuerFiscal:"BDLTRM82A01Z336O",issuerAddress:"VIALE DANTE ALIGHIERI 98",issuerCity:"PIACENZA",issuerProvince:"PC"};
     const allFields=[...fields,...receiptFields];
     let saved={};try{saved=JSON.parse(localStorage.getItem(billingKey())||"{}")||{};}catch(_){};allFields.forEach(([k])=>{const v=saved[k]!==undefined?saved[k]:defaults[k];if(typeof v==="string")form.elements.namedItem(k).value=v;});if(!saved.receiptPayment)form.elements.namedItem("receiptPayment").value="Contanti";
+    let currentMode=null;
     const switchMode=mode=>{
-      const receipt=mode==="receipt";
-      wrapper.querySelector("#egyInvoiceColumns").hidden=receipt;
+      currentMode=currentMode===mode?null:mode;
+      const invoice=currentMode==="invoice",receipt=currentMode==="receipt";
+      wrapper.querySelector("#egyInvoiceColumns").hidden=!invoice;
       wrapper.querySelector("#egyReceiptSection").hidden=!receipt;
       wrapper.querySelector("#egyReceiptPrint").hidden=!receipt;
-      wrapper.querySelectorAll("[data-egy-doc]").forEach(b=>b.classList.toggle("active",b.dataset.egyDoc===mode));
+      wrapper.querySelector(".egyInvoiceActions").hidden=!currentMode;
+      wrapper.querySelectorAll("[data-egy-doc]").forEach(b=>{
+        const opened=b.dataset.egyDoc===currentMode;
+        b.classList.toggle("active",opened);
+        b.setAttribute("aria-expanded",String(opened));
+      });
       status.textContent="";
     };
     wrapper.querySelectorAll("[data-egy-doc]").forEach(b=>b.addEventListener("click",()=>switchMode(b.dataset.egyDoc)));
@@ -187,7 +194,7 @@
       finally{btn.disabled=false;}
     });
     refreshArchive().catch(console.warn);
-    switchMode("invoice");
+    switchMode(null);
   }
   function installQuickClient(){
     const form=document.getElementById("quickRepairForm"),select=document.getElementById("quickRepairClient"),
