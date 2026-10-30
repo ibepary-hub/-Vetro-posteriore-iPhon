@@ -38,3 +38,6 @@ html[data-bt-brand="egyphone"] .egyV2CashNav{display:block;width:calc(100% - 24p
 #egyCustomerPortal h1{color:#e8c17c;letter-spacing:.1em}
 #egyCustomerPortal h2{color:#f4f5f6}
 #egyV2CustomerUrl{overflow-wrap:anywhere;line-height:2}
+
+.egyV2TicketNotice[hidden]{display:none!important}
+.egyV2TicketNotice{position:fixed;right:20px;bottom:20px;z-index:2147483600;background:#1a364b;color:#fff;border:1px solid #dbb65a;border-radius:12px;padding:16px;max-width:350px;box-shadow:0 12px 30px #0006}
