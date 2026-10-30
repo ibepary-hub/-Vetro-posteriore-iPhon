@@ -145,9 +145,37 @@
     });
     switchMode("invoice");
   }
+  function installQuickClient(){
+    const form=document.getElementById("quickRepairForm"),select=document.getElementById("quickRepairClient"),
+      wrap=document.getElementById("quickRepairCustomClientWrap"),input=document.getElementById("quickRepairCustomClient");
+    if(!form||!select||!wrap||!input)return;
+    if(form.dataset.egyQuickClient==="1")return;
+    form.dataset.egyQuickClient="1";
+    const list=document.createElement("datalist");list.id="egyQuickClientSuggestions";form.append(list);
+    input.setAttribute("list",list.id);
+    input.setAttribute("autocomplete","off");
+    input.placeholder="Scrivi il nome del cliente o scegline uno esistente…";
+    select.value="ALTRO";select.dispatchEvent(new Event("change",{bubbles:true}));
+    select.closest("label").hidden=true;
+    wrap.hidden=false;input.required=true;
+    async function loadSuggestions(){
+      if(!active())return;
+      try{
+        const {data:{user}}=await sb.auth.getUser();if(!user)return;
+        const {data:profile,error:pe}=await sb.from("beparytech_profiles").select("workspace_owner_id,active").eq("user_id",user.id).maybeSingle();
+        if(pe||!profile?.active)return;
+        const {data,error}=await sb.from("beparytech_clients").select("display_name").eq("workspace_owner_id",profile.workspace_owner_id).eq("active",true).order("display_name").limit(500);
+        if(error)throw error;
+        list.replaceChildren(...(data||[]).filter(c=>c.display_name).map(c=>new Option(c.display_name,c.display_name)));
+      }catch(err){console.warn("Rubrica EGYPHONE non disponibile",err);}
+    }
+    input.addEventListener("focus",loadSuggestions);
+    form.addEventListener("reset",()=>setTimeout(()=>{if(!active())return;select.value="ALTRO";select.dispatchEvent(new Event("change",{bubbles:true}));wrap.hidden=false;input.required=true;},0));
+    loadSuggestions();
+  }
   function install(){
     if(!active())return;
-    installSearch();billingPanel();configured=true;
+    installSearch();billingPanel();installQuickClient();configured=true;
   }
   document.addEventListener("egyphone:active",install);
   window.addEventListener("load",()=>{if(active())install();});
