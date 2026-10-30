@@ -22,9 +22,9 @@ function mount(){
  const layer=document.createElement("div");layer.id="btSupportOverlay";layer.hidden=true;
  layer.innerHTML='<div class="btSupportCard"><div class="btSupportTop"><h2>Centro assistenza IT</h2><button type="button" id="btSupportClose">Chiudi ✕</button></div><p>Segnala un problema o richiedi una modifica al tuo gestionale.</p><form id="btSupportForm"><label>Tipo di richiesta<select name="category"><option>Problema tecnico</option><option>Richiesta modifica</option><option>Nuova funzionalità</option></select></label><label>Priorità<select name="priority"><option>Normale</option><option>Bassa</option><option>Urgente</option></select></label><label>Oggetto<input name="subject" minlength="3" maxlength="160" required></label><label>Descrizione<textarea name="description" minlength="10" maxlength="5000" rows="4" required></textarea></label><button type="submit">Apri ticket</button><p id="btSupportMessage" aria-live="polite"></p></form><div id="btSupportHistory"></div></div>';
  document.body.append(layer);
- const close=()=>layer.hidden=true;
+ const close=()=>{layer.hidden=true;document.body.classList.remove("bt-support-open");};
  layer.querySelector("#btSupportClose").addEventListener("click",close);
- button.addEventListener("click",async()=>{layer.hidden=false;try{await load(layer.querySelector("#btSupportHistory"));}catch(e){layer.querySelector("#btSupportMessage").textContent=e.message;}});
+ button.addEventListener("click",async()=>{layer.hidden=false;document.body.classList.add("bt-support-open");try{await load(layer.querySelector("#btSupportHistory"));}catch(e){layer.querySelector("#btSupportMessage").textContent=e.message;}});
  layer.querySelector("#btSupportForm").addEventListener("submit",async e=>{
   e.preventDefault();const form=e.currentTarget,msg=layer.querySelector("#btSupportMessage"),btn=form.querySelector("button[type=submit]");btn.disabled=true;msg.textContent="Salvataggio…";
   try{const {owner,user}=await context();const val=name=>String(form.elements.namedItem(name)?.value||"").trim();
