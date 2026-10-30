@@ -42,3 +42,52 @@ html[data-bt-brand="egyphone"] body.studio .menuIcon{color:#e9be65!important}
 @media(prefers-reduced-motion:reduce){
  html[data-bt-brand="egyphone"] body.studio *{transition-duration:.01ms!important}
 }
+
+
+/* Contrast patch 2026-10-30: selectors matched against current dashboard HTML. */
+html[data-bt-brand="egyphone"] body.studio .dashboardHeroCopy h2,
+html[data-bt-brand="egyphone"] body.studio #dashboardGreetingName{
+ color:#f6f0df!important;text-shadow:none!important;
+}
+html[data-bt-brand="egyphone"] body.studio .dashboardHeroCopy p{
+ color:#bdccd9!important;
+}
+html[data-bt-brand="egyphone"] body.studio .dashboardPrimaryActions{
+ display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+ gap:14px!important;align-items:stretch!important;
+}
+html[data-bt-brand="egyphone"] body.studio .dashboardPrimaryActions .primaryActionCard{
+ background:#132a40!important;border:1px solid #38516b!important;
+ color:#f6f0df!important;border-radius:14px!important;
+ min-height:96px!important;padding:16px!important;
+ box-shadow:0 4px 16px #0003!important;align-items:center!important;
+}
+html[data-bt-brand="egyphone"] body.studio .dashboardPrimaryActions .primaryActionCard strong{
+ color:#f6f0df!important;font-weight:750!important;opacity:1!important;
+}
+html[data-bt-brand="egyphone"] body.studio .dashboardPrimaryActions .primaryActionCard small{
+ color:#c1d0dd!important;opacity:1!important;
+}
+html[data-bt-brand="egyphone"] body.studio .dashboardPrimaryActions .primaryActionCard > b{
+ background:#0c1d2d!important;color:#f0bf59!important;
+ border:1px solid #445675!important;border-radius:11px!important;
+}
+html[data-bt-brand="egyphone"] body.studio .dashboardPrimaryActions .primaryActionCard:hover{
+ border-color:#d5a138!important;background:#193650!important;
+ box-shadow:0 6px 20px #0005!important;
+}
+html[data-bt-brand="egyphone"] body.studio .dashboardKpis,
+html[data-bt-brand="egyphone"] body.studio .dashboardKpis > *{
+ color:#f4f0e6!important;
+}
+html[data-bt-brand="egyphone"] body.studio .dashboardMainGrid .dashAnalyticsCard,
+html[data-bt-brand="egyphone"] body.studio .dashboardMainGrid .dashCard,
+html[data-bt-brand="egyphone"] body.studio .dashboardMainGrid .dashboardPanel{
+ background:#132a40!important;color:#f6f0df!important;border-color:#38516b!important;
+}
+@media(max-width:900px){
+ html[data-bt-brand="egyphone"] body.studio .dashboardPrimaryActions{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+}
+@media(max-width:560px){
+ html[data-bt-brand="egyphone"] body.studio .dashboardPrimaryActions{grid-template-columns:1fr!important}
+}
