@@ -587,6 +587,7 @@ function btRenderPreviewDashboard(){
   if(mix) mix.innerHTML=`<div class="mixDonut"><div><strong>228</strong><small>pezzi</small></div></div><div class="mixLegend"><span><i class="bgDot"></i>BackGlass <b>80%</b></span><span><i class="hsDot"></i>Housing <b>11%</b></span><span><i class="reqDot"></i>Altri ricambi <b>9%</b></span></div>`;
 }
 function btEnterPreview(){
+  return; // Anteprima pubblica disabilitata.
   btPreviewMode=true;
   document.body.classList.add("logged-in","preview-mode");
   document.getElementById("signedOut").hidden=true;
@@ -628,7 +629,7 @@ function btExitPreview(){
   document.getElementById("mainMenu")?.classList.remove("open");
   window.scrollTo({top:0,behavior:"smooth"});
 }
-document.getElementById("previewBtn")?.addEventListener("click",btEnterPreview);
+// Anteprima pubblica disabilitata.
 document.getElementById("previewExitBtn")?.addEventListener("click",btExitPreview);
 
 document.getElementById("forgotPasswordBtn").onclick=async()=>{
