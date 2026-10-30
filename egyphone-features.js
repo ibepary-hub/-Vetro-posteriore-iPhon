@@ -121,28 +121,60 @@
       catch(err){status.textContent="Salvataggio non riuscito: "+err.message;}
     });
     wrapper.querySelector("#egyInvoiceClear").addEventListener("click",()=>{form.reset();localStorage.removeItem(billingKey());status.textContent="Campi svuotati.";});
-    wrapper.querySelector("#egyReceiptPrint").addEventListener("click",()=>{
-      const read=k=>String(form.elements.namedItem(k)?.value||"").trim();
-      const amount=Number(read("receiptAmount").replace(",","."));
-      if(!read("receiptDescription")||!Number.isFinite(amount)||amount<=0){status.textContent="Inserisci descrizione e importo valido.";return;}
-      if(!window.jspdf?.jsPDF){status.textContent="Modulo PDF non disponibile.";return;}
+    function makeReceiptPdf(row){
+      if(!window.jspdf?.jsPDF)throw new Error("Modulo PDF non disponibile");
       const doc=new window.jspdf.jsPDF({unit:"mm",format:"a5"});
       doc.setFont("helvetica","bold");doc.setFontSize(18);doc.text("EGYPHONE",15,20);
       doc.setFont("helvetica","normal");doc.setFontSize(8);
       doc.text(doc.splitTextToSize("EGYPTER PHONE DI ABDELRAHMAN TAMER MOHAMED ABDELWAHA",115),15,26);
       doc.text("Viale Dante Alighieri 98 - Piacenza (PC)",15,35);
-      doc.text("P.IVA 01753890332  |  C.F. BDLTRM82A01Z336O",15,40);
+      doc.text("P.IVA 01753890332 | C.F. BDLTRM82A01Z336O",15,40);
       doc.text("Tel. 3801246605",15,45);
       doc.setFontSize(10);doc.text("RIEPILOGO DI CORTESIA - NON FISCALE",15,54);
-      doc.setFont("helvetica","normal");doc.setFontSize(11);
-      let y=65;const line=(label,value)=>{const pieces=doc.splitTextToSize(label+": "+(value||"-"),115);doc.text(pieces,15,y);y+=pieces.length*6+3;};
-      line("Data",new Date().toLocaleString("it-IT"));line("Cliente",read("receiptCustomer")||"Cliente generico");line("Telefono",read("receiptPhone"));line("Descrizione",read("receiptDescription"));
-      line("Metodo pagamento",read("receiptPayment"));line("Note",read("receiptNotes"));
-      y+=5;doc.setFont("helvetica","bold");doc.setFontSize(15);doc.text("Totale: "+amount.toFixed(2).replace(".",",")+" EUR",15,Math.min(y,174));
-      doc.setFont("helvetica","normal");doc.setFontSize(8);doc.text("Documento non fiscale. Non sostituisce il documento commerciale.",15,192);
-      doc.save("EGYPHONE_Riepilogo_non_fiscale.pdf");
-      status.textContent="PDF di cortesia generato. Non valido come scontrino fiscale.";
+      doc.setFont("helvetica","normal");doc.setFontSize(10);
+      let y=64;const line=(label,value)=>{const lines=doc.splitTextToSize(label+": "+(value||"-"),115);doc.text(lines,15,y);y+=lines.length*5+3;};
+      line("Numero interno",row.code);
+      line("Data",new Date(row.created_at).toLocaleString("it-IT"));
+      line("Cliente",row.customer_name||"Cliente generico");line("Telefono",row.customer_phone);
+      line("Descrizione",row.description);line("Pagamento",row.payment_method);line("Note",row.notes);
+      line("Stato",row.status==="void"?"ANNULLATO":"Emesso");
+      y+=3;doc.setFont("helvetica","bold");doc.setFontSize(14);
+      doc.text("Totale: "+Number(row.amount).toFixed(2).replace(".",",")+" EUR",15,Math.min(y,175));
+      doc.setFont("helvetica","normal");doc.setFontSize(8);
+      doc.text("Documento non fiscale. Non sostituisce il documento commerciale.",15,193);
+      doc.save(row.code+".pdf");
+    }
+    async function refreshArchive(){
+      const panel=wrapper.querySelector("#egyDocArchive");if(!panel)return;
+      const {data,error}=await sb.from("beparytech_courtesy_documents")
+        .select("code,created_at,customer_name,description,amount,payment_method,status,notes,customer_phone")
+        .order("created_at",{ascending:false}).limit(200);
+      if(error){panel.textContent="Archivio non disponibile: "+error.message;return;}
+      const rows=data||[];
+      panel.innerHTML='<h3>Archivio documenti di cortesia</h3><p>'+rows.length+' documenti recenti · numerazione interna</p>'+
+        '<div class="egyArchiveRows">'+rows.map((row,i)=>
+          '<div class="egyArchiveItem"><div><strong>'+esc(row.code)+'</strong><small>'+esc(new Date(row.created_at).toLocaleDateString("it-IT"))+
+          ' · '+esc(row.customer_name||"Cliente generico")+' · '+esc(row.description)+'</small></div><div><b>'+Number(row.amount).toFixed(2).replace(".",",")+' €</b> <button type="button" data-archive-index="'+i+'">PDF</button></div></div>'
+        ).join("")+'</div>';
+      panel.querySelectorAll("[data-archive-index]").forEach(b=>b.addEventListener("click",()=>makeReceiptPdf(rows[Number(b.dataset.archiveIndex)])));
+    }
+    const archive=document.createElement("section");archive.id="egyDocArchive";archive.className="egyDocArchive";
+    wrapper.append(archive);
+    wrapper.querySelector("#egyReceiptPrint").addEventListener("click",async()=>{
+      const btn=wrapper.querySelector("#egyReceiptPrint");const read=k=>String(form.elements.namedItem(k)?.value||"").trim();
+      const amount=Number(read("receiptAmount").replace(",","."));
+      if(!read("receiptDescription")||!Number.isFinite(amount)||amount<=0){status.textContent="Inserisci descrizione e importo valido.";return;}
+      btn.disabled=true;status.textContent="Salvataggio documento e assegnazione numero…";
+      try{
+        const {data,error}=await sb.rpc("bt_issue_courtesy_document",{p_customer_name:read("receiptCustomer"),p_customer_phone:read("receiptPhone"),p_description:read("receiptDescription"),p_amount:amount,p_payment_method:read("receiptPayment")||"Contanti",p_notes:read("receiptNotes")});
+        if(error)throw error;
+        status.textContent="Documento "+data.code+" salvato. Documento non fiscale.";
+        try{makeReceiptPdf(data);}catch(pdfErr){status.textContent="Documento "+data.code+" salvato, ma il PDF non è stato generato: "+pdfErr.message;}
+        await refreshArchive();
+      }catch(e){status.textContent="Non salvato: "+(e.message||"Errore");}
+      finally{btn.disabled=false;}
     });
+    refreshArchive().catch(console.warn);
     switchMode("invoice");
   }
   function installQuickClient(){
