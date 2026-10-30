@@ -43,20 +43,59 @@
     input.addEventListener("input",()=>{clearTimeout(searchTimer);requestSeq++;searchTimer=setTimeout(()=>repairSearch(input.value),240);});
   }
   function billingKey(){return "egyphone-invoice-fields-v1";}
+
+  const receiptFields=[["receiptCustomer","Cliente (facoltativo)"],["receiptPhone","Telefono (facoltativo)"],["receiptDescription","Descrizione *"],["receiptAmount","Totale IVA inclusa (€) *"],["receiptPayment","Metodo pagamento"],["receiptNotes","Note (facoltative)"]];
+  function makeFields(list){return list.map(([key,label])=>'<label class="egyField"><span>'+esc(label)+'</span><input autocomplete="off" name="'+esc(key)+'" placeholder="'+esc(label)+'" '+(key==="receiptAmount"?'type="number" step="0.01" min="0"':'')+'></label>').join("");}
   function billingPanel(){
     const container=document.getElementById("adminInvoicesPanel");
     if(!container||container.querySelector("#egyInvoiceForm"))return;
     [...container.children].forEach(el=>{el.dataset.egyLegacyHidden="1";el.style.display="none";});
-    const wrapper=document.createElement("section");wrapper.id="egyInvoiceForm";wrapper.style.cssText="background:#12283d;border:1px solid #38536a;border-radius:16px;padding:20px;color:#f4f0e6;margin:12px 0;";
-    wrapper.innerHTML='<h2 style="margin:0 0 8px;color:#f4d48e">Fatturazione EGYPHONE</h2><p style="color:#bfccd8">Inserisci i dati fiscali del negozio e del cliente. Tutti i campi partono vuoti e puoi salvarli su questo dispositivo.</p>'+
-      '<form id="egyInvoiceDetails"><div class="egyInvoiceFields">'+fields.map(([key,label])=>'<label style="display:grid;gap:6px;font-size:13px;color:#e3edf5">'+esc(label)+'<input autocomplete="off" name="'+esc(key)+'" placeholder="'+esc(label)+'" style="width:100%;min-width:0;padding:12px;background:#0c1e30;border:1px solid #4a637a;border-radius:9px;color:#f7f4eb"></label>').join("")+'</div>'+
-      '<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px"><button type="submit" class="primaryAction">Salva dati fatturazione</button><button type="button" id="egyInvoiceClear" class="secondaryAction">Svuota campi</button></div><p id="egyInvoiceStatus" aria-live="polite" style="color:#eac579"></p></form>'+
-      '<p style="color:#bbcbdb;font-size:12px;margin-top:14px">Questa scheda salva i dati sul dispositivo; la generazione della fattura XML EGYPHONE non è ancora attivata. Non usare la vecchia fatturazione RIPARALO/VR Trasporti.</p>';
+    const wrapper=document.createElement("section");wrapper.id="egyInvoiceForm";
+    wrapper.innerHTML='<div class="egyDocHead"><h2>Documenti EGYPHONE</h2><p>Scegli il documento da preparare.</p><div class="egyDocTabs"><button type="button" class="active" data-egy-doc="invoice">Fattura</button><button type="button" data-egy-doc="receipt">Scontrino di cortesia</button></div></div>'+
+    '<form id="egyInvoiceDetails"><div id="egyInvoiceColumns" class="egyInvoiceColumns">'+
+      '<section class="egyInvoiceColumn"><h3>Dati emittente</h3><p>Informazioni fiscali del negozio</p><div class="egyColumnFields">'+makeFields(fields.slice(0,8))+'</div></section>'+
+      '<section class="egyInvoiceColumn"><h3>Dati cliente</h3><p>Destinatario del documento</p><div class="egyColumnFields">'+makeFields(fields.slice(8))+'</div></section></div>'+
+      '<section id="egyReceiptSection" class="egyInvoiceColumn" hidden><h3>Scontrino di cortesia</h3><p>Documento non fiscale, utile come riepilogo della vendita.</p><div class="egyColumnFields">'+makeFields(receiptFields)+'</div></section>'+
+      '<div class="egyInvoiceActions"><button type="submit" class="primaryAction">Salva dati</button><button type="button" id="egyInvoiceClear" class="secondaryAction">Svuota campi</button><button type="button" id="egyReceiptPrint" class="primaryAction" hidden>Genera PDF non fiscale</button></div><p id="egyInvoiceStatus" aria-live="polite"></p></form>'+
+      '<p class="egyInvoiceDisclaimer">La fattura elettronica XML EGYPHONE non è ancora abilitata. Il PDF di cortesia non è uno scontrino fiscale né un documento commerciale valido ai fini fiscali.</p>';
     container.prepend(wrapper);
     const form=wrapper.querySelector("form"),status=wrapper.querySelector("#egyInvoiceStatus");
-    try{const saved=JSON.parse(localStorage.getItem(billingKey())||"{}");fields.forEach(([k])=>{if(typeof saved[k]==="string")form.elements.namedItem(k).value=saved[k];});}catch(_){}
-    form.addEventListener("submit",e=>{e.preventDefault();const values={};fields.forEach(([key])=>values[key]=String(form.elements.namedItem(key)?.value||"").trim());try{localStorage.setItem(billingKey(),JSON.stringify(values));status.textContent="Dati fatturazione salvati su questo dispositivo.";}catch(err){status.textContent="Impossibile salvare i dati: "+err.message;}});
+    const allFields=[...fields,...receiptFields];
+    try{const saved=JSON.parse(localStorage.getItem(billingKey())||"{}");allFields.forEach(([k])=>{if(typeof saved[k]==="string")form.elements.namedItem(k).value=saved[k];});}catch(_){}
+    const switchMode=mode=>{
+      const receipt=mode==="receipt";
+      wrapper.querySelector("#egyInvoiceColumns").hidden=receipt;
+      wrapper.querySelector("#egyReceiptSection").hidden=!receipt;
+      wrapper.querySelector("#egyReceiptPrint").hidden=!receipt;
+      wrapper.querySelectorAll("[data-egy-doc]").forEach(b=>b.classList.toggle("active",b.dataset.egyDoc===mode));
+      status.textContent="";
+    };
+    wrapper.querySelectorAll("[data-egy-doc]").forEach(b=>b.addEventListener("click",()=>switchMode(b.dataset.egyDoc)));
+    form.addEventListener("submit",e=>{
+      e.preventDefault();const values={};
+      allFields.forEach(([key])=>values[key]=String(form.elements.namedItem(key)?.value||"").trim());
+      try{localStorage.setItem(billingKey(),JSON.stringify(values));status.textContent="Dati salvati soltanto su questo dispositivo.";}
+      catch(err){status.textContent="Salvataggio non riuscito: "+err.message;}
+    });
     wrapper.querySelector("#egyInvoiceClear").addEventListener("click",()=>{form.reset();localStorage.removeItem(billingKey());status.textContent="Campi svuotati.";});
+    wrapper.querySelector("#egyReceiptPrint").addEventListener("click",()=>{
+      const read=k=>String(form.elements.namedItem(k)?.value||"").trim();
+      const amount=Number(read("receiptAmount").replace(",","."));
+      if(!read("receiptDescription")||!Number.isFinite(amount)||amount<=0){status.textContent="Inserisci descrizione e importo valido.";return;}
+      if(!window.jspdf?.jsPDF){status.textContent="Modulo PDF non disponibile.";return;}
+      const doc=new window.jspdf.jsPDF({unit:"mm",format:"a5"});
+      doc.setFont("helvetica","bold");doc.setFontSize(18);doc.text("EGYPHONE",15,20);
+      doc.setFontSize(10);doc.text("RIEPILOGO DI CORTESIA - NON FISCALE",15,30);
+      doc.setFont("helvetica","normal");doc.setFontSize(11);
+      let y=43;const line=(label,value)=>{const pieces=doc.splitTextToSize(label+": "+(value||"-"),115);doc.text(pieces,15,y);y+=pieces.length*6+3;};
+      line("Data",new Date().toLocaleString("it-IT"));line("Cliente",read("receiptCustomer")||"Cliente generico");line("Telefono",read("receiptPhone"));line("Descrizione",read("receiptDescription"));
+      line("Metodo pagamento",read("receiptPayment"));line("Note",read("receiptNotes"));
+      y+=5;doc.setFont("helvetica","bold");doc.setFontSize(15);doc.text("Totale: "+amount.toFixed(2).replace(".",",")+" EUR",15,Math.min(y,166));
+      doc.setFont("helvetica","normal");doc.setFontSize(8);doc.text("Documento non fiscale. Non sostituisce il documento commerciale.",15,192);
+      doc.save("EGYPHONE_Riepilogo_non_fiscale.pdf");
+      status.textContent="PDF di cortesia generato. Non valido come scontrino fiscale.";
+    });
+    switchMode("invoice");
   }
   function install(){
     if(!active())return;
