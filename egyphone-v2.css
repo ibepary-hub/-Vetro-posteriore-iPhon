@@ -7,3 +7,11 @@ html[data-bt-brand="egyphone"] #mainMenu .menuNav .v2Secondary{display:none!impo
 html[data-bt-brand="egyphone"] #mainMenu .menuNav .v2Advanced[open] .v2Secondary{display:flex!important}
 html[data-bt-brand="egyphone"] #mainMenu .menuNav .v2Advanced{border:1px solid #435268;border-radius:10px;padding:7px 4px;margin:9px 0}
 html[data-bt-brand="egyphone"] #mainMenu .menuNav .v2Advanced summary{cursor:pointer;padding:10px;color:#d8c390}
+
+html[data-bt-brand="egyphone"] .egyV2Checklist{border:1px solid #5a6d7c;border-radius:13px;padding:16px;margin:16px 0;color:#f0e7db;min-width:0}
+html[data-bt-brand="egyphone"] .egyV2Checklist legend{padding:0 9px;color:#f4d18a;font-weight:750}
+html[data-bt-brand="egyphone"] .egyV2Checklist>p{margin:0 0 14px;color:#c4d1dc;font-size:13px}
+html[data-bt-brand="egyphone"] .egyV2CheckGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+html[data-bt-brand="egyphone"] .egyV2CheckGrid label{display:flex;flex-direction:column;gap:6px;min-width:0}
+html[data-bt-brand="egyphone"] .egyV2CheckGrid select{min-width:0;width:100%;color:#f7f4ed;background:#122a3d;border:1px solid #64798d;border-radius:8px;padding:10px}
+@media(max-width:680px){html[data-bt-brand="egyphone"] .egyV2CheckGrid{grid-template-columns:1fr}}
