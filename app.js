@@ -2759,7 +2759,8 @@ function bindQuickRepairV92(){
       const device=document.getElementById("quickRepairDevice").value.trim(),note=document.getElementById("quickRepairNote").value.trim();
       if(!client||!device||!work)throw new Error("Inserisci cliente, dispositivo e lavoro da fare.");
       const day=new Date().toISOString().slice(0,10),code=`RIP-${day.replaceAll("-","")}-${String(Date.now()).slice(-5)}`;
-      const payload={workspace_owner_id:ctx.owner,created_by:ctx.user,repaired_at:day,accepted_at:new Date().toISOString(),practice_code:code,receipt_token:code,store:client,client_name:client,device,repair_type:work,reported_issue:null,price_ex_vat:0,vat_rate:22,repair_status:"Da completare",quote_status:"Da diagnosticare",warranty_months:0,invoiced:false,note:note||null,photo_paths:[]};
+      const v2Tech=String(document.getElementById("egyV2Technician")?.value||"").trim();
+      const payload={workspace_owner_id:ctx.owner,created_by:ctx.user,...(document.documentElement.dataset.btBrand==="egyphone"&&v2Tech?{assigned_technician:v2Tech}:{}),repaired_at:day,accepted_at:new Date().toISOString(),practice_code:code,receipt_token:code,store:client,client_name:client,device,repair_type:work,reported_issue:null,price_ex_vat:0,vat_rate:22,repair_status:"Da completare",quote_status:"Da diagnosticare",warranty_months:0,invoiced:false,note:note||null,photo_paths:[]};
       const {error}=await sb.from("beparytech_admin_repairs").insert(payload);if(error)throw error;
       form.reset();syncClient();syncType();if(msg){msg.className="createUserMsg ok";msg.textContent=`Pratica ${code} salvata. Puoi completarla anche più tardi.`;}await loadAdminRepairs();
     }catch(err){if(msg){msg.className="createUserMsg error";msg.textContent=err.message||"Errore salvataggio";}}
