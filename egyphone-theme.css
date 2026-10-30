@@ -91,3 +91,81 @@ html[data-bt-brand="egyphone"] body.studio .dashboardMainGrid .dashboardPanel{
 @media(max-width:560px){
  html[data-bt-brand="egyphone"] body.studio .dashboardPrimaryActions{grid-template-columns:1fr!important}
 }
+
+
+/* EGYPHONE — Repair and sales summaries: cohesive layout desktop and mobile */
+html[data-bt-brand="egyphone"] body.studio #adminRepairsSummary,
+html[data-bt-brand="egyphone"] body.studio .deviceSalesSummary{
+ display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;
+ gap:10px!important;margin:16px 0 20px!important;
+}
+html[data-bt-brand="egyphone"] body.studio #adminRepairsSummary > div,
+html[data-bt-brand="egyphone"] body.studio .deviceSalesSummary > div{
+ min-width:0!important;min-height:86px!important;
+ padding:16px!important;border-radius:13px!important;
+ background:#182f45!important;border:1px solid #3b5269!important;
+ box-shadow:none!important;display:flex!important;flex-direction:column!important;justify-content:center!important;
+}
+html[data-bt-brand="egyphone"] body.studio #adminRepairsSummary span,
+html[data-bt-brand="egyphone"] body.studio .deviceSalesSummary span{
+ color:#c5d2df!important;font-size:11px!important;line-height:1.5!important;
+}
+html[data-bt-brand="egyphone"] body.studio #adminRepairsSummary strong,
+html[data-bt-brand="egyphone"] body.studio .deviceSalesSummary strong{
+ color:#f5d48a!important;font-size:23px!important;line-height:1.25!important;
+}
+html[data-bt-brand="egyphone"] body.studio .repairHistoryTools{
+ display:flex!important;max-width:100%!important;gap:9px!important;
+}
+html[data-bt-brand="egyphone"] body.studio .repairHistoryTools input{
+ background:#12283a!important;color:#f4f0e6!important;border-color:#405970!important;
+}
+html[data-bt-brand="egyphone"] body.studio .repairHistoryTools input::placeholder{color:#aebfcf!important}
+html[data-bt-brand="egyphone"] body.studio .repairPracticeBucket .deviceAdminSaleRow{
+ background:#152b40!important;border:1px solid #3b536b!important;
+ border-radius:14px!important;padding:15px!important;
+}
+html[data-bt-brand="egyphone"] body.studio .repairPracticeBucket .deviceAdminSaleRow strong{
+ color:#f3eee5!important;
+}
+html[data-bt-brand="egyphone"] body.studio .repairPracticeBucket .deviceAdminSaleMeta span,
+html[data-bt-brand="egyphone"] body.studio .repairPracticeBucket .deviceAdminSaleTop span{
+ color:#c0cfdb!important;
+}
+@media(max-width:950px){
+ html[data-bt-brand="egyphone"] body.studio #adminRepairsSummary,
+ html[data-bt-brand="egyphone"] body.studio .deviceSalesSummary{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+ }
+}
+@media(max-width:600px){
+ html[data-bt-brand="egyphone"] body.studio #adminRepairsSummary,
+ html[data-bt-brand="egyphone"] body.studio .deviceSalesSummary{
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;
+ }
+ html[data-bt-brand="egyphone"] body.studio #adminRepairsSummary > div,
+ html[data-bt-brand="egyphone"] body.studio .deviceSalesSummary > div{
+  padding:12px!important;min-height:75px!important;
+ }
+ html[data-bt-brand="egyphone"] body.studio #adminRepairsSummary strong,
+ html[data-bt-brand="egyphone"] body.studio .deviceSalesSummary strong{font-size:20px!important}
+ html[data-bt-brand="egyphone"] body.studio .repairHistoryTools{
+  flex-direction:column!important;align-items:stretch!important;width:100%!important;
+ }
+ html[data-bt-brand="egyphone"] body.studio .repairHistoryTools input{
+  width:100%!important;min-width:0!important;
+ }
+ html[data-bt-brand="egyphone"] body.studio .repairHistoryTools button{width:100%!important}
+ html[data-bt-brand="egyphone"] body.studio .repairPracticeBucket .deviceAdminSaleTop{
+  flex-wrap:wrap!important;gap:8px!important;
+ }
+ html[data-bt-brand="egyphone"] body.studio .repairPracticeBucket .deviceAdminSalePrice{
+  white-space:normal!important;text-align:left!important;
+ }
+ html[data-bt-brand="egyphone"] body.studio .repairPracticeBucket .deviceAdminSaleActions{
+  display:flex!important;flex-wrap:wrap!important;gap:8px!important;justify-content:stretch!important;
+ }
+ html[data-bt-brand="egyphone"] body.studio .repairPracticeBucket .deviceAdminSaleActions button{
+  flex:1 1 120px!important;min-height:40px!important;
+ }
+}
