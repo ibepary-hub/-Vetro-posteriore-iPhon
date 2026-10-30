@@ -83,6 +83,14 @@
       '<p class="egyInvoiceDisclaimer">La fattura elettronica XML EGYPHONE non è ancora abilitata. Il PDF di cortesia non è uno scontrino fiscale né un documento commerciale valido ai fini fiscali.</p>';
     container.prepend(wrapper);
     const form=wrapper.querySelector("form"),status=wrapper.querySelector("#egyInvoiceStatus");
+    const payment=form.elements.namedItem("receiptPayment");
+    if(payment){
+      const select=document.createElement("select");select.name="receiptPayment";
+      for(const [value,label] of [["Contanti","Contanti"],["Carta / POS","Carta / POS"],["Bancomat","Bancomat"],["Bonifico bancario","Bonifico bancario"],["Satispay","Satispay"],["Pagamento misto","Pagamento misto"],["Altro","Altro"]]){
+        select.add(new Option(label,value));
+      }
+      payment.replaceWith(select);
+    }
     const fiscal=form.elements.namedItem("issuerRegime");
     if(fiscal){const sel=document.createElement("select");sel.name="issuerRegime";sel.innerHTML='<option value="">Seleziona regime fiscale…</option><option value="RF01">RF01 · Ordinario</option><option value="RF19">RF19 · Forfettario</option><option value="RF18">RF18 · Altro</option>';fiscal.replaceWith(sel);}
     const vatTimers={};
@@ -96,7 +104,7 @@
     });
     const defaults={issuerName:"EGYPTER PHONE DI ABDELRAHMAN TAMER MOHAMED ABDELWAHA",issuerVat:"01753890332",issuerFiscal:"BDLTRM82A01Z336O",issuerAddress:"VIALE DANTE ALIGHIERI 98",issuerCity:"PIACENZA",issuerProvince:"PC"};
     const allFields=[...fields,...receiptFields];
-    let saved={};try{saved=JSON.parse(localStorage.getItem(billingKey())||"{}")||{};}catch(_){};allFields.forEach(([k])=>{const v=saved[k]!==undefined?saved[k]:defaults[k];if(typeof v==="string")form.elements.namedItem(k).value=v;});
+    let saved={};try{saved=JSON.parse(localStorage.getItem(billingKey())||"{}")||{};}catch(_){};allFields.forEach(([k])=>{const v=saved[k]!==undefined?saved[k]:defaults[k];if(typeof v==="string")form.elements.namedItem(k).value=v;});if(!saved.receiptPayment)form.elements.namedItem("receiptPayment").value="Contanti";
     const switchMode=mode=>{
       const receipt=mode==="receipt";
       wrapper.querySelector("#egyInvoiceColumns").hidden=receipt;
@@ -120,12 +128,17 @@
       if(!window.jspdf?.jsPDF){status.textContent="Modulo PDF non disponibile.";return;}
       const doc=new window.jspdf.jsPDF({unit:"mm",format:"a5"});
       doc.setFont("helvetica","bold");doc.setFontSize(18);doc.text("EGYPHONE",15,20);
-      doc.setFontSize(10);doc.text("RIEPILOGO DI CORTESIA - NON FISCALE",15,30);
+      doc.setFont("helvetica","normal");doc.setFontSize(8);
+      doc.text(doc.splitTextToSize("EGYPTER PHONE DI ABDELRAHMAN TAMER MOHAMED ABDELWAHA",115),15,26);
+      doc.text("Viale Dante Alighieri 98 - Piacenza (PC)",15,35);
+      doc.text("P.IVA 01753890332  |  C.F. BDLTRM82A01Z336O",15,40);
+      doc.text("Tel. 3801246605",15,45);
+      doc.setFontSize(10);doc.text("RIEPILOGO DI CORTESIA - NON FISCALE",15,54);
       doc.setFont("helvetica","normal");doc.setFontSize(11);
-      let y=43;const line=(label,value)=>{const pieces=doc.splitTextToSize(label+": "+(value||"-"),115);doc.text(pieces,15,y);y+=pieces.length*6+3;};
+      let y=65;const line=(label,value)=>{const pieces=doc.splitTextToSize(label+": "+(value||"-"),115);doc.text(pieces,15,y);y+=pieces.length*6+3;};
       line("Data",new Date().toLocaleString("it-IT"));line("Cliente",read("receiptCustomer")||"Cliente generico");line("Telefono",read("receiptPhone"));line("Descrizione",read("receiptDescription"));
       line("Metodo pagamento",read("receiptPayment"));line("Note",read("receiptNotes"));
-      y+=5;doc.setFont("helvetica","bold");doc.setFontSize(15);doc.text("Totale: "+amount.toFixed(2).replace(".",",")+" EUR",15,Math.min(y,166));
+      y+=5;doc.setFont("helvetica","bold");doc.setFontSize(15);doc.text("Totale: "+amount.toFixed(2).replace(".",",")+" EUR",15,Math.min(y,174));
       doc.setFont("helvetica","normal");doc.setFontSize(8);doc.text("Documento non fiscale. Non sostituisce il documento commerciale.",15,192);
       doc.save("EGYPHONE_Riepilogo_non_fiscale.pdf");
       status.textContent="PDF di cortesia generato. Non valido come scontrino fiscale.";
