@@ -12,6 +12,24 @@
   const div=document.createElement("fieldset");div.className="egyV2Checklist";
   div.innerHTML='<legend>Controllo iniziale del dispositivo</legend><p>Facoltativo: registra lo stato prima della riparazione. I controlli non eseguiti restano “Non verificato”.</p><div class="egyV2CheckGrid">'+checks.map((c,i)=>'<label><span>'+esc(c)+'</span><select data-egyv2-check="'+i+'"><option value="Non verificato">Non verificato</option><option value="Funzionante">Funzionante</option><option value="Difettoso">Difettoso</option><option value="Non applicabile">Non applicabile</option></select></label>').join("")+'</div>';
   note.closest("label").after(div);
+  const techLabel=document.createElement("label");techLabel.className="egyV2Tech";
+  techLabel.innerHTML='<span>Tecnico assegnato (facoltativo)</span><select id="egyV2Technician"><option value="">Da assegnare</option></select>';
+  div.before(techLabel);
+  async function loadTechnicians(){
+   try{
+    const {data:{user}}=await sb.auth.getUser();if(!user)return;
+    const {data:me,error:pe}=await sb.from("beparytech_profiles").select("workspace_owner_id,active").eq("user_id",user.id).single();
+    if(pe||!me?.active)return;
+    const {data:rows,error}=await sb.from("beparytech_profiles").select("username,role").eq("workspace_owner_id",me.workspace_owner_id).eq("active",true).limit(100);
+    if(error)throw error;
+    const select=techLabel.querySelector("select");
+    for(const person of rows||[]){
+      if(!person.username||[...select.options].some(o=>o.value===person.username))continue;
+      select.add(new Option(person.username,person.username));
+    }
+   }catch(err){console.warn("EGYPHONE: tecnici non disponibili",err);}
+  }
+  loadTechnicians();
   // Capture submit before the existing handler, preserving original content.
   form.addEventListener("submit",e=>{
    if(!active())return;
