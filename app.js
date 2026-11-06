@@ -395,6 +395,7 @@ function btHasModule(name){
 }
 function applyRoleVisibility(){
   const admin=isAdmin();
+  window.__btJarvisRoleAdmin=admin;
   window.dispatchEvent(new CustomEvent("beparytech:jarvis-role",{detail:{admin}}));
   const superAdmin=isSuperAdmin();
   const usersTab=document.getElementById("usersTab");
