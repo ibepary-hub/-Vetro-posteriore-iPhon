@@ -48,5 +48,6 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!modal.hidden)close
 modal.querySelector("form").addEventListener("submit",e=>{e.preventDefault();const t=field.value;field.value="";send(t)});
 modal.querySelectorAll("[data-jcmd]").forEach(b=>b.addEventListener("click",()=>send(b.dataset.jcmd)));
 modal.querySelector("#btJMic").addEventListener("click",()=>{if(!admin)return;const SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR){bubble("Il riconoscimento vocale non è disponibile in questo browser. Scrivi il comando.");return}if(rec){rec.stop();rec=null;return}const r=new SR();rec=r;r.lang="it-IT";r.onresult=e=>{if(e.results?.[0]?.[0]?.transcript)send(e.results[0][0].transcript)};r.onerror=e=>{status.textContent="MICROFONO: "+e.error};r.onend=()=>{if(rec===r)rec=null;if(status.textContent==="ASCOLTO…")status.textContent="SISTEMA PRONTO"};try{r.start();status.textContent="ASCOLTO…"}catch(e){rec=null;status.textContent="MICROFONO NON DISPONIBILE"}});
-window.addEventListener("beparytech:jarvis-role",e=>{admin=e.detail?.admin===true;launch.hidden=!admin;if(!admin)close()});window.addEventListener("pagehide",close);
+window.addEventListener("beparytech:jarvis-role",e=>{admin=e.detail?.admin===true;launch.hidden=!admin;if(!admin)close()});if(window.__btJarvisRoleAdmin===true){admin=true;launch.hidden=false}
+window.addEventListener("pagehide",close);
 })();
