@@ -52,13 +52,26 @@
   async function check(){
     if(typeof sb==="undefined")return;
     const {data:{user}}=await sb.auth.getUser();
-    if(!user){lastUid="";clearBrand();return;}
+    if(!user){
+      lastUid="";
+      // Il branding modifica il DOM: ricaricare ricrea il layout originale.
+      if(document.documentElement.dataset.btBrand==="egyphone"){clearBrand();window.location.reload();return;}
+      clearBrand();return;
+    }
     if(lastUid===user.id&&document.documentElement.dataset.btBrand==="egyphone")return;
     const {data:profile,error}=await sb.from("beparytech_profiles").select("workspace_owner_id,active").eq("user_id",user.id).maybeSingle();
     if(error||!profile?.active)return;
     const {data:company,error:ce}=await sb.from("beparytech_companies").select("slug,vat_number").eq("workspace_owner_id",profile.workspace_owner_id).maybeSingle();
     if(ce)return;
-    if(String(company?.slug||"").toLowerCase()==="egyphone"||String(company?.vat_number||"").replace(/\D/g,"")==="01753890332"){apply();lastUid=user.id;}
+    const isEgyphone=String(company?.slug||"").toLowerCase()==="egyphone"||String(company?.vat_number||"").replace(/\D/g,"")==="01753890332";
+    if(!isEgyphone){
+      lastUid="";
+      if(document.documentElement.dataset.btBrand==="egyphone"){
+        clearBrand();window.location.reload();return;
+      }
+      clearBrand();return;
+    }
+    apply();lastUid=user.id;
   }
   window.addEventListener("load",()=>{check().catch(console.warn);});
   if(typeof sb!=="undefined")sb.auth.onAuthStateChange(()=>{setTimeout(()=>check().catch(console.warn),250);});
