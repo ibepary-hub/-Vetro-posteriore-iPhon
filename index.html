@@ -31,7 +31,10 @@
         <div class="menuGroupTitle">IL LABORATORIO</div>
         <button id="repairsMenuItem" class="menuItem adminOnly" type="button" data-category="RiparazioniAdmin"><span class="menuIcon">⌁</span><span><strong>Riparazioni</strong><small>In lavorazione, pronti e storico</small></span></button>
         <button id="vrRepairsMenuItem" class="menuItem adminOnly" type="button" data-category="RiparazioniVR" hidden><span class="menuIcon">⇄</span><span><strong>VR Trasporti</strong><small>Riparazioni e archivio dedicato</small></span></button>
-        <button id="riparaloMonthlyMenu" class="menuItem adminOnly" type="button" data-category="RiparaloMensile" hidden><span class="menuIcon">▤</span><span><strong>Riparalo</strong><small>Vendite, riparazioni e fatture</small></span></button>
+        <div class="menuGroupLabel">RIPARALO</div>
+        <button id="riparaloSalesMenu" class="menuItem adminOnly" type="button" data-category="RiparaloVendite" hidden><span class="menuIcon">€</span><span><strong>Riparalo · Vendite ricambi</strong><small>Vendite e storico</small></span></button>
+        <button id="riparaloRepairsMenu" class="menuItem adminOnly" type="button" data-category="RiparaloRiparazioni" hidden><span class="menuIcon">⌁</span><span><strong>Riparalo · Riparazioni</strong><small>Accettazioni e pratiche</small></span></button>
+        <button id="riparaloMonthlyMenu" class="menuItem adminOnly" type="button" data-category="RiparaloMensile" hidden><span class="menuIcon">▤</span><span><strong>Riparalo · Riepilogo e fatturazione</strong><small>Archivio mensile, Excel, PDF e XML</small></span></button>
         <details class="studioNavDetails"><summary>Nuova accettazione</summary><button id="quickRepairMenuItem" class="menuItem adminOnly" type="button" data-category="AccettazioneRapida"><span class="menuIcon">＋</span><span><strong>Accettazione rapida</strong><small>Cliente, dispositivo e lavoro</small></span></button>
         <button id="fullRepairMenuItem" class="menuItem adminOnly" type="button" data-category="AccettazioneCompleta"><span class="menuIcon">▤</span><span><strong>Accettazione con firma</strong><small>Ritiro, firma, IMEI e preventivo</small></span></button>
         </details><button id="workDdtMenuItem" class="menuItem adminOnly" type="button" data-category="ContoLavorazione"><span class="menuIcon">⇄</span><span><strong>DDT conto lavorazione</strong><small>Entrata, lavorazione e restituzione</small></span></button>
@@ -329,7 +332,7 @@
 
     
 <section id="riparaloMonthlyView" class="deviceSalesView" hidden>
-  <div class="deviceSaleCard adminUniformCard">
+  <div id="ripOpsCard" class="deviceSaleCard adminUniformCard">
     <div class="deviceSaleCardHead"><div><strong>Area operativa Riparalo</strong><small>Registrazione diretta · RPL e MELA</small></div></div>
     <div class="repairFormActions"><button id="ripNewSale" type="button" class="primaryAction">+ Nuova vendita</button><button id="ripNewRepair" type="button" class="primaryAction">+ Nuova accettazione</button></div>
   </div>
@@ -1137,7 +1140,7 @@
 </nav>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="app.js?v=2219"></script>
+<script src="app.js?v=2220"></script>
 <script src="jarvis-admin.js?v=1" defer></script>
 <script src="dymo-native.js?v=2204"></script>
 <script src="dymo-engine.js?v=2204"></script>
