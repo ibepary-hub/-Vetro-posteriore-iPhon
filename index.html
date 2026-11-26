@@ -31,6 +31,7 @@
         <div class="menuGroupTitle">IL LABORATORIO</div>
         <button id="repairsMenuItem" class="menuItem adminOnly" type="button" data-category="RiparazioniAdmin"><span class="menuIcon">⌁</span><span><strong>Riparazioni</strong><small>In lavorazione, pronti e storico</small></span></button>
         <button id="vrRepairsMenuItem" class="menuItem adminOnly" type="button" data-category="RiparazioniVR" hidden><span class="menuIcon">⇄</span><span><strong>VR Trasporti</strong><small>Riparazioni e archivio dedicato</small></span></button>
+        <button id="riparaloMonthlyMenu" class="menuItem adminOnly" type="button" data-category="RiparaloMensile" hidden><span class="menuIcon">▤</span><span><strong>Riparalo</strong><small>Vendite, riparazioni e fatture</small></span></button>
         <details class="studioNavDetails"><summary>Nuova accettazione</summary><button id="quickRepairMenuItem" class="menuItem adminOnly" type="button" data-category="AccettazioneRapida"><span class="menuIcon">＋</span><span><strong>Accettazione rapida</strong><small>Cliente, dispositivo e lavoro</small></span></button>
         <button id="fullRepairMenuItem" class="menuItem adminOnly" type="button" data-category="AccettazioneCompleta"><span class="menuIcon">▤</span><span><strong>Accettazione con firma</strong><small>Ritiro, firma, IMEI e preventivo</small></span></button>
         </details><button id="workDdtMenuItem" class="menuItem adminOnly" type="button" data-category="ContoLavorazione"><span class="menuIcon">⇄</span><span><strong>DDT conto lavorazione</strong><small>Entrata, lavorazione e restituzione</small></span></button>
@@ -55,7 +56,7 @@
         <div class="menuGroupTitle">VENDITE E DOCUMENTI</div>
         <button id="deviceSalesMenuItem" class="menuItem adminOnly" type="button" data-category="VenditeAdmin"><span class="menuIcon">€</span><span><strong>Vendite ricambi</strong><small>Ricambi, prezzi e IVA</small></span></button>
         <button id="invoicesMenuItem" class="menuItem adminOnly" type="button" data-category="Fatturazione"><span class="menuIcon">▤</span><span><strong>Fatture clienti</strong><small>Clienti, documenti e XML</small></span></button>
-        <button id="riparaloMonthlyMenu" class="menuItem adminOnly" type="button" data-category="RiparaloMensile" hidden><span class="menuIcon">▤</span><span><strong>Riparalo</strong><small>Ricambi e riparazioni per mese</small></span></button>
+
       </div>
 
       <div id="adminMenuGroup" class="menuGroup adminOnly" hidden>
@@ -328,6 +329,39 @@
 
     
 <section id="riparaloMonthlyView" class="deviceSalesView" hidden>
+  <div class="deviceSaleCard adminUniformCard">
+    <div class="deviceSaleCardHead"><div><strong>Area operativa Riparalo</strong><small>Registrazione diretta · RPL e MELA</small></div></div>
+    <div class="repairFormActions"><button id="ripNewSale" type="button" class="primaryAction">+ Nuova vendita</button><button id="ripNewRepair" type="button" class="primaryAction">+ Nuova accettazione</button></div>
+  </div>
+  <form id="ripSaleForm" class="deviceSaleCard adminUniformCard" hidden>
+    <div class="deviceSaleCardHead"><strong>Nuova vendita ricambio</strong></div>
+    <div class="deviceSaleGrid">
+      <label><span>Data</span><input id="ripSaleDate" type="date" required></label>
+      <label><span>Negozio</span><select id="ripSaleStore" required><option value="">Scegli negozio</option></select></label>
+      <label class="wide"><span>Nome ricambio</span><input id="ripSaleName" maxlength="140" placeholder="Es. Display iPhone 13" required></label>
+      <label><span>Quantità</span><input id="ripSaleQty" type="number" min="1" max="500" step="1" value="1" required></label>
+      <label><span>Prezzo unitario €</span><input id="ripSalePrice" type="number" min="0" step="0.01" required></label>
+      <label><span>IVA</span><select id="ripSaleMode" required><option value="">Scegli</option><option value="net">IVA esclusa</option><option value="gross">IVA inclusa</option></select></label>
+      <label class="wide"><span>Note</span><textarea id="ripSaleNote" maxlength="500" rows="2"></textarea></label>
+    </div>
+    <p id="ripSaleTotal"></p><div class="repairFormActions"><button id="ripSaleSave" type="submit" class="primaryAction">Salva vendita</button><button id="ripSaleCancel" type="button" class="secondaryAction">Chiudi</button></div><div id="ripSaleMsg" class="createUserMsg" aria-live="polite"></div>
+  </form>
+  <form id="ripRepairForm" class="deviceSaleCard adminUniformCard" hidden>
+    <div class="deviceSaleCardHead"><strong id="ripRepairHeading">Nuova accettazione</strong></div>
+    <div class="deviceSaleGrid">
+      <label><span>Data</span><input id="ripRepairDate" type="date" required></label>
+      <label><span>Negozio</span><select id="ripRepairStore" required><option value="">Scegli negozio</option></select></label>
+      <label class="wide"><span>Dispositivo</span><input id="ripRepairDevice" maxlength="160" required></label>
+      <label><span>IMEI / Seriale</span><input id="ripRepairImei" maxlength="120"></label>
+      <label><span>Stato</span><select id="ripRepairStatus"><option>Da riparare</option><option>Da completare</option><option>Da diagnosticare</option><option>In lavorazione</option><option>Attesa ricambio</option><option>Attesa cliente</option><option>Riparato</option><option>Pronto</option><option>Consegnato</option></select></label>
+      <label class="wide"><span>Note / Riferimento e-Share</span><textarea id="ripRepairNote" maxlength="1000" rows="2"></textarea></label>
+    </div>
+    <h3>Lavorazioni multiple</h3><label><span>Cerca lavorazione</span><input id="ripWorkSearch" type="search" placeholder="Cerca una riparazione..."></label>
+    <div id="ripWorkCatalog"></div><div class="repairFormActions"><input id="ripWorkCustom" maxlength="240" placeholder="Lavorazione personalizzata"><button id="ripWorkAdd" type="button" class="secondaryAction">+ Aggiungi</button></div>
+    <h3>Lavorazioni selezionate</h3><div id="ripWorkSelected"></div><p id="ripRepairTotal"></p>
+    <div class="repairFormActions"><button id="ripRepairSave" type="submit" class="primaryAction">Salva riparazione</button><button id="ripRepairCancel" type="button" class="secondaryAction">Chiudi</button></div><div id="ripRepairMsg" class="createUserMsg" aria-live="polite"></div>
+  </form>
+
   <div class="deviceSaleCard adminUniformCard">
     <div class="deviceSaleCardHead"><div><strong>RIPARALO S.R.L.</strong><small>Vendite ricambi e riparazioni · RPL e MELA</small></div><button id="ripRefresh" type="button" class="secondaryAction">Aggiorna</button></div>
     <div class="deviceSaleGrid">
@@ -1103,7 +1137,7 @@
 </nav>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="app.js?v=2218"></script>
+<script src="app.js?v=2219"></script>
 <script src="jarvis-admin.js?v=1" defer></script>
 <script src="dymo-native.js?v=2204"></script>
 <script src="dymo-engine.js?v=2204"></script>
