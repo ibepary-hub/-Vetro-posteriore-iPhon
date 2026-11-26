@@ -467,7 +467,13 @@
         <label><span>IVA %</span><input id="adminRepairVatRate" type="number" min="0" max="100" step="0.01" value="22" inputmode="decimal"></label>
         <label><span>Fatturato</span><select id="adminRepairInvoiced"><option value="false" selected>No</option><option value="true">Sì</option></select></label><label class="wide"><span>Nota</span><textarea id="adminRepairNote" maxlength="1000" rows="3" placeholder="Dettagli intervento, ricambio usato, difetto riscontrato…"></textarea></label>
       </div>
-      <div id="vrSimpleWorkButtons" class="repairFormActions" hidden><button class="secondaryAction" type="button" data-vr-work="Cambio display">Cambio display</button><button class="secondaryAction" type="button" data-vr-work="Cambio batteria">Cambio batteria</button><button class="secondaryAction" type="button" data-vr-work="Cambio connettore">Cambio connettore</button><button class="secondaryAction" type="button" data-vr-work="Altro">Altro</button></div>
+      <section id="vrSimpleWorkButtons" class="deviceSaleCard" hidden>
+        <div class="deviceSaleCardHead"><div><strong>Lavorazioni multiple</strong><small>Seleziona uno o più interventi e inserisci il prezzo netto di ciascuno.</small></div></div>
+        <label><span>Cerca lavorazione</span><input id="vrWorkSearch" type="search" placeholder="Cerca una riparazione..." disabled></label>
+        <div id="vrWorkCatalog"></div>
+        <div class="repairFormActions"><input id="vrWorkCustom" maxlength="240" placeholder="Lavorazione personalizzata" disabled><button id="vrWorkAdd" class="secondaryAction" type="button">+ Aggiungi</button></div>
+        <h3>Lavorazioni selezionate</h3><div id="vrWorkSelected"></div>
+      </section>
       <div class="vatPreview repairV1Finance">
         <div><span>Imponibile</span><strong id="adminRepairNet">€ 0,00</strong></div>
         <div><span>IVA</span><strong id="adminRepairVat">€ 0,00</strong></div>
@@ -1079,7 +1085,7 @@
 </nav>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="app.js?v=2215"></script>
+<script src="app.js?v=2216"></script>
 <script src="jarvis-admin.js?v=1" defer></script>
 <script src="dymo-native.js?v=2204"></script>
 <script src="dymo-engine.js?v=2204"></script>
