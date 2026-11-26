@@ -426,7 +426,7 @@ function applyRoleVisibility(){
   if(hoursMenu) hoursMenu.hidden=!admin;
   if(deviceSalesMenu) deviceSalesMenu.hidden=!admin;
   if(invoicesMenu) invoicesMenu.hidden=!admin;
-  const ripMenu=document.getElementById("riparaloMonthlyMenu");if(ripMenu)ripMenu.hidden=!admin;
+  for(const id of ["riparaloMonthlyMenu","riparaloSalesMenu","riparaloRepairsMenu"]){const el=document.getElementById(id);if(el)el.hidden=!admin;}
   if(bestekCatalogMenu) bestekCatalogMenu.hidden=!admin;
   if(repairsMenu) repairsMenu.hidden=!admin;
   const vrMenu=document.getElementById("vrRepairsMenuItem");if(vrMenu)vrMenu.hidden=!admin;
@@ -481,7 +481,7 @@ function applyLicenseVisibility(){
   const licenseOk=btLicenseActive();
   const map=[
     ["repairMenuGroup","repairs"],["quickRepairMenuItem","repairs"],["fullRepairMenuItem","repairs"],["repairsMenuItem","repairs"],["vrRepairsMenuItem","repairs"],
-    ["workDdtMenuItem","ddt"],["salesMenuGroup","sales"],["deviceSalesMenuItem","sales"],["invoicesMenuItem","invoicing"],["riparaloMonthlyMenu","invoicing"],
+    ["workDdtMenuItem","ddt"],["salesMenuGroup","sales"],["deviceSalesMenuItem","sales"],["invoicesMenuItem","invoicing"],["riparaloMonthlyMenu","invoicing"],["riparaloSalesMenu","sales"],["riparaloRepairsMenu","repairs"],
     ["hoursMenuItem","hours"],["backupMenuItem","backup"],["bestekCatalogMenuItem","bestek"]
   ];
   for(const [id,m] of map){const el=document.getElementById(id);if(el&&isAdmin()&&!isSuperAdmin())el.hidden=!licenseOk||!btHasModule(m);}
@@ -3909,6 +3909,8 @@ btVrWorkRoot?.addEventListener("click",e=>{
 const btRipMonths=["Gennaio","Febbraio","Marzo","Aprile","Maggio","Giugno","Luglio","Agosto","Settembre","Ottobre","Novembre","Dicembre"];
 let btRipRows=[],btRipReady=false,btRipRequest=0;
 const btRipEl=id=>document.getElementById(id);
+const btRipRoutes=["RiparaloVendite","RiparaloRiparazioni","RiparaloMensile"];
+function btRipIsRoute(c=currentCategory){return btRipRoutes.includes(c);}
 function btRipAllowed(){return isAdmin()&&(isSuperAdmin()||(btLicenseActive()&&btHasModule("invoicing")&&btHasModule("sales")&&btHasModule("repairs")));}
 function btRipRange(){
   const year=Number(btRipEl("ripYear").value),month=Number(btRipEl("ripMonth").value);
@@ -3920,7 +3922,7 @@ async function btRipPages(build){
 }
 function btRipMoney(r){const net=r.unitNet==null?null:Math.round(r.unitNet*r.qty*100)/100;return {net,vat:net==null?null:Math.round(net*r.vatRate)/100,gross:net==null?null:Math.round(net*(100+r.vatRate))/100};}
 function btRipFiltered(month=Number(btRipEl("ripMonth").value)){
-  const store=btRipEl("ripStore").value,type=btRipEl("ripType").value,status=btRipEl("ripInvoiceStatus").value;
+  const store=btRipEl("ripStore").value,type=currentCategory==="RiparaloVendite"?"Ricambi":currentCategory==="RiparaloRiparazioni"?"Riparazioni":btRipEl("ripType").value,status=btRipEl("ripInvoiceStatus").value;
   return btRipRows.filter(r=>Number(r.date.slice(5,7))===month&&(!store||r.store===store)&&(!type||r.type===type)&&(!status||r.invoiceStatus===status));
 }
 function btRipTotals(rows){return rows.reduce((a,r)=>{const v=btRipMoney(r);if(v.net==null){a.missing++;return a;}a.net+=v.net;a.vat+=v.vat;a.gross+=v.gross;a[r.type==="Riparazioni"?"repairs":"parts"]+=v.net;return a;},{net:0,vat:0,gross:0,repairs:0,parts:0,missing:0});}
@@ -3935,7 +3937,7 @@ async function btRipLoad(){
       btRipPages(()=>sb.from("beparytech_admin_device_sales").select("id,sold_at,store,device_name,sale_price,net_amount,vat_rate").in("store",RIPARALO_STORES).gte("sold_at",from).lte("sold_at",to)),
       btRipPages(()=>sb.from("beparytech_admin_repairs").select("id,repaired_at,client_name,store,device,repair_type,price_ex_vat,vat_rate,invoiced,invoice_ref,repair_status,practice_code,vr_services,imei_serial,note").eq("workspace_owner_id",ctx.owner).gte("repaired_at",from).lte("repaired_at",to))
     ]);
-    if(request!==btRipRequest||currentCategory!=="RiparaloMensile")return;
+    if(request!==btRipRequest||!btRipIsRoute())return;
     const rows=[];
     stock.filter(saleCountsAsSold).forEach(r=>{const p=saleUnitPrice(r);rows.push({date:invoiceLineDate(r.sold_at),store:r.customer,type:"Ricambi",source:"Magazzino",description:[r.category,noLogoName(r.model,r.category),r.color].filter(Boolean).join(" "),qty:Math.max(1,Number(r.quantity||1)),unitNet:p==null?null:Number(p),vatRate:22,invoiceStatus:"Non disponibile",ref:"MAG-"+r.id});});
     parts.forEach(r=>rows.push({date:invoiceLineDate(r.sold_at),store:r.store,type:"Ricambi",source:"Vendita ricambio",description:r.device_name||"Ricambio",qty:1,unitNet:Number(r.net_amount??r.sale_price??0),vatRate:Number(r.vat_rate??22),invoiceStatus:"Non disponibile",ref:"RIC-"+r.id}));
@@ -3950,7 +3952,7 @@ function btRipRender(){
   const {year,month}=btRipRange(),rows=btRipFiltered(),t=btRipTotals(rows);
   btRipEl("ripPeriodTitle").textContent=btRipMonths[month-1]+" "+year;
   btRipEl("ripSummary").innerHTML=[["Vendite ricambi",t.parts],["Riparazioni",t.repairs],["Imponibile",t.net],["IVA",t.vat],["Totale IVA inclusa",t.gross]].map(([k,v])=>'<div><span>'+k+'</span><strong>'+euroFmt.format(v)+'</strong></div>').join("");
-  list.innerHTML=rows.map(r=>{const m=btRipMoney(r);return '<article class="invoiceLine"><div class="invoiceLineMain"><strong>'+escapeHtml(r.description)+'</strong><span>'+escapeHtml(r.date+" · "+r.store+" · "+r.source+" · "+r.ref)+'</span><small>'+escapeHtml((r.status?r.status+" · ":"")+r.invoiceStatus)+'</small></div><div class="invoiceLineMoney"><strong>'+(m.net==null?"Prezzo mancante":euroFmt.format(m.net))+'</strong><span>'+(m.gross==null?"":euroFmt.format(m.gross)+" IVA incl.")+'</span>'+(r.repairId?'<button type="button" class="secondaryAction" data-rip-edit="'+r.repairId+'">Modifica</button>':'')+'</div></article>';}).join("")||'<div class="emptyState">'+(btRipReady?"Nessun movimento nel periodo.":"Archivio non ancora caricato.")+'</div>';
+  list.innerHTML=rows.map(r=>{const m=btRipMoney(r);return '<article class="invoiceLine"><div class="invoiceLineMain"><strong>'+escapeHtml(r.description)+'</strong><span>'+escapeHtml(r.date+" · "+r.store+" · "+r.source+" · "+r.ref)+'</span><small>'+escapeHtml((r.status?r.status+" · ":"")+r.invoiceStatus)+'</small></div><div class="invoiceLineMoney"><strong>'+(m.net==null?"Prezzo mancante":euroFmt.format(m.net))+'</strong><span>'+(m.gross==null?"":euroFmt.format(m.gross)+" IVA incl.")+'</span>'+(r.repairId&&currentCategory==="RiparaloRiparazioni"?'<button type="button" class="secondaryAction" data-rip-edit="'+r.repairId+'">Modifica</button>':'')+'</div></article>';}).join("")||'<div class="emptyState">'+(btRipReady?"Nessun movimento nel periodo.":"Archivio non ancora caricato.")+'</div>';
   archive.innerHTML=btRipMonths.map((name,i)=>{const a=btRipFiltered(i+1),v=btRipTotals(a);return '<button type="button" class="secondaryAction" data-rip-month="'+(i+1)+'">'+name+' '+year+' · '+a.length+' movimenti · '+euroFmt.format(v.gross)+'</button>';}).join("");
   btRipEl("ripMissing").textContent=t.missing?t.missing+" vendite senza prezzo di listino: escluse dai totali, ma visibili nell’archivio.":"";
   for(const id of ["ripExcel","ripPdf","ripXml"])btRipEl(id).disabled=!btRipReady||!rows.length;
@@ -3972,7 +3974,7 @@ function btRipPdf(){
   doc.save("Riparalo_"+year+"-"+String(month).padStart(2,"0")+".pdf");
 }
 function btRipInvoice(){
-  if(!btRipReady||!btRipAllowed())return;
+  if(!btRipReady||!btRipAllowed()||currentCategory!=="RiparaloMensile")return;
   const {from,to}=btRipRange(),rows=btRipFiltered().filter(r=>r.unitNet!=null&&r.invoiceStatus!=="Fatturato");
   if(!rows.length){btRipEl("ripMsg").textContent="Nessuna voce disponibile da fatturare.";return;}
   setCategory("Fatturazione");
@@ -3999,13 +4001,15 @@ function btRipInit(){
 const btRipPrevRoute=setCategory;
 setCategory=function(category,fromBack=false){
   const view=btRipEl("riparaloMonthlyView");
-  if(category!=="RiparaloMensile"){if(view)view.hidden=true;if(currentCategory==="RiparaloMensile"){btRipRequest++;btRipRows=[];btRipReady=false;}return btRipPrevRoute(category,fromBack);}
+  if(!btRipIsRoute(category)){if(view)view.hidden=true;if(btRipIsRoute()){btRipRequest++;btRipRows=[];btRipReady=false;}return btRipPrevRoute(category,fromBack);}
+  if(btRipBusy)return;
   if(!view||!btRipAllowed())return;
   btRipPrevRoute("Dashboard",fromBack);
-  currentCategory="RiparaloMensile";try{localStorage.setItem("beparytech-last-category",currentCategory);}catch(_){}
+  currentCategory=category;try{localStorage.setItem("beparytech-last-category",currentCategory);}catch(_){}
   for(const id of ["dashboardView","inventory","deviceSalesView"])if(btRipEl(id))btRipEl(id).hidden=true;
   document.querySelectorAll(".tools,.stats").forEach(x=>x.hidden=true);
-  view.hidden=false;btRipEl("categoryName").textContent="Riparalo";btRipEl("categoryDescription").textContent="Vendite ricambi e riparazioni · archivio mensile";
+  view.hidden=false;const section=category==="RiparaloVendite"?"Vendite ricambi":category==="RiparaloRiparazioni"?"Riparazioni":"Riepilogo e fatturazione";btRipEl("categoryName").textContent="Riparalo · "+section;btRipEl("categoryDescription").textContent="RIPARALO S.R.L. · "+section;
+  btRipEl("ripNewSale").hidden=category!=="RiparaloVendite";btRipEl("ripNewRepair").hidden=category!=="RiparaloRiparazioni";btRipEl("ripOpsCard").hidden=category==="RiparaloMensile";btRipEl("ripType").closest("label").hidden=category!=="RiparaloMensile";btRipEl("ripXml").hidden=category!=="RiparaloMensile";btRipEl("ripType").value="";btRipEl("ripInvoiceStatus").value="";
   document.querySelectorAll(".menuItem[data-category]").forEach(x=>x.classList.toggle("active",x.dataset.category===currentCategory));updateSmartNavigation();btRipInit();btRipOpsInit();btRipOpen("");btRipLoad();
 };
 
@@ -4041,7 +4045,7 @@ function btRipWorkTotal(){
 }
 function btRipAddWork(name){name=String(name||"").trim();if(name&&name.length<=240&&!btRipWorks.some(x=>x.name===name)){btRipWorks.push({name,price:"",mode:""});btRipRenderWorks();}}
 async function btRipSave(e,kind){
-  e.preventDefault();if(btRipBusy||!btRipAllowed()||currentCategory!=="RiparaloMensile")return;
+  e.preventDefault();if(btRipBusy||!btRipAllowed()||currentCategory!==(kind==="sale"?"RiparaloVendite":"RiparaloRiparazioni"))return;
   const get=id=>btRipEl(id).value.trim(),msg=btRipEl(kind==="sale"?"ripSaleMsg":"ripRepairMsg"),btn=btRipEl(kind==="sale"?"ripSaleSave":"ripRepairSave");
   btRipBusy=true;btn.disabled=true;msg.textContent="Salvataggio…";
   try{
@@ -4062,7 +4066,7 @@ async function btRipSave(e,kind){
       if(!res.error&&res.data?.id)await btLogRepairHistoryV1(ctx,res.data.id,edit?"Pratica modificata":"Pratica creata",{repair_status:payload.repair_status,price_ex_vat:price});
     }
     if(res.error)throw res.error;
-    if(currentCategory==="RiparaloMensile"){btRipEl("ripYear").value=date.slice(0,4);btRipEl("ripMonth").value=String(Number(date.slice(5,7)));btRipBusy=false;btRipOpen("");await btRipLoad();btRipEl("ripMsg").textContent="Salvataggio completato. "+btRipEl("ripMsg").textContent;}
+    if(btRipIsRoute()){btRipEl("ripYear").value=date.slice(0,4);btRipEl("ripMonth").value=String(Number(date.slice(5,7)));btRipBusy=false;btRipOpen("");await btRipLoad();btRipEl("ripMsg").textContent="Salvataggio completato. "+btRipEl("ripMsg").textContent;}
   }catch(err){msg.textContent=err.message||"Salvataggio non riuscito.";}finally{btRipBusy=false;btn.disabled=false;}
 }
 function btRipOpsInit(){
