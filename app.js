@@ -2528,14 +2528,14 @@ async function buildBusinessInvoicePreview(){
       // Il filtro cliente viene fatto lato browser perché i nomi possono essere stati salvati
       // come "VR Trasporti", "VR Trasporti Srl", "VR TRASPORTI S.R.L." ecc.
       const {data,error}=await sb.from("beparytech_admin_repairs")
-        .select("id,repaired_at,client_name,store,device,repair_type,imei_serial,price_ex_vat,vat_rate,note,invoiced,repair_status,workspace_owner_id")
+        .select("id,repaired_at,client_name,store,device,repair_type,imei_serial,price_ex_vat,vat_rate,note,invoiced,repair_status,workspace_owner_id,vr_services")
         .eq("workspace_owner_id",ctx.owner)
         .gte("repaired_at",from).lte("repaired_at",to)
         .or("invoiced.is.null,invoiced.eq.false")
         .order("repaired_at",{ascending:true}).limit(2000);if(error)throw error;
       const norm=v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().toLocaleLowerCase("it-IT").replace(/[^a-z0-9]+/g," ").trim();
       const isVr=r=>{const c=norm(r.client_name),s=norm(r.store),n=`${c} ${s}`.trim();return /(^| )vr( |$)/.test(n)&&/trasport/.test(n);};
-      (data||[]).filter(isVr).forEach(r=>lines.push({selected:true,date:invoiceLineDate(r.repaired_at),store:r.client_name||r.store||"VR Trasporti",source:"Riparazione",description:`${r.repair_type||"Riparazione"} · ${r.device||"dispositivo"}${r.imei_serial?` · IMEI/Seriale ${r.imei_serial}`:""}`,qty:1,unitNet:Number(r.price_ex_vat||0),vatRate:Number(r.vat_rate??22),ref:`RIP-${r.id}`,repairId:Number(r.id)}));
+      (data||[]).filter(r=>isVr(r)||btIsVrRepair(r)).forEach(r=>btVrInvoiceServices(r).forEach((item,i)=>lines.push({selected:true,date:invoiceLineDate(r.repaired_at),store:r.client_name||r.store||"VR Trasporti",source:"Riparazione",description:`${item.name} · ${r.device||"dispositivo"}${r.imei_serial?` · IMEI/Seriale ${r.imei_serial}`:""}`.slice(0,1000),qty:1,unitNet:item.price,vatRate:Number(r.vat_rate??22),ref:`RIP-${r.id}-${i+1}`,repairId:Number(r.id)})));
     }else{
       const includeStock=document.getElementById("invoiceIncludeStock")?.checked,includeParts=document.getElementById("invoiceIncludeParts")?.checked,includeRepairs=document.getElementById("invoiceIncludeRepairs")?.checked,includeHours=document.getElementById("invoiceIncludeHours")?.checked;
       const jobs=[],tsRange=invoiceTimestampRange(from,to);jobs.push(includeStock?sb.from("beparytech_sales").select("id,customer,category,item_key,model,color,quantity,sold_at,is_archived,restored_to_inventory,delivered_at,delete_reason").gte("sold_at",tsRange.start).lt("sold_at",tsRange.endExclusive).limit(2000):Promise.resolve({data:[],error:null}));jobs.push(includeParts?sb.from("beparytech_admin_device_sales").select("id,sold_at,store,device_name,sale_price,net_amount,vat_rate,vat_amount,note").gte("sold_at",from).lte("sold_at",to).limit(1000):Promise.resolve({data:[],error:null}));jobs.push(includeRepairs?sb.from("beparytech_admin_repairs").select("id,repaired_at,client_name,store,device,repair_type,price_ex_vat,vat_rate,note,invoiced").gte("repaired_at",from).lte("repaired_at",to).eq("invoiced",false).limit(1000):Promise.resolve({data:[],error:null}));jobs.push(includeHours?sb.from("beparytech_work_hours").select("id,work_date,morning_in,morning_out,afternoon_in,afternoon_out,company,total_minutes_override,note").gte("work_date",from).lte("work_date",to).limit(1000):Promise.resolve({data:[],error:null}));jobs.push(includeHours?sb.from("beparytech_work_extras").select("id,work_date,description,minutes,amount,company,note").gte("work_date",from).lte("work_date",to).limit(1000):Promise.resolve({data:[],error:null}));
@@ -2552,7 +2552,7 @@ function selectedInvoiceLines(){return invoiceAutomationLines.filter(r=>r.select
 function renderInvoicePreview(){
   const lines=selectedInvoiceLines(),box=document.getElementById("invoiceLines"),sum=document.getElementById("invoiceSummary"),net=lines.reduce((a,r)=>a+r.unitNet*r.qty,0),vat=lines.reduce((a,r)=>a+(r.unitNet*r.qty*r.vatRate/100),0),gross=net+vat;if(sum)sum.innerHTML=`<div><span>Righe</span><strong>${lines.length}</strong></div><div><span>Imponibile</span><strong>${euroFmt.format(net)}</strong></div><div><span>IVA</span><strong>${euroFmt.format(vat)}</strong></div><div><span>Totale</span><strong>${euroFmt.format(gross)}</strong></div>`;
   if(box)box.innerHTML=invoiceAutomationLines.length?invoiceAutomationLines.map((r,i)=>`<article class="invoiceLine ${r.selected===false?"invoiceLineExcluded":""}"><label class="invoiceLinePick"><input type="checkbox" class="invoiceLineCheck" data-index="${i}" ${r.selected===false?"":"checked"}><span></span></label><div class="invoiceLineNo">${i+1}</div><div class="invoiceLineMain"><strong>${escapeHtml(r.description)}</strong><span>${escapeHtml(r.store)} · ${new Date(r.date+"T12:00:00").toLocaleDateString("it-IT")} · ${escapeHtml(r.source)}</span></div><div class="invoiceLineMoney"><strong>${euroFmt.format(r.unitNet*r.qty)}</strong><span>${r.qty>1?`${r.qty} × ${euroFmt.format(r.unitNet)} · `:""}IVA ${r.vatRate}%</span></div></article>`).join(""):'<div class="emptyState">Nessuna voce da fatturare.</div>';
-  box?.querySelectorAll(".invoiceLineCheck").forEach(c=>c.addEventListener("change",()=>{const row=invoiceAutomationLines[Number(c.dataset.index)];if(row)row.selected=c.checked;renderInvoicePreview();}));const csv=document.getElementById("invoiceCsvBtn"),xml=document.getElementById("invoiceXmlBtn"),mark=document.getElementById("invoiceMarkPaidBtn");if(csv)csv.disabled=!lines.length;if(xml)xml.disabled=!lines.length;if(mark)mark.disabled=!lines.some(r=>r.repairId);
+  box?.querySelectorAll(".invoiceLineCheck").forEach(c=>c.addEventListener("change",()=>{const row=invoiceAutomationLines[Number(c.dataset.index)];if(row){row.selected=c.checked;if(invoiceClientMode()==="vr"&&row.repairId)invoiceAutomationLines.filter(r=>r.repairId===row.repairId).forEach(r=>r.selected=c.checked);}renderInvoicePreview();}));const csv=document.getElementById("invoiceCsvBtn"),xml=document.getElementById("invoiceXmlBtn"),mark=document.getElementById("invoiceMarkPaidBtn");if(csv)csv.disabled=!lines.length;if(xml)xml.disabled=!lines.length;if(mark)mark.disabled=!lines.some(r=>r.repairId);
 }
 function invoiceDocumentBasics(){return {number:String(document.getElementById("invoiceNumber")?.value||"").trim(),date:document.getElementById("invoiceDate")?.value||""};}
 function downloadBlobText(name,text,type){const blob=new Blob([text],{type}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);}
@@ -2563,7 +2563,7 @@ function buildFatturaPaXml(){
   return `<?xml version="1.0" encoding="UTF-8"?>\n<p:FatturaElettronica versione="FPR12" xmlns:ds="http://www.w3.org/2000/09/xmldsig#" xmlns:p="http://ivaservizi.agenziaentrate.gov.it/docs/xsd/fatture/v1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"><FatturaElettronicaHeader><DatiTrasmissione><IdTrasmittente><IdPaese>IT</IdPaese><IdCodice>${xmlEsc(issuer.vat)}</IdCodice></IdTrasmittente><ProgressivoInvio>${progressive}</ProgressivoInvio><FormatoTrasmissione>FPR12</FormatoTrasmissione><CodiceDestinatario>${xmlEsc(client.recipientCode)}</CodiceDestinatario></DatiTrasmissione><CedentePrestatore><DatiAnagrafici><IdFiscaleIVA><IdPaese>IT</IdPaese><IdCodice>${xmlEsc(issuer.vat)}</IdCodice></IdFiscaleIVA>${issuer.taxCode?`<CodiceFiscale>${xmlEsc(issuer.taxCode)}</CodiceFiscale>`:""}<Anagrafica><Denominazione>${xmlEsc(issuer.name)}</Denominazione></Anagrafica><RegimeFiscale>${xmlEsc(issuer.regime)}</RegimeFiscale></DatiAnagrafici><Sede><Indirizzo>${xmlEsc(issuer.address)}</Indirizzo><CAP>${xmlEsc(issuer.zip)}</CAP><Comune>${xmlEsc(issuer.city)}</Comune><Provincia>${xmlEsc(issuer.province)}</Provincia><Nazione>IT</Nazione></Sede></CedentePrestatore><CessionarioCommittente><DatiAnagrafici><IdFiscaleIVA><IdPaese>IT</IdPaese><IdCodice>${xmlEsc(client.vat)}</IdCodice></IdFiscaleIVA>${client.taxCode?`<CodiceFiscale>${xmlEsc(client.taxCode)}</CodiceFiscale>`:""}<Anagrafica><Denominazione>${xmlEsc(client.name)}</Denominazione></Anagrafica></DatiAnagrafici><Sede><Indirizzo>${xmlEsc(client.address)}</Indirizzo><CAP>${xmlEsc(client.zip)}</CAP><Comune>${xmlEsc(client.city)}</Comune><Provincia>${xmlEsc(client.province)}</Provincia><Nazione>IT</Nazione></Sede></CessionarioCommittente></FatturaElettronicaHeader><FatturaElettronicaBody><DatiGenerali><DatiGeneraliDocumento><TipoDocumento>TD01</TipoDocumento><Divisa>EUR</Divisa><Data>${xmlEsc(doc.date)}</Data><Numero>${xmlEsc(doc.number)}</Numero><ImportoTotaleDocumento>${gross.toFixed(2)}</ImportoTotaleDocumento></DatiGeneraliDocumento></DatiGenerali><DatiBeniServizi>${details}${recap}</DatiBeniServizi></FatturaElettronicaBody></p:FatturaElettronica>`;
 }
 function exportInvoiceXml(){try{if(!saveIssuerSettings())return;if(invoiceClientMode()==="vr"&&!saveVrClientSettings())return;const doc=invoiceDocumentBasics(),xml=buildFatturaPaXml(),safeNum=(doc.number||"fattura").replace(/[^A-Za-z0-9_-]+/g,"_");downloadBlobText(`IT${readIssuer().vat}_${safeNum}.xml`,xml,"application/xml;charset=utf-8");const msg=document.getElementById("invoiceLoadMsg");if(msg){msg.className="createUserMsg ok";msg.textContent="XML generato. Dopo averlo controllato/caricato su Aruba, puoi segnare le riparazioni selezionate come fatturate.";}}catch(e){const msg=document.getElementById("invoiceLoadMsg");if(msg){msg.className="createUserMsg error";msg.textContent=e.message||"Errore generazione XML.";}}}
-async function markSelectedRepairsInvoiced(){const ids=selectedInvoiceLines().filter(r=>r.repairId).map(r=>r.repairId),doc=invoiceDocumentBasics(),msg=document.getElementById("invoiceLoadMsg");if(!ids.length)return;if(!doc.number){if(msg){msg.className="createUserMsg error";msg.textContent="Inserisci il numero fattura prima di segnare le riparazioni come fatturate.";}return;}if(!confirm(`Segnare ${ids.length} riparazioni come fatturate con riferimento ${doc.number}?`))return;try{const ctx=await btGetWorkspaceOwnerId();const {error}=await sb.from("beparytech_admin_repairs").update({invoiced:true,invoice_ref:doc.number}).in("id",ids).eq("workspace_owner_id",ctx.owner);if(error)throw error;if(msg){msg.className="createUserMsg ok";msg.textContent="Riparazioni segnate come fatturate.";}await buildBusinessInvoicePreview();await loadAdminRepairs();}catch(e){if(msg){msg.className="createUserMsg error";msg.textContent=e.message||"Impossibile aggiornare le riparazioni.";}}}
+async function markSelectedRepairsInvoiced(){const ids=[...new Set(selectedInvoiceLines().filter(r=>r.repairId).map(r=>r.repairId))],doc=invoiceDocumentBasics(),msg=document.getElementById("invoiceLoadMsg");if(!ids.length)return;if(!doc.number){if(msg){msg.className="createUserMsg error";msg.textContent="Inserisci il numero fattura prima di segnare le riparazioni come fatturate.";}return;}if(!confirm(`Segnare ${ids.length} riparazioni come fatturate con riferimento ${doc.number}?`))return;try{const ctx=await btGetWorkspaceOwnerId();const {error}=await sb.from("beparytech_admin_repairs").update({invoiced:true,invoice_ref:doc.number}).in("id",ids).eq("workspace_owner_id",ctx.owner);if(error)throw error;if(msg){msg.className="createUserMsg ok";msg.textContent="Riparazioni segnate come fatturate.";}await buildBusinessInvoicePreview();await loadAdminRepairs();}catch(e){if(msg){msg.className="createUserMsg error";msg.textContent=e.message||"Impossibile aggiornare le riparazioni.";}}}
 function bindInvoiceAutomation(){const panel=document.getElementById("adminInvoicesPanel");if(!panel||panel.dataset.bound==="1")return;panel.dataset.bound="1";defaultInvoicePeriod();loadIssuerSettings();loadVrClientSettings();updateInvoiceClientUi();document.getElementById("invoiceClientSelect")?.addEventListener("change",updateInvoiceClientUi);document.getElementById("saveVrClientBtn")?.addEventListener("click",saveVrClientSettings);document.getElementById("saveIssuerBtn")?.addEventListener("click",saveIssuerSettings);document.getElementById("invoiceRefreshBtn")?.addEventListener("click",buildBusinessInvoicePreview);document.getElementById("invoiceCsvBtn")?.addEventListener("click",exportInvoiceCsv);document.getElementById("invoiceXmlBtn")?.addEventListener("click",exportInvoiceXml);document.getElementById("invoiceMarkPaidBtn")?.addEventListener("click",markSelectedRepairsInvoiced);}
 document.addEventListener("DOMContentLoaded",bindInvoiceAutomation);
 
@@ -2896,7 +2896,7 @@ function openAdminRepairEditorV95(id, completing=false){
   if(currentCategory!=="RiparazioniVR")setCategory("AccettazioneCompleta");
   setTimeout(()=>{
     startAdminRepairEdit(id);
-    if(currentCategory==="RiparazioniVR"){btSetVrRepairClient();btVrSetIntakeOpen(true);document.getElementById("adminRepairForm")?.scrollIntoView({behavior:"smooth",block:"start"});}
+    if(currentCategory==="RiparazioniVR"){btSetVrRepairClient();btVrLoadServices(adminRepairRows.find(r=>Number(r.id)===Number(id)));btVrSetIntakeOpen(true);document.getElementById("adminRepairForm")?.scrollIntoView({behavior:"smooth",block:"start"});}
     const msg=document.getElementById("adminRepairMsg");
     if(msg&&completing){msg.className="createUserMsg";msg.textContent="Completa i dati mancanti e salva: resterà la stessa pratica.";}
   },100);
@@ -3787,7 +3787,7 @@ let btVrSimpleSaving=false;
 function btVrSimpleMode(active){
   const f=document.getElementById("adminRepairForm");if(!f)return;
   if(active){
-    const keep=new Set(["adminRepairDate","adminRepairDevice","adminRepairImei","adminRepairType","adminRepairPrice","adminRepairStatus","adminRepairNote"]);
+    const keep=new Set(["adminRepairDate","adminRepairDevice","adminRepairImei","adminRepairStatus","adminRepairNote"]);
     const grid=f.querySelector(".deviceSaleGrid");
     for(const el of Array.from(grid.children)){
       if(Array.from(el.querySelectorAll("input,textarea,select")).some(x=>keep.has(x.id)))continue;
@@ -3807,12 +3807,11 @@ function btVrSimpleMode(active){
   const opts=document.getElementById("adminRepairStatus");
   if(active&&opts&&!Array.from(opts.options).some(o=>o.value==="Non riparato")){const o=new Option("Non riparato","Non riparato");o.dataset.vrOnly="1";opts.add(o);}
   if(!active)opts?.querySelector('[data-vr-only]')?.remove();
-  const buttons=document.getElementById("vrSimpleWorkButtons");if(buttons)buttons.hidden=!active;
+  const buttons=document.getElementById("vrSimpleWorkButtons");if(buttons){buttons.hidden=!active;if(!active)buttons.querySelectorAll("input").forEach(x=>x.disabled=true);else{buttons.querySelectorAll("input").forEach(x=>x.disabled=false);btVrRenderServices();}}
 }
 function btVrSimpleDefaults(){
   document.getElementById("adminRepairDate").value=localDateISO();
-  document.getElementById("adminRepairType").value="Cambio display";
-  document.getElementById("adminRepairPrice").value="30";
+  btVrServices=[{name:"Cambio display",price:"30"}];btVrRenderServices();
   document.getElementById("adminRepairStatus").value="Pronto";
   document.getElementById("adminRepairVatRate").value="22";
   updateAdminRepairVatPreview();
@@ -3823,10 +3822,11 @@ async function btSaveVrSimpleRepair(msg){
   const editId=adminRepairEditingId;
   const existing=editId?adminRepairRows.find(r=>Number(r.id)===Number(editId)):null;
   if(!isAdmin()||(editId&&(!existing||!btIsVrRepair(existing))))throw new Error("Pratica VR non disponibile.");
-  const date=get("adminRepairDate"),device=get("adminRepairDevice"),work=get("adminRepairType"),priceRaw=get("adminRepairPrice"),price=Number(priceRaw);
-  if(!date||!device||!work||!priceRaw||!Number.isFinite(price)||price<0)throw new Error("Compila data, dispositivo, lavorazione e prezzo valido.");
+  const date=get("adminRepairDate"),device=get("adminRepairDevice"),services=btVrServices.map(x=>({name:x.name,price:Number(x.price)}));
+  if(!date||!device||!services.length||btVrServices.some(x=>!String(x.price).trim()||!Number.isFinite(Number(x.price))||Number(x.price)<0||!x.name.trim()||x.name.length>240))throw new Error("Compila data, dispositivo e prezzo valido per ogni lavorazione.");
+  const price=services.reduce((a,x)=>a+Math.round(x.price*100),0)/100;const work=services.map(x=>x.name).join(" + ").slice(0,240);
   const ref=get("adminRepairEShareRef"),note=get("adminRepairNote");
-  const payload={repaired_at:date,device,repair_type:work,imei_serial:get("adminRepairImei")||null,repair_status:get("adminRepairStatus"),price_ex_vat:price,note:((existing&&ref?"Rif. e-Share: "+ref+(note?" · ":""):"")+note)||null};
+  const payload={repaired_at:date,device,repair_type:work,vr_services:services.map(x=>({...x,price:Math.round(x.price*100)/100})),imei_serial:get("adminRepairImei")||null,repair_status:get("adminRepairStatus"),price_ex_vat:price,note:((existing&&ref?"Rif. e-Share: "+ref+(note?" · ":""):"")+note)||null};
   const submit=document.getElementById("adminRepairSubmitBtn");
   btVrSimpleSaving=true;if(submit)submit.disabled=true;
   try{
@@ -3845,7 +3845,52 @@ async function btSaveVrSimpleRepair(msg){
     }
   }finally{btVrSimpleSaving=false;if(submit)submit.disabled=false;}
 }
-document.getElementById("vrSimpleWorkButtons")?.addEventListener("click",e=>{
-  const b=e.target.closest("button[data-vr-work]");if(!b||currentCategory!=="RiparazioniVR")return;
-  const input=document.getElementById("adminRepairType");input.value=b.dataset.vrWork;if(input.value==="Altro")input.focus();
+
+const btVrCatalog=[["Display e scocca",["Cambio display","Cambio vetro display","Cambio touchscreen","Cambio vetro posteriore","Cambio scocca completa","Cambio frame","Cambio lente fotocamera"]],["Batteria e ricarica",["Cambio batteria","Cambio connettore di ricarica","Riparazione ricarica wireless","Cambio flat di ricarica","Pulizia connettore"]],["Fotocamere e sensori",["Cambio fotocamera anteriore","Cambio fotocamera posteriore","Riparazione Face ID","Riparazione Touch ID","Cambio sensore prossimità","Cambio sensore luminosità","Cambio lettore impronte"]],["Audio e tasti",["Cambio microfono","Cambio altoparlante","Cambio capsula auricolare","Cambio vibrazione","Cambio tasto accensione","Cambio tasti volume","Cambio flat tasti"]],["Scheda madre e rete",["Riparazione scheda madre","Microsaldatura","Riparazione corto circuito","Riparazione dispositivo non si accende","Riparazione danni da liquido","Riparazione Wi-Fi","Riparazione Bluetooth","Riparazione GPS","Riparazione rete / segnale","Cambio lettore SIM","Riparazione circuito di ricarica","Riparazione riavvio continuo","Riparazione connettore FPC"]],["Software e altri servizi",["Diagnosi","Aggiornamento software","Ripristino software","Recupero dati","Trasferimento dati","Configurazione dispositivo","Pulizia interna","Sostituzione pellicola","Manodopera","Altro"]]];
+let btVrServices=[];
+function btVrInvoiceServices(r){
+  const list=r.vr_services;
+  if(Array.isArray(list)&&list.length&&list.every(x=>typeof x.name==="string"&&x.name.trim()&&typeof x.price==="number"&&Number.isFinite(x.price)&&x.price>=0)&&list.reduce((a,x)=>a+Math.round(x.price*100),0)===Math.round(Number(r.price_ex_vat||0)*100))return list;
+  return [{name:r.repair_type||"Riparazione",price:Number(r.price_ex_vat||0)}];
+}
+function btVrLoadServices(r){
+  if(!r)return;
+  btVrServices=btVrInvoiceServices(r).map(x=>({name:x.name,price:String(x.price)}));
+  btVrRenderServices();
+}
+function btVrSyncTotal(){
+  const total=btVrServices.reduce((a,x)=>a+Math.round((Number(x.price)||0)*100),0)/100;
+  document.getElementById("adminRepairPrice").value=total.toFixed(2);
+  document.getElementById("adminRepairType").value=btVrServices.map(x=>x.name).join(" + ").slice(0,240);
+  updateAdminRepairVatPreview();
+}
+function btVrRenderServices(){
+  const root=document.getElementById("vrSimpleWorkButtons");if(!root)return;
+  const list=root.querySelector("#vrWorkCatalog"),picked=root.querySelector("#vrWorkSelected"),search=root.querySelector("#vrWorkSearch");
+  if(!list||!picked)return;
+  const open=new Set(Array.from(list.querySelectorAll("details[open]")).map(x=>x.dataset.group));
+  const q=(search?.value||"").toLowerCase().trim();
+  list.innerHTML=btVrCatalog.map(([group,items],i)=>{
+    const matching=items.filter(x=>x.toLowerCase().includes(q));if(!matching.length)return "";
+    return '<details class="deviceSaleCard" data-group="'+i+'" '+(q||open.has(String(i))?'open':'')+'><summary>'+escapeHtml(group)+' ('+items.length+')</summary>'+matching.map(name=>'<label><input type="checkbox" data-vr-choice="'+escapeHtml(name)+'" '+(btVrServices.some(x=>x.name===name)?'checked':'')+'> '+escapeHtml(name)+'</label>').join("")+'</details>';
+  }).join("");
+  picked.innerHTML=btVrServices.map((x,i)=>'<div class="repairFormActions"><strong>'+escapeHtml(x.name)+'</strong><label>Prezzo netto € <input type="number" min="0" step="0.01" data-vr-price="'+i+'" value="'+escapeHtml(String(x.price))+'" required></label><button type="button" class="secondaryAction" data-vr-remove="'+i+'">Rimuovi</button></div>').join("")||'<p>Seleziona almeno una lavorazione.</p>';
+  btVrSyncTotal();
+}
+function btVrAddService(name){
+  name=String(name||"").trim();if(!name||name.length>240||btVrServices.some(x=>x.name===name))return;
+  btVrServices.push({name,price:name==="Cambio display"?"30":""});btVrRenderServices();
+}
+const btVrWorkRoot=document.getElementById("vrSimpleWorkButtons");
+btVrWorkRoot?.addEventListener("change",e=>{
+  const el=e.target;if(el.matches("[data-vr-choice]")){const name=el.dataset.vrChoice;if(el.checked)btVrAddService(name);else{btVrServices=btVrServices.filter(x=>x.name!==name);btVrRenderServices();}}
+});
+btVrWorkRoot?.addEventListener("input",e=>{
+  const el=e.target;if(el.id==="vrWorkSearch")btVrRenderServices();
+  if(el.matches("[data-vr-price]")){const item=btVrServices[Number(el.dataset.vrPrice)];if(item){item.price=el.value;btVrSyncTotal();}}
+});
+btVrWorkRoot?.addEventListener("click",e=>{
+  const el=e.target.closest("button");if(!el)return;
+  if(el.matches("[data-vr-remove]")){btVrServices.splice(Number(el.dataset.vrRemove),1);btVrRenderServices();}
+  if(el.id==="vrWorkAdd"){const custom=document.getElementById("vrWorkCustom");btVrAddService(custom.value);custom.value="";}
 });
