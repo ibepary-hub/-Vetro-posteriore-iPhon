@@ -3811,9 +3811,10 @@ function btVrSimpleMode(active){
 }
 function btVrSimpleDefaults(){
   document.getElementById("adminRepairDate").value=localDateISO();
-  btVrServices=[{name:"Cambio display",price:"30"}];btVrRenderServices();
+  btVrServices=[];
   document.getElementById("adminRepairStatus").value="Pronto";
   document.getElementById("adminRepairVatRate").value="22";
+  btVrResetCatalog();btVrRenderServices();
   updateAdminRepairVatPreview();
 }
 async function btSaveVrSimpleRepair(msg){
@@ -3822,8 +3823,9 @@ async function btSaveVrSimpleRepair(msg){
   const editId=adminRepairEditingId;
   const existing=editId?adminRepairRows.find(r=>Number(r.id)===Number(editId)):null;
   if(!isAdmin()||(editId&&(!existing||!btIsVrRepair(existing))))throw new Error("Pratica VR non disponibile.");
-  const date=get("adminRepairDate"),device=get("adminRepairDevice"),services=btVrServices.map(x=>({name:x.name,price:Number(x.price)}));
-  if(!date||!device||!services.length||btVrServices.some(x=>!String(x.price).trim()||!Number.isFinite(Number(x.price))||Number(x.price)<0||!x.name.trim()||x.name.length>240))throw new Error("Compila data, dispositivo e prezzo valido per ogni lavorazione.");
+  const date=get("adminRepairDate"),device=get("adminRepairDevice"),rate=btVrRate();
+  if(!date||!device||!btVrServices.length||btVrServices.some(x=>!btVrValidPrice(x)||!x.name.trim()||x.name.length>240))throw new Error("Compila data, dispositivo, prezzo e modalità IVA per ogni lavorazione.");
+  const services=btVrServices.map(x=>({name:x.name,price:btVrNetPrice(x,rate),input_price:Math.round(Number(x.price)*100)/100,input_mode:x.mode}));
   const price=services.reduce((a,x)=>a+Math.round(x.price*100),0)/100;const work=services.map(x=>x.name).join(" + ").slice(0,240);
   const ref=get("adminRepairEShareRef"),note=get("adminRepairNote");
   const payload={repaired_at:date,device,repair_type:work,vr_services:services.map(x=>({...x,price:Math.round(x.price*100)/100})),imei_serial:get("adminRepairImei")||null,repair_status:get("adminRepairStatus"),price_ex_vat:price,note:((existing&&ref?"Rif. e-Share: "+ref+(note?" · ":""):"")+note)||null};
@@ -3855,14 +3857,20 @@ function btVrInvoiceServices(r){
 }
 function btVrLoadServices(r){
   if(!r)return;
-  btVrServices=btVrInvoiceServices(r).map(x=>({name:x.name,price:String(x.price)}));
-  btVrRenderServices();
+  const rate=btVrRate();
+  btVrServices=btVrInvoiceServices(r).map(x=>{const original={name:x.name,price:String(x.input_price??""),mode:x.input_mode};return btVrValidPrice(original)&&btVrNetPrice(original,rate)===Math.round(x.price*100)/100?original:{name:x.name,price:String(x.price),mode:"net"};});
+  btVrResetCatalog();btVrRenderServices();
 }
+function btVrRate(){const v=Number(document.getElementById("adminRepairVatRate")?.value??22);return Number.isFinite(v)&&v>=0&&v<=100?v:22;}
+function btVrValidPrice(x){return ["net","gross"].includes(x.mode)&&String(x.price??"").trim()!==""&&Number.isFinite(Number(x.price))&&Number(x.price)>=0&&Math.abs(Number(x.price)*100-Math.round(Number(x.price)*100))<0.00001;}
+function btVrNetPrice(x,rate=btVrRate()){if(!btVrValidPrice(x))return 0;return Math.round((x.mode==="gross"?Number(x.price)/(1+rate/100):Number(x.price))*100+1e-9)/100;}
+function btVrResetCatalog(){const root=document.getElementById("vrSimpleWorkButtons");if(!root)return;for(const id of ["vrWorkSearch","vrWorkCustom"]){const el=document.getElementById(id);if(el)el.value="";}root.querySelectorAll("details").forEach(x=>x.open=false);}
 function btVrSyncTotal(){
-  const total=btVrServices.reduce((a,x)=>a+Math.round((Number(x.price)||0)*100),0)/100;
+  const rate=btVrRate(),total=btVrServices.reduce((a,x)=>a+Math.round(btVrNetPrice(x,rate)*100),0)/100;
   document.getElementById("adminRepairPrice").value=total.toFixed(2);
   document.getElementById("adminRepairType").value=btVrServices.map(x=>x.name).join(" + ").slice(0,240);
   updateAdminRepairVatPreview();
+  document.querySelectorAll("#vrWorkSelected [data-vr-summary]").forEach(el=>{const x=btVrServices[Number(el.dataset.vrSummary)];if(!x||!btVrValidPrice(x)){el.textContent="Inserisci il prezzo e scegli IVA inclusa o esclusa.";return;}const net=btVrNetPrice(x,rate),gross=Math.round(net*(1+rate/100)*100+1e-9)/100;el.textContent="Netto: "+euroFmt.format(net)+" · Lordo: "+euroFmt.format(gross)+(x.mode==="gross"&&Math.abs(gross-Number(x.price))>0.005?" · Arrotondamento fiscale al centesimo":"");});
 }
 function btVrRenderServices(){
   const root=document.getElementById("vrSimpleWorkButtons");if(!root)return;
@@ -3874,16 +3882,16 @@ function btVrRenderServices(){
     const matching=items.filter(x=>x.toLowerCase().includes(q));if(!matching.length)return "";
     return '<details class="deviceSaleCard" data-group="'+i+'" '+(q||open.has(String(i))?'open':'')+'><summary>'+escapeHtml(group)+' ('+items.length+')</summary>'+matching.map(name=>'<label><input type="checkbox" data-vr-choice="'+escapeHtml(name)+'" '+(btVrServices.some(x=>x.name===name)?'checked':'')+'> '+escapeHtml(name)+'</label>').join("")+'</details>';
   }).join("");
-  picked.innerHTML=btVrServices.map((x,i)=>'<div class="repairFormActions"><strong>'+escapeHtml(x.name)+'</strong><label>Prezzo netto € <input type="number" min="0" step="0.01" data-vr-price="'+i+'" value="'+escapeHtml(String(x.price))+'" required></label><button type="button" class="secondaryAction" data-vr-remove="'+i+'">Rimuovi</button></div>').join("")||'<p>Seleziona almeno una lavorazione.</p>';
+  picked.innerHTML=btVrServices.map((x,i)=>'<div class="deviceSaleCard"><strong>'+escapeHtml(x.name)+'</strong><div class="repairFormActions"><label>Prezzo € <input type="number" min="0" step="0.01" data-vr-price="'+i+'" value="'+escapeHtml(String(x.price))+'" required></label><label><input type="radio" name="vrPriceMode'+i+'" data-vr-mode="'+i+'" value="net" '+(x.mode==="net"?"checked":"")+' required> IVA esclusa</label><label><input type="radio" name="vrPriceMode'+i+'" data-vr-mode="'+i+'" value="gross" '+(x.mode==="gross"?"checked":"")+' required> IVA inclusa</label><button type="button" class="secondaryAction" data-vr-remove="'+i+'">Rimuovi</button></div><small data-vr-summary="'+i+'" aria-live="polite"></small></div>').join("")||'<p>Nessuna lavorazione selezionata.</p>';
   btVrSyncTotal();
 }
 function btVrAddService(name){
   name=String(name||"").trim();if(!name||name.length>240||btVrServices.some(x=>x.name===name))return;
-  btVrServices.push({name,price:name==="Cambio display"?"30":""});btVrRenderServices();
+  btVrServices.push({name,price:"",mode:""});btVrRenderServices();
 }
 const btVrWorkRoot=document.getElementById("vrSimpleWorkButtons");
 btVrWorkRoot?.addEventListener("change",e=>{
-  const el=e.target;if(el.matches("[data-vr-choice]")){const name=el.dataset.vrChoice;if(el.checked)btVrAddService(name);else{btVrServices=btVrServices.filter(x=>x.name!==name);btVrRenderServices();}}
+  const el=e.target;if(el.matches("[data-vr-mode]")&&el.checked){const item=btVrServices[Number(el.dataset.vrMode)];if(item){item.mode=el.value;btVrSyncTotal();}return;}if(el.matches("[data-vr-choice]")){const name=el.dataset.vrChoice;if(el.checked)btVrAddService(name);else{btVrServices=btVrServices.filter(x=>x.name!==name);btVrRenderServices();}}
 });
 btVrWorkRoot?.addEventListener("input",e=>{
   const el=e.target;if(el.id==="vrWorkSearch")btVrRenderServices();
