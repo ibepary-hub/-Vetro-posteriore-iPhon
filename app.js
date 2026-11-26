@@ -2895,7 +2895,7 @@ function openAdminRepairEditorV95(id, completing=false){
   if(currentCategory!=="RiparazioniVR")setCategory("AccettazioneCompleta");
   setTimeout(()=>{
     startAdminRepairEdit(id);
-    if(currentCategory==="RiparazioniVR")btSetVrRepairClient();
+    if(currentCategory==="RiparazioniVR"){btSetVrRepairClient();btVrSetIntakeOpen(true);document.getElementById("adminRepairForm")?.scrollIntoView({behavior:"smooth",block:"start"});}
     const msg=document.getElementById("adminRepairMsg");
     if(msg&&completing){msg.className="createUserMsg";msg.textContent="Completa i dati mancanti e salva: resterà la stessa pratica.";}
   },100);
@@ -3743,6 +3743,7 @@ const btVrPreviousRoute=setCategory;
 setCategory=function(category,fromBack=false){
   if(category!=="RiparazioniVR"){
     if(currentCategory==="RiparazioniVR"){
+      btVrSetIntakeOpen(false);const toggle=document.getElementById("vrIntakeToggle");if(toggle)toggle.hidden=true;
       currentCategory="RiparazioniAdmin";resetAdminRepairEditor();
       ["adminRepairClient","adminRepairStore"].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=false;});
       currentCategory="RiparazioniVR";
@@ -3755,7 +3756,8 @@ setCategory=function(category,fromBack=false){
   setTimeout(()=>{
     if(currentCategory!=="RiparazioniVR")return;
     v93SetRepairMode("practices");resetAdminRepairEditor();
-    document.getElementById("adminRepairForm").hidden=false;
+    const toggle=document.getElementById("vrIntakeToggle");if(toggle)toggle.hidden=false;
+    btVrSetIntakeOpen(false);
     btSetVrRepairClient();
     document.getElementById("categoryName").textContent="VR Trasporti";
     document.getElementById("categoryDescription").textContent="Riparazioni e archivio dedicato";
@@ -3766,3 +3768,14 @@ setCategory=function(category,fromBack=false){
     loadAdminRepairs();
   },0);
 };
+
+function btVrSetIntakeOpen(open){
+  const form=document.getElementById("adminRepairForm"),toggle=document.getElementById("vrIntakeToggle");
+  if(form)form.hidden=!open;
+  if(toggle){toggle.setAttribute("aria-expanded",String(open));toggle.textContent=open?"− Chiudi accettazione":"+ Nuova accettazione";}
+}
+document.getElementById("vrIntakeToggle")?.addEventListener("click",()=>{
+  if(currentCategory!=="RiparazioniVR")return;
+  const form=document.getElementById("adminRepairForm");if(!form)return;
+  btVrSetIntakeOpen(form.hidden);
+});
