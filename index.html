@@ -331,6 +331,43 @@
 
 
     
+<style id="riparaloLayoutV2221">
+#riparaloMonthlyView:not([hidden]){display:grid;gap:18px;width:100%;min-width:0;box-sizing:border-box}
+#riparaloMonthlyView [hidden]{display:none!important}
+#riparaloMonthlyView>.deviceSaleCard{padding:20px!important;min-width:0;box-sizing:border-box}
+#riparaloMonthlyView .deviceSaleCardHead{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+#riparaloMonthlyView .deviceSaleCardHead small{display:block;margin-top:5px}
+#riparaloMonthlyView .deviceSaleGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(180px,100%),1fr));gap:14px}
+#riparaloMonthlyView .deviceSaleGrid .wide{grid-column:1/-1}
+#riparaloMonthlyView .deviceSaleGrid :is(input,select,textarea){width:100%;min-width:0;box-sizing:border-box}
+#riparaloMonthlyView .repairFormActions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+#riparaloMonthlyView .repairFormActions button{min-width:max-content;white-space:normal}
+#riparaloMonthlyView #ripSummary{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(min(145px,100%),1fr))!important;gap:10px;margin:18px 0 12px}
+#riparaloMonthlyView #ripSummary>div{padding:14px;min-width:0;border:1px solid var(--line);border-radius:10px}
+#riparaloMonthlyView #ripSummary>div:last-child{background:rgba(46,160,67,.09);border-color:rgba(46,160,67,.35)}
+#riparaloMonthlyView #ripSummary strong{display:block;font-size:clamp(17px,1.5vw,22px);white-space:nowrap;margin-top:6px}
+#riparaloMonthlyView #ripList{display:grid;gap:12px;min-width:0}
+body #riparaloMonthlyView #ripList .invoiceLine{display:grid!important;grid-template-columns:minmax(0,1fr) minmax(145px,max-content)!important;align-items:center;gap:20px;padding:18px!important;overflow:visible!important;min-width:0}
+#riparaloMonthlyView #ripList .invoiceLineMain{grid-column:1!important;min-width:0;display:grid;gap:7px;overflow-wrap:anywhere}
+#riparaloMonthlyView #ripList .invoiceLineMain strong{font-size:16px;line-height:1.45;white-space:normal;overflow:visible;text-overflow:clip}
+#riparaloMonthlyView #ripList .invoiceLineMain span{font-size:13px;line-height:1.5;white-space:normal;overflow-wrap:anywhere}
+#riparaloMonthlyView #ripList .invoiceLineMain small{font-size:12px;line-height:1.4}
+body #riparaloMonthlyView #ripList .invoiceLineMoney{grid-column:2!important;grid-row:1!important;display:flex;flex-direction:column;align-items:flex-end;text-align:right!important;gap:6px;min-width:0;overflow:visible}
+#riparaloMonthlyView #ripList .invoiceLineMoney strong{font-size:19px;white-space:nowrap}
+#riparaloMonthlyView #ripList .invoiceLineMoney span{white-space:nowrap;font-size:13px}
+#riparaloMonthlyView #ripList .invoiceLineMoney button{width:auto!important;min-width:110px!important;max-width:none!important;padding:9px 16px!important;white-space:nowrap!important;overflow:visible!important;min-height:40px;flex-shrink:0}
+#riparaloMonthlyView #ripArchive button{text-align:left;white-space:normal;line-height:1.5;min-height:52px;padding:12px}
+#riparaloMonthlyView #ripWorkCatalog{display:grid;gap:8px}
+#riparaloMonthlyView #ripWorkCatalog details{padding:12px}
+#riparaloMonthlyView #ripWorkCatalog details label{display:flex;gap:9px;align-items:center;padding:6px 0}
+@media(max-width:600px){
+#riparaloMonthlyView{gap:12px}
+#riparaloMonthlyView>.deviceSaleCard{padding:14px!important}
+body #riparaloMonthlyView #ripList .invoiceLine{grid-template-columns:minmax(0,1fr)!important;gap:12px;padding:14px!important}
+body #riparaloMonthlyView #ripList .invoiceLineMoney{grid-column:1!important;grid-row:2!important;align-items:flex-start;text-align:left!important;border-top:1px solid var(--line);padding-top:10px}
+#riparaloMonthlyView #ripList .invoiceLineMoney button{align-self:flex-end}
+}
+</style>
 <section id="riparaloMonthlyView" class="deviceSalesView" hidden>
   <div id="ripOpsCard" class="deviceSaleCard adminUniformCard">
     <div class="deviceSaleCardHead"><div><strong>Area operativa Riparalo</strong><small>Registrazione diretta · RPL e MELA</small></div></div>
@@ -1140,7 +1177,7 @@
 </nav>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="app.js?v=2220"></script>
+<script src="app.js?v=2221"></script>
 <script src="jarvis-admin.js?v=1" defer></script>
 <script src="dymo-native.js?v=2204"></script>
 <script src="dymo-engine.js?v=2204"></script>
