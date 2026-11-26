@@ -55,6 +55,7 @@
         <div class="menuGroupTitle">VENDITE E DOCUMENTI</div>
         <button id="deviceSalesMenuItem" class="menuItem adminOnly" type="button" data-category="VenditeAdmin"><span class="menuIcon">€</span><span><strong>Vendite ricambi</strong><small>Ricambi, prezzi e IVA</small></span></button>
         <button id="invoicesMenuItem" class="menuItem adminOnly" type="button" data-category="Fatturazione"><span class="menuIcon">▤</span><span><strong>Fatture clienti</strong><small>Clienti, documenti e XML</small></span></button>
+        <button id="riparaloMonthlyMenu" class="menuItem adminOnly" type="button" data-category="RiparaloMensile" hidden><span class="menuIcon">▤</span><span><strong>Riparalo</strong><small>Ricambi e riparazioni per mese</small></span></button>
       </div>
 
       <div id="adminMenuGroup" class="menuGroup adminOnly" hidden>
@@ -326,6 +327,23 @@
 
 
     
+<section id="riparaloMonthlyView" class="deviceSalesView" hidden>
+  <div class="deviceSaleCard adminUniformCard">
+    <div class="deviceSaleCardHead"><div><strong>RIPARALO S.R.L.</strong><small>Vendite ricambi e riparazioni · RPL e MELA</small></div><button id="ripRefresh" type="button" class="secondaryAction">Aggiorna</button></div>
+    <div class="deviceSaleGrid">
+      <label><span>Anno</span><select id="ripYear"></select></label>
+      <label><span>Mese</span><select id="ripMonth"></select></label>
+      <label><span>Negozio</span><select id="ripStore"><option value="">Tutti i negozi</option></select></label>
+      <label><span>Tipo</span><select id="ripType"><option value="">Tutto</option><option>Ricambi</option><option>Riparazioni</option></select></label>
+      <label><span>Fatturazione</span><select id="ripInvoiceStatus"><option value="">Tutti gli stati</option><option>Da fatturare</option><option>Fatturato</option><option>Non disponibile</option></select></label>
+    </div>
+    <div id="ripSummary" class="vatPreview"></div>
+    <div id="ripMsg" class="createUserMsg" aria-live="polite"></div><p id="ripMissing" aria-live="polite"></p>
+    <div class="repairFormActions"><button id="ripExcel" type="button" class="secondaryAction" disabled>Esporta Excel</button><button id="ripPdf" type="button" class="secondaryAction" disabled>Esporta PDF</button><button id="ripXml" type="button" class="primaryAction" disabled>Genera fattura mensile XML</button></div>
+  </div>
+  <div class="deviceSaleCard adminUniformCard"><div class="deviceSaleCardHead"><div><strong id="ripPeriodTitle">Movimenti del mese</strong><small>Importi e dettaglio per negozio</small></div></div><div id="ripList"></div></div>
+  <div class="deviceSaleCard adminUniformCard"><div class="deviceSaleCardHead"><div><strong>Archivio mensile</strong><small>Seleziona un mese per aprire il dettaglio</small></div></div><div id="ripArchive" class="deviceSaleGrid"></div></div>
+</section>
 <section id="deviceSalesView" class="deviceSalesView" hidden>
   <div class="adminWorkHero">
     <div>
@@ -1085,7 +1103,7 @@
 </nav>
 <script src="https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="app.js?v=2217"></script>
+<script src="app.js?v=2218"></script>
 <script src="jarvis-admin.js?v=1" defer></script>
 <script src="dymo-native.js?v=2204"></script>
 <script src="dymo-engine.js?v=2204"></script>
