@@ -428,6 +428,7 @@ function applyRoleVisibility(){
   if(invoicesMenu) invoicesMenu.hidden=!admin;
   if(bestekCatalogMenu) bestekCatalogMenu.hidden=!admin;
   if(repairsMenu) repairsMenu.hidden=!admin;
+  const vrMenu=document.getElementById("vrRepairsMenuItem");if(vrMenu)vrMenu.hidden=!admin;
   if(quickRepairMenu) quickRepairMenu.hidden=!admin;
   if(fullRepairMenu) fullRepairMenu.hidden=!admin;
   if(settingsMenu) settingsMenu.hidden=!admin;
@@ -441,7 +442,7 @@ function applyRoleVisibility(){
     document.getElementById("hoursView").hidden=true;
     const dsv=document.getElementById("deviceSalesView"); if(dsv) dsv.hidden=true;
     const sv=document.getElementById("settingsView"); if(sv) sv.hidden=true;
-    if(["Utenti","GestioneMagazzino","ScorteZero","Backup","Orari","VenditeAdmin","Fatturazione","CatalogoBestek","RiparazioniAdmin","AccettazioneRapida","AccettazioneCompleta","ContoLavorazione","Clienti","Impostazioni"].includes(currentCategory)) setCategory("Dashboard");
+    if(["Utenti","GestioneMagazzino","ScorteZero","Backup","Orari","VenditeAdmin","Fatturazione","CatalogoBestek","RiparazioniAdmin","RiparazioniVR","AccettazioneRapida","AccettazioneCompleta","ContoLavorazione","Clienti","Impostazioni"].includes(currentCategory)) setCategory("Dashboard");
   }
   const menuUser=document.getElementById("menuUserName"), menuRole=document.getElementById("menuUserRole");
   if(menuUser) menuUser.textContent=currentProfile?.username||currentUser?.email||"Utente";
@@ -478,7 +479,7 @@ async function loadSaasContext(){
 function applyLicenseVisibility(){
   const licenseOk=btLicenseActive();
   const map=[
-    ["repairMenuGroup","repairs"],["quickRepairMenuItem","repairs"],["fullRepairMenuItem","repairs"],["repairsMenuItem","repairs"],
+    ["repairMenuGroup","repairs"],["quickRepairMenuItem","repairs"],["fullRepairMenuItem","repairs"],["repairsMenuItem","repairs"],["vrRepairsMenuItem","repairs"],
     ["workDdtMenuItem","ddt"],["salesMenuGroup","sales"],["deviceSalesMenuItem","sales"],["invoicesMenuItem","invoicing"],
     ["hoursMenuItem","hours"],["backupMenuItem","backup"],["bestekCatalogMenuItem","bestek"]
   ];
@@ -2256,6 +2257,7 @@ function resetAdminRepairEditor(){
   ["repairAccCharger","repairAccCable","repairAccSim","repairAccCase","repairAccBox"].forEach(id=>{const el=document.getElementById(id);if(el)el.checked=false;});
   adminRepairNewPhotos=[];adminRepairExistingPhotos=[];adminRepairSignatureData=null;renderAdminRepairPhotoPreview();drawAdminRepairSignature(null);const pc=document.getElementById("adminRepairPhotos");if(pc)pc.value="";const consent=document.getElementById("adminRepairSignatureConsent");if(consent)consent.checked=false;
   updateAdminRepairVatPreview();
+  if(currentCategory==="RiparazioniVR")btSetVrRepairClient();
 }
 
 function startAdminRepairEdit(id){
@@ -2329,7 +2331,7 @@ function bindAdminRepairs(){
    ev.preventDefault(); const msg=document.getElementById("adminRepairMsg"); if(msg){msg.className="createUserMsg";msg.textContent=adminRepairEditingId?"Salvataggio modifiche…":"Salvataggio…";}
    try{
     const ctx=await btGetWorkspaceOwnerId();
-    const clientChoice=document.getElementById("adminRepairClient").value;const clientName=clientChoice==="ALTRO"?document.getElementById("adminRepairCustomClient").value.trim():clientChoice;if(!clientName)throw new Error("Seleziona o inserisci il cliente.");const repairDate=document.getElementById("adminRepairDate").value;const warrantyMonths=Number(document.getElementById("adminRepairWarrantyMonths").value||0);let warrantyUntil=null;if(warrantyMonths&&repairDate){const wd=new Date(repairDate+"T12:00:00");wd.setMonth(wd.getMonth()+warrantyMonths);warrantyUntil=wd.toISOString().slice(0,10);}const autoCode=`RIP-${repairDate.replaceAll("-","")}-${String(Date.now()).slice(-5)}`;const practiceCode=document.getElementById("adminRepairPracticeCode").value.trim()||autoCode;const termsConsent=document.getElementById("adminRepairSignatureConsent");if(!termsConsent?.checked)throw new Error("Il cliente deve accettare le condizioni di presa in carico e prendere visione dell’informativa privacy.");const estimatedPickup=document.getElementById("adminRepairEstimatedPickup").value||null;if(estimatedPickup&&repairDate&&estimatedPickup<repairDate)throw new Error("La data presunta di ritiro non può essere precedente alla data di accettazione.");const existingRepair=adminRepairEditingId?adminRepairRows.find(r=>Number(r.id)===Number(adminRepairEditingId)):null;const sameTerms=existingRepair?.intake_terms_version===BT_INTAKE_TERMS_VERSION&&existingRepair?.privacy_notice_version===BT_PRIVACY_NOTICE_VERSION&&existingRepair?.intake_terms_accepted_at;const acceptedAt=sameTerms?existingRepair.intake_terms_accepted_at:new Date().toISOString();const payload={repaired_at:repairDate,estimated_pickup_date:estimatedPickup,practice_code:practiceCode,signature_data:adminRepairSignatureData||null,signed_at:adminRepairSignatureData?(existingRepair?.signed_at||new Date().toISOString()):null,intake_terms_accepted_at:acceptedAt,intake_terms_version:BT_INTAKE_TERMS_VERSION,privacy_notice_version:BT_PRIVACY_NOTICE_VERSION,receipt_token:practiceCode,client_name:clientName,customer_phone:document.getElementById("adminRepairCustomerPhone").value.trim()||null,customer_email:document.getElementById("adminRepairCustomerEmail").value.trim()||null,store:document.getElementById("adminRepairStore").value||clientName,device:document.getElementById("adminRepairDevice").value.trim(),reported_issue:document.getElementById("adminRepairReportedIssue").value.trim(),device_condition:document.getElementById("adminRepairDeviceCondition").value.trim()||null,accessories:btRepairAccessoriesFromFormV1(),repair_type:document.getElementById("adminRepairType").value.trim(),imei_serial:document.getElementById("adminRepairImei").value.trim()||null,part_cost:document.getElementById("adminRepairPartCost").value===""?null:Number(document.getElementById("adminRepairPartCost").value),deposit_amount:document.getElementById("adminRepairDeposit")?.value===""?0:Number(document.getElementById("adminRepairDeposit")?.value||0),repair_status:document.getElementById("adminRepairStatus").value,quote_status:document.getElementById("adminRepairQuoteStatus").value,quote_amount:document.getElementById("adminRepairQuoteAmount").value===""?null:Number(document.getElementById("adminRepairQuoteAmount").value),warranty_months:warrantyMonths,warranty_until:warrantyUntil,invoiced:document.getElementById("adminRepairInvoiced").value==="true",price_ex_vat:Number(document.getElementById("adminRepairPrice").value||0),vat_rate:Number(document.getElementById("adminRepairVatRate").value||22),note:(()=>{const r=document.getElementById("adminRepairEShareRef").value.trim();const n=document.getElementById("adminRepairNote").value.trim();return `${r?`Rif. e-Share: ${r}${n?` · `:""}`:""}${n}`||null;})()};
+    const clientChoice=document.getElementById("adminRepairClient").value;const clientName=currentCategory==="RiparazioniVR"?"VR Trasporti":clientChoice==="ALTRO"?document.getElementById("adminRepairCustomClient").value.trim():clientChoice;if(!clientName)throw new Error("Seleziona o inserisci il cliente.");const repairDate=document.getElementById("adminRepairDate").value;const warrantyMonths=Number(document.getElementById("adminRepairWarrantyMonths").value||0);let warrantyUntil=null;if(warrantyMonths&&repairDate){const wd=new Date(repairDate+"T12:00:00");wd.setMonth(wd.getMonth()+warrantyMonths);warrantyUntil=wd.toISOString().slice(0,10);}const autoCode=`RIP-${repairDate.replaceAll("-","")}-${String(Date.now()).slice(-5)}`;const practiceCode=document.getElementById("adminRepairPracticeCode").value.trim()||autoCode;const termsConsent=document.getElementById("adminRepairSignatureConsent");if(!termsConsent?.checked)throw new Error("Il cliente deve accettare le condizioni di presa in carico e prendere visione dell’informativa privacy.");const estimatedPickup=document.getElementById("adminRepairEstimatedPickup").value||null;if(estimatedPickup&&repairDate&&estimatedPickup<repairDate)throw new Error("La data presunta di ritiro non può essere precedente alla data di accettazione.");const existingRepair=adminRepairEditingId?adminRepairRows.find(r=>Number(r.id)===Number(adminRepairEditingId)):null;const sameTerms=existingRepair?.intake_terms_version===BT_INTAKE_TERMS_VERSION&&existingRepair?.privacy_notice_version===BT_PRIVACY_NOTICE_VERSION&&existingRepair?.intake_terms_accepted_at;const acceptedAt=sameTerms?existingRepair.intake_terms_accepted_at:new Date().toISOString();const payload={repaired_at:repairDate,estimated_pickup_date:estimatedPickup,practice_code:practiceCode,signature_data:adminRepairSignatureData||null,signed_at:adminRepairSignatureData?(existingRepair?.signed_at||new Date().toISOString()):null,intake_terms_accepted_at:acceptedAt,intake_terms_version:BT_INTAKE_TERMS_VERSION,privacy_notice_version:BT_PRIVACY_NOTICE_VERSION,receipt_token:practiceCode,client_name:clientName,customer_phone:document.getElementById("adminRepairCustomerPhone").value.trim()||null,customer_email:document.getElementById("adminRepairCustomerEmail").value.trim()||null,store:currentCategory==="RiparazioniVR"?"VR Trasporti":document.getElementById("adminRepairStore").value||clientName,device:document.getElementById("adminRepairDevice").value.trim(),reported_issue:document.getElementById("adminRepairReportedIssue").value.trim(),device_condition:document.getElementById("adminRepairDeviceCondition").value.trim()||null,accessories:btRepairAccessoriesFromFormV1(),repair_type:document.getElementById("adminRepairType").value.trim(),imei_serial:document.getElementById("adminRepairImei").value.trim()||null,part_cost:document.getElementById("adminRepairPartCost").value===""?null:Number(document.getElementById("adminRepairPartCost").value),deposit_amount:document.getElementById("adminRepairDeposit")?.value===""?0:Number(document.getElementById("adminRepairDeposit")?.value||0),repair_status:document.getElementById("adminRepairStatus").value,quote_status:document.getElementById("adminRepairQuoteStatus").value,quote_amount:document.getElementById("adminRepairQuoteAmount").value===""?null:Number(document.getElementById("adminRepairQuoteAmount").value),warranty_months:warrantyMonths,warranty_until:warrantyUntil,invoiced:document.getElementById("adminRepairInvoiced").value==="true",price_ex_vat:Number(document.getElementById("adminRepairPrice").value||0),vat_rate:Number(document.getElementById("adminRepairVatRate").value||22),note:(()=>{const r=document.getElementById("adminRepairEShareRef").value.trim();const n=document.getElementById("adminRepairNote").value.trim();return `${r?`Rif. e-Share: ${r}${n?` · `:""}`:""}${n}`||null;})()};
     let error,savedId=adminRepairEditingId;
     if(adminRepairEditingId){
       const res=await sb.from("beparytech_admin_repairs").update(payload).eq("id",adminRepairEditingId).eq("workspace_owner_id",ctx.owner).select("id").single();error=res.error;savedId=res.data?.id||adminRepairEditingId;
@@ -2700,7 +2702,7 @@ document.addEventListener("DOMContentLoaded",()=>{
 
 
 // v89 · deep link QR pratica
-(function(){let done=false;async function openPracticeFromUrl(){if(done||!isAdmin?.())return;const code=new URLSearchParams(location.search).get('practice');if(!code)return;done=true;try{setCategory('RiparazioniAdmin');setTimeout(async()=>{await loadAdminRepairs();const q=document.getElementById('adminRepairSearch');if(q){q.value=code;q.dispatchEvent(new Event('input',{bubbles:true}));}setTimeout(()=>document.querySelector('#adminRepairsList .businessRepairRow:not([hidden])')?.scrollIntoView({behavior:'smooth',block:'center'}),250);},250);}catch(e){done=false;}}setInterval(openPracticeFromUrl,1300);})();
+(function(){let done=false;async function openPracticeFromUrl(){if(done||!isAdmin?.())return;const code=new URLSearchParams(location.search).get('practice');if(!code)return;done=true;try{const ctx=await btGetWorkspaceOwnerId();const {data,error}=await sb.from('beparytech_admin_repairs').select('client_name,store').eq('workspace_owner_id',ctx.owner).eq('practice_code',code).limit(1);if(error)throw error;setCategory(data?.[0]&&btIsVrRepair(data[0])?'RiparazioniVR':'RiparazioniAdmin');setTimeout(async()=>{await loadAdminRepairs();const q=document.getElementById('adminRepairSearch');if(q){q.value=code;q.dispatchEvent(new Event('input',{bubbles:true}));}setTimeout(()=>document.querySelector('#adminRepairsList .businessRepairRow:not([hidden])')?.scrollIntoView({behavior:'smooth',block:'center'}),250);},250);}catch(e){done=false;}}setInterval(openPracticeFromUrl,1300);})();
 
 
 // ===== v92: Accettazione separata, rapida, QR affidabile e DYMO configurabile =====
@@ -2890,9 +2892,10 @@ function bindRepairRowsV95(root){
   root.querySelectorAll(".deleteAdminRepair").forEach(b=>b.onclick=()=>deleteAdminRepair(Number(b.dataset.id)));
 }
 function openAdminRepairEditorV95(id, completing=false){
-  setCategory("AccettazioneCompleta");
+  if(currentCategory!=="RiparazioniVR")setCategory("AccettazioneCompleta");
   setTimeout(()=>{
     startAdminRepairEdit(id);
+    if(currentCategory==="RiparazioniVR")btSetVrRepairClient();
     const msg=document.getElementById("adminRepairMsg");
     if(msg&&completing){msg.className="createUserMsg";msg.textContent="Completa i dati mancanti e salva: resterà la stessa pratica.";}
   },100);
@@ -2902,9 +2905,15 @@ async function loadAdminRepairsV95(){
   fullList.innerHTML='<div class="emptyState">Caricamento…</div>';quickList.innerHTML='<div class="emptyState">Caricamento…</div>';
   try{
     const ctx=await btGetWorkspaceOwnerId();
-    const {data,error}=await sb.from("beparytech_admin_repairs").select("*").eq("workspace_owner_id",ctx.owner).order("repaired_at",{ascending:false}).order("id",{ascending:false}).limit(300);
-    if(error)throw error;
-    const rows=data||[];adminRepairRows=rows;
+    const vr=currentCategory==="RiparazioniVR", request=++btVrRepairLoadRequest;
+    const all=[];
+    for(let offset=0;;offset+=200){
+      const {data,error}=await sb.from("beparytech_admin_repairs").select("*").eq("workspace_owner_id",ctx.owner).order("repaired_at",{ascending:false}).order("id",{ascending:false}).range(offset,offset+199);
+      if(request!==btVrRepairLoadRequest||vr!==(currentCategory==="RiparazioniVR"))return;
+      if(error)throw error;
+      all.push(...(data||[]));if(!data||data.length<200)break;
+    }
+    const rows=all.filter(r=>btIsVrRepair(r)===vr);adminRepairRows=rows;
     const quick=rows.filter(r=>r.repair_status==="Da completare"),full=rows.filter(r=>r.repair_status!=="Da completare");
     const net=rows.reduce((x,r)=>x+Number(r.price_ex_vat||0),0),vat=rows.reduce((x,r)=>x+Number(r.vat_amount||0),0),total=rows.reduce((x,r)=>x+Number(r.total_inc_vat||0),0);
     const sum=document.getElementById("adminRepairsSummary");if(sum)sum.innerHTML=`<div><span>Accettazioni rapide</span><strong>${quick.length}</strong></div><div><span>Riparazioni</span><strong>${full.length}</strong></div><div><span>Da fatturare</span><strong>${rows.filter(r=>!r.invoiced).length}</strong></div><div><span>Totale</span><strong>${euroFmt.format(total)}</strong></div>`;
@@ -3716,3 +3725,44 @@ function bindVatLookups(){
   }
 }
 document.addEventListener('DOMContentLoaded',bindVatLookups);
+
+
+/* Area VR Trasporti - stesso archivio, viste separate */
+let btVrRepairLoadRequest=0;
+function btIsVrRepair(r){
+  const norm=v=>String(v||"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+  return [r.client_name,r.store].some(v=>/^(vr|v r) trasport/.test(norm(v)));
+}
+function btSetVrRepairClient(){
+  const c=document.getElementById("adminRepairClient"),s=document.getElementById("adminRepairStore"),x=document.getElementById("adminRepairCustomClient");
+  if(c){c.value="VR Trasporti";c.dispatchEvent(new Event("change"));c.disabled=true;}
+  if(s){if(!Array.from(s.options).some(o=>o.value==="VR Trasporti"))s.add(new Option("VR Trasporti","VR Trasporti"));s.value="VR Trasporti";s.disabled=true;}
+  if(x){x.required=false;x.disabled=true;x.value="";}
+}
+const btVrPreviousRoute=setCategory;
+setCategory=function(category,fromBack=false){
+  if(category!=="RiparazioniVR"){
+    if(currentCategory==="RiparazioniVR"){
+      currentCategory="RiparazioniAdmin";resetAdminRepairEditor();
+      ["adminRepairClient","adminRepairStore"].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=false;});
+      currentCategory="RiparazioniVR";
+    }
+    return btVrPreviousRoute(category,fromBack);
+  }
+  if(!isAdmin())return;
+  btVrPreviousRoute("RiparazioniAdmin",fromBack);
+  currentCategory="RiparazioniVR";
+  setTimeout(()=>{
+    if(currentCategory!=="RiparazioniVR")return;
+    v93SetRepairMode("practices");resetAdminRepairEditor();
+    document.getElementById("adminRepairForm").hidden=false;
+    btSetVrRepairClient();
+    document.getElementById("categoryName").textContent="VR Trasporti";
+    document.getElementById("categoryDescription").textContent="Riparazioni e archivio dedicato";
+    document.getElementById("adminWorkHeroTitle").textContent="VR Trasporti · Riparazioni";
+    document.getElementById("adminWorkHeroText").textContent="Registra nuove lavorazioni e consulta lo storico VR Trasporti.";
+    const q=document.getElementById("adminRepairSearch");if(q)q.value="";
+    document.querySelectorAll(".menuItem[data-category]").forEach(b=>b.classList.toggle("active",b.dataset.category==="RiparazioniVR"));
+    loadAdminRepairs();
+  },0);
+};
